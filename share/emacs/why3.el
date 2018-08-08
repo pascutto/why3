@@ -49,10 +49,14 @@
     (modify-syntax-entry ?\( "()1n" st)
     (modify-syntax-entry ?\) ")(4n" st)
     (modify-syntax-entry ?* ". 23" st)
-    ; attributes
-    (modify-syntax-entry ?[ "(]1b" st)
+    ; attributes.
+    ; One whitespace is needed before the closing bracket
+    ; because it seems that two characters comment can be ended only by
+    ; two characters comment.
+    (modify-syntax-entry ?[ "(]1" st)
     (modify-syntax-entry ?@ ". 2b" st)
-    (modify-syntax-entry ?] "> b" st)
+    (modify-syntax-entry ?\  "- 3b" st)
+    (modify-syntax-entry ?] ")[4" st)
     st)
   "Syntax table for why3-mode")
 
