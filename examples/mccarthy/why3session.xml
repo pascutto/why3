@@ -3,17 +3,17 @@
 "http://why3.lri.fr/why3session.dtd">
 <why3session shape_version="4">
 <prover id="0" name="CVC4" version="1.5" timelimit="1" steplimit="0" memlimit="1000"/>
-<prover id="1" name="Alt-Ergo" version="1.30" timelimit="5" steplimit="0" memlimit="1000"/>
+<prover id="2" name="Alt-Ergo" version="2.2.0" timelimit="5" steplimit="0" memlimit="1000"/>
 <file name="../mccarthy.mlw" proved="true">
 <theory name="McCarthy91" proved="true">
  <goal name="VC f91" expl="VC for f91" proved="true">
- <proof prover="1" timelimit="10"><result status="valid" time="0.00" steps="31"/></proof>
+ <proof prover="2" timelimit="10"><result status="valid" time="0.00" steps="19"/></proof>
  </goal>
  <goal name="VC f91_nonrec" expl="VC for f91_nonrec" proved="true">
- <proof prover="1" timelimit="10"><result status="valid" time="0.29" steps="517"/></proof>
+ <proof prover="2" timelimit="10"><result status="valid" time="0.61" steps="1863"/></proof>
  </goal>
  <goal name="VC f91_pseudorec" expl="VC for f91_pseudorec" proved="true">
- <proof prover="1" timelimit="10"><result status="valid" time="0.01" steps="49"/></proof>
+ <proof prover="2" timelimit="10"><result status="valid" time="0.01" steps="58"/></proof>
  </goal>
 </theory>
 <theory name="McCarthyWithCoroutines" proved="true">
@@ -32,13 +32,13 @@
 </theory>
 <theory name="McCarthy91Mach" proved="true">
  <goal name="VC f91" expl="VC for f91" proved="true">
- <proof prover="1"><result status="valid" time="0.07" steps="1067"/></proof>
+ <proof prover="2"><result status="valid" time="0.07" steps="750"/></proof>
  </goal>
  <goal name="VC f91_nonrec" expl="VC for f91_nonrec" proved="true">
- <proof prover="1"><result status="valid" time="6.06" steps="12891"/></proof>
+ <proof prover="2"><result status="valid" time="3.46" steps="5339"/></proof>
  </goal>
  <goal name="VC f91_pseudorec" expl="VC for f91_pseudorec" proved="true">
- <proof prover="1"><result status="valid" time="0.08" steps="432"/></proof>
+ <proof prover="2"><result status="valid" time="0.19" steps="1601"/></proof>
  </goal>
 </theory>
 </file>

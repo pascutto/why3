@@ -2,8 +2,8 @@
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "http://why3.lri.fr/why3session.dtd">
 <why3session shape_version="4">
-<prover id="0" name="Alt-Ergo" version="1.30" timelimit="1" steplimit="0" memlimit="1000"/>
 <prover id="1" name="Z3" version="4.5.0" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="2" name="Alt-Ergo" version="2.2.0" timelimit="1" steplimit="0" memlimit="1000"/>
 <file name="../verifythis_2018_mind_the_gap_2.mlw" proved="true">
 <theory name="GapBuffer" proved="true">
  <goal name="VC dummy_char" expl="VC for dummy_char" proved="true">
@@ -27,13 +27,13 @@
   <proof prover="1"><result status="valid" time="0.01"/></proof>
   </goal>
   <goal name="VC left.4" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" time="0.02" steps="59"/></proof>
+  <proof prover="2"><result status="valid" time="0.02" steps="74"/></proof>
   </goal>
   <goal name="VC left.5" expl="postcondition" proved="true">
   <proof prover="1"><result status="valid" time="0.02"/></proof>
   </goal>
   <goal name="VC left.6" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" time="0.02" steps="3"/></proof>
+  <proof prover="2"><result status="valid" time="0.02" steps="4"/></proof>
   </goal>
  </transf>
  </goal>
@@ -52,13 +52,13 @@
   <proof prover="1"><result status="valid" time="0.02"/></proof>
   </goal>
   <goal name="VC right.4" expl="postcondition" proved="true">
-  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.02" steps="55"/></proof>
+  <proof prover="2" timelimit="5" memlimit="2000"><result status="valid" time="0.02" steps="84"/></proof>
   </goal>
   <goal name="VC right.5" expl="postcondition" proved="true">
   <proof prover="1"><result status="valid" time="0.02"/></proof>
   </goal>
   <goal name="VC right.6" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" time="0.02" steps="3"/></proof>
+  <proof prover="2"><result status="valid" time="0.02" steps="4"/></proof>
   </goal>
  </transf>
  </goal>
@@ -115,8 +115,8 @@
   <proof prover="1"><result status="valid" time="0.04"/></proof>
   </goal>
   <goal name="VC insert.3" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" time="0.02" steps="182"/></proof>
   <proof prover="1"><result status="timeout" time="1.00"/></proof>
+  <proof prover="2"><result status="valid" time="0.02" steps="118"/></proof>
   </goal>
   <goal name="VC insert.4" expl="index in array bounds" proved="true">
   <proof prover="1"><result status="valid" time="0.02"/></proof>
@@ -128,8 +128,8 @@
   <proof prover="1"><result status="valid" time="0.01"/></proof>
   </goal>
   <goal name="VC insert.7" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" time="0.03" steps="104"/></proof>
   <proof prover="1"><result status="timeout" time="1.00"/></proof>
+  <proof prover="2"><result status="valid" time="0.03" steps="67"/></proof>
   </goal>
  </transf>
  </goal>

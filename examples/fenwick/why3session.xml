@@ -2,23 +2,23 @@
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "http://why3.lri.fr/why3session.dtd">
 <why3session shape_version="4">
-<prover id="1" name="Alt-Ergo" version="1.30" timelimit="10" steplimit="0" memlimit="1000"/>
+<prover id="0" name="Alt-Ergo" version="2.2.0" timelimit="10" steplimit="0" memlimit="1000"/>
 <file name="../fenwick.mlw" proved="true">
 <theory name="Fenwick" proved="true">
  <goal name="VC make" expl="VC for make" proved="true">
- <proof prover="1"><result status="valid" time="0.01" steps="39"/></proof>
+ <proof prover="0"><result status="valid" time="0.01" steps="76"/></proof>
  </goal>
  <goal name="VC add" expl="VC for add" proved="true">
- <proof prover="1"><result status="valid" time="0.66" steps="721"/></proof>
+ <proof prover="0"><result status="valid" time="0.66" steps="1145"/></proof>
  </goal>
  <goal name="VC sum_dec" expl="VC for sum_dec" proved="true">
- <proof prover="1"><result status="valid" time="0.04" steps="37"/></proof>
+ <proof prover="0"><result status="valid" time="0.24" steps="251"/></proof>
  </goal>
  <goal name="VC fen_compact" expl="VC for fen_compact" proved="true">
- <proof prover="1"><result status="valid" time="0.82" steps="850"/></proof>
+ <proof prover="0"><result status="valid" time="2.35" steps="1959"/></proof>
  </goal>
  <goal name="VC query" expl="VC for query" proved="true">
- <proof prover="1"><result status="valid" time="2.57" steps="2527"/></proof>
+ <proof prover="0"><result status="valid" time="6.44" steps="7012"/></proof>
  </goal>
 </theory>
 </file>
