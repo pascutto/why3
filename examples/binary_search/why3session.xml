@@ -3,16 +3,17 @@
 "http://why3.lri.fr/why3session.dtd">
 <why3session shape_version="4">
 <prover id="0" name="Alt-Ergo" version="2.0.0" timelimit="5" steplimit="0" memlimit="1000"/>
-<prover id="3" name="Alt-Ergo" version="1.30" timelimit="10" steplimit="0" memlimit="1000"/>
+<prover id="1" name="Alt-Ergo" version="2.2.0" timelimit="10" steplimit="0" memlimit="1000"/>
+<prover id="2" name="CVC4" version="1.6" timelimit="1" steplimit="0" memlimit="1000"/>
 <file name="../binary_search.mlw" proved="true">
 <theory name="BinarySearch" proved="true">
  <goal name="VC binary_search" expl="VC for binary_search" proved="true">
- <proof prover="3"><result status="valid" time="0.05" steps="88"/></proof>
+ <proof prover="1"><result status="valid" time="0.05" steps="156"/></proof>
  </goal>
 </theory>
 <theory name="BinarySearchAnyMidPoint" proved="true">
  <goal name="VC binary_search" expl="VC for binary_search" proved="true">
- <proof prover="3"><result status="valid" time="0.01" steps="63"/></proof>
+ <proof prover="1"><result status="valid" time="0.01" steps="66"/></proof>
  </goal>
 </theory>
 <theory name="BinarySearchBranchless" proved="true">
@@ -22,12 +23,12 @@
 </theory>
 <theory name="BinarySearchInt32" proved="true">
  <goal name="VC binary_search" expl="VC for binary_search" proved="true">
- <proof prover="3"><result status="valid" time="1.27" steps="8288"/></proof>
+ <proof prover="2"><result status="valid" time="0.08"/></proof>
  </goal>
 </theory>
 <theory name="BinarySearchBoolean" proved="true">
  <goal name="VC binary_search" expl="VC for binary_search" proved="true">
- <proof prover="3"><result status="valid" time="0.08" steps="194"/></proof>
+ <proof prover="1"><result status="valid" time="0.08" steps="291"/></proof>
  </goal>
 </theory>
 </file>
