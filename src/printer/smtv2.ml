@@ -521,8 +521,12 @@ let add_check_sat info fmt =
   if info.info_cntexample && info.info_cntexample_need_push then
     fprintf fmt "@[(push)@]@\n";
   fprintf fmt "@[(check-sat)@]@\n";
-  (* unfortunately we can't do that unconditionally, since it will make
-     CVC4 fail and immediately exit if last answer was not 'unknown' *)
+  (* unfortunately we can't do that unconditionally, since it will
+     make CVC4 fail and immediately exit if last answer was not
+     'unknown'.  But the same is acheived by putting (set-info :status
+     unknown) at the beginning of the file. This is done using the
+     "prelude" in the drivers for SMT solvers, when they support
+     it. *)
   (* fprintf fmt "@[(get-info :reason-unknown)@]@\n"; *)
   if info.info_cntexample then
     fprintf fmt "@[(get-model)@]@\n"

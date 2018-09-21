@@ -2,6 +2,7 @@
 
 prelude ";; produced by cvc4_16.drv ;;"
 prelude "(set-info :smt-lib-version 2.6)"
+prelude "(set-info :status unknown)"
 prelude "(set-logic AUFBVFPDTNIRA)"
 (*
     A    : Array

@@ -1,5 +1,8 @@
 (** Why3 driver for Z3 >= 4.3.2 *)
 
+prelude ";; produced by z3_440.drv ;;"
+prelude "(set-info :smt-lib-version 2.6)"
+prelude "(set-info :status unknown)"
 (* Do not set any logic, let z3 choose by itself
    prelude "(set-logic AUFNIRA)"
 *)
