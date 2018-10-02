@@ -40,7 +40,7 @@ and field = Fimmutable of value | Fmutable of value ref
 type info = {
     env : Env.env;
     mm  : Pmodule.pmodule Mstr.t;
-    vars: value Mid.t;
+    vars : value Hid.t list;
     funs: decl Mrs.t;
     get_decl: rsymbol -> Mltree.decl;
     cur_rs: rsymbol; (* current function *)
@@ -388,7 +388,6 @@ let exec_print _ args =
   List.iter (eprintf "%a@." print_value) args;
   Vvoid
 
-
 let built_in_modules =
   [
     ["bool"],"Bool", [],
@@ -549,9 +548,9 @@ let cs_push info rs =
     let ts_end = Unix.gettimeofday () in
     print_callstack info.cs (ts_end -. !ts);
     ts := Unix.gettimeofday ();
-    { info with cur_rs = rs; cs = new_cs }
+    { info with cur_rs = rs; cs = new_cs; vars = (Hid.create 17):: info.vars }
     end
-  else { info with cur_rs = rs; cs = new_cs }
+  else { info with cur_rs = rs; cs = new_cs; vars = (Hid.create 17):: info.vars }
 
 let cs_pop info =
   if Debug.test_flag debug_flamegraph
@@ -560,9 +559,20 @@ let cs_pop info =
     print_callstack info.cs (ts_end -. !ts);
     ts := Unix.gettimeofday () end
 
-let get pv info : value =  Mid.find pv.pv_vs.vs_name info.vars
+let get pv info : value =
+  let rec find id vars =
+    match vars with
+    | store::t ->
+       begin try Hid.find store id
+       with Not_found -> find id t end
+    | [] -> assert false in
+  find pv.pv_vs.vs_name info.vars
 
-let add_id id v info = {info with vars = Mid.add id v info.vars}
+let add_id id v info =
+  match info.vars with
+  | h::_ -> Hid.replace h id v
+  | [] -> assert false
+
 let add_vs vs = add_id vs.vs_name
 let add_pv pv = add_vs pv.pv_vs
 
@@ -572,32 +582,34 @@ let add_fundecl rs decl info =
 
 exception NoMatch
 
+(* FIXME: backtracking in case of failed match
+          are variables added in failed match always irrelevant? *)
 let rec matching info v pat =
   match pat with
-  | Pwild -> info
+  | Pwild -> ()
   | Pvar vs -> add_vs vs v info
   | Ptuple pl ->
      begin match v with
      | Vtuple l ->
-        List.fold_left2 matching info l pl
+        List.iter2 (matching info) l pl
      | _ -> assert false
      end
   | Por (p1, p2) ->
      begin try matching info v p1 with NoMatch -> matching info v p2 end
-  | Pas (p, vs) -> add_vs vs v (matching info v p)
+  | Pas (p, vs) -> matching info v p; add_vs vs v info
   | Papp (ls, pl) ->
      match v with
      | Vconstr ({rs_logic = RLls ls2}, l) ->
         if ls_equal ls ls2 then
-          List.fold_left2 matching info (List.map field_get l) pl
+          List.iter2 (matching info) (List.map field_get l) pl
         else if ls2.ls_constr > 0 then raise NoMatch
         else assert false
      | Vbool b ->
         let ls2 = if b then fs_bool_true else fs_bool_false in
-        if ls_equal ls ls2 then info else raise NoMatch
+        if ls_equal ls ls2 then () else raise NoMatch
      | _ -> raise CannotReduce (* FIXME more cases ? *)
 
-let rec interp_expr info (e:Mltree.expr) : value =
+let rec interp_expr (info:info) (e:Mltree.expr) : value =
   Mltree.(match e.e_node with
   | Econst nc ->
      begin match e.e_ity with
@@ -613,22 +625,18 @@ let rec interp_expr info (e:Mltree.expr) : value =
       Debug.dprintf debug_interp "Eapp %a@." Expr.print_rs rs;
       let eval_call info vl e rs =
         Debug.dprintf debug_interp "eval params@.";
-        let info' =
-          List.fold_left2
-            (fun info e (id, _ty, ig) ->
-              assert (not ig);
-              let v = interp_expr info e in
-              Debug.dprintf debug_interp "arg %s : %a@."
-                id.id_string print_value v;
-              add_id id v info)
-            info le vl in
-        if rs_equal rs info.cur_rs
-        then interp_expr info' e
-        else begin
-          let info' = cs_push info' rs in
-          let v = interp_expr info' e in
-          cs_pop info';
-          v end in
+        let info' = cs_push info rs in
+        List.iter2
+          (fun e (id, _ty, ig) ->
+            assert (not ig);
+            let v = interp_expr info e in
+            Debug.dprintf debug_interp "arg %s : %a@."
+              id.id_string print_value v;
+            add_id id v info')
+          le vl;
+        let v = interp_expr info' e in
+        cs_pop info';
+        v in
       Debug.dprintf debug_interp "eval call@.";
       let res = try begin
         if Hrs.mem builtin_progs rs
@@ -687,7 +695,8 @@ let rec interp_expr info (e:Mltree.expr) : value =
   | Efun _ -> Debug.dprintf debug_interp "Efun@."; raise CannotReduce
   | Elet (Lvar(pv, e), ein) ->
      let v = interp_expr info e in
-     interp_expr (add_pv pv v info) ein
+     add_pv pv v info;
+     interp_expr info ein
   | Eif (c, th, el) ->
      begin match interp_expr info c with
      | Vbool true -> interp_expr info th
@@ -736,22 +745,26 @@ let rec interp_expr info (e:Mltree.expr) : value =
         if dir = To
         then
           for i = BigInt.to_int i1 to BigInt.to_int i2 do
-            ignore (interp_expr (add_pv x (Vbigint (BigInt.of_int i)) info) e)
+            add_pv x (Vbigint (BigInt.of_int i)) info;
+            ignore (interp_expr info e)
           done
         else
           for i = BigInt.to_int i1 downto BigInt.to_int i2 do
-            ignore (interp_expr (add_pv x (Vbigint (BigInt.of_int i)) info) e)
+            add_pv x (Vbigint (BigInt.of_int i)) info;
+            ignore (interp_expr info e)
           done;
         Vvoid
      | (Vint i1, Vint i2) ->
         if dir = To
         then
           for i = i1 to i2 do
-            ignore (interp_expr (add_pv x (Vint i) info) e)
+            add_pv x (Vint i) info;
+            ignore (interp_expr info e)
           done
         else
           for i = i1 downto i2 do
-            ignore (interp_expr (add_pv x (Vint i) info) e)
+            add_pv x (Vint i) info;
+            ignore (interp_expr info e)
           done;
         Vvoid
      | _ -> Debug.dprintf debug_interp "Non-integer for bounds@.";
@@ -790,8 +803,8 @@ let rec interp_expr info (e:Mltree.expr) : value =
             | [] -> assert false
             | (p,e)::tl ->
                 try
-                  let info' = matching info v p in
-                  interp_expr info' e
+                  matching info v p;
+                  interp_expr info e
                 with NoMatch -> aux tl
           in
           aux l
@@ -806,11 +819,11 @@ let rec interp_expr info (e:Mltree.expr) : value =
                  match pvl, ov with
                  | [], None -> interp_expr info e
                  | l, Some (Vtuple l') when (List.length l = List.length l') ->
-                    let info = List.fold_left2 (fun info pv v -> add_pv pv v info)
-                                               info l l' in
+                    List.iter2 (fun pv v -> add_pv pv v info) l l';
                     interp_expr info e
                  | [pv], Some v ->
-                    interp_expr (add_pv pv v info) e
+                    add_pv pv v info;
+                    interp_expr info e
                  | _ -> Debug.dprintf debug_interp "Etry: bad arity@.";
                         aux bl end
                else aux bl
@@ -857,18 +870,20 @@ let rec term_of_value = function
   | Varray _ -> raise CannotReduce
   | Vmatrix _ -> raise CannotReduce
 
-let init_info env mm rs vars =
+let init_info env mm rs hvars =
   { env = env;
     mm = mm;
+    vars = [hvars];
     funs = Mrs.empty;
-    vars = vars;
     get_decl = get_decl env mm;
     cur_rs = rs;
     cs = []; }
 
-let interp env mm rs vars =
+let interp env mm rs mvars =
   get_builtin_progs env;
-  let info = init_info env mm rs vars in
+  let initial_vars = Hid.create 17 in
+  Mid.iter (Hid.add initial_vars) mvars;
+  let info = init_info env mm rs initial_vars in
   if Debug.test_flag debug_flamegraph then ts := Unix.gettimeofday ();
   let decl = info.get_decl rs in
   match decl with
