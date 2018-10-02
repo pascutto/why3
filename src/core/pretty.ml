@@ -660,6 +660,7 @@ let local_decls task symbmap =
     | _ :: rest -> filter acc rest
     | [] -> match acc1,acc2 with
             | [], g::r -> List.rev r, [g]
+            | _,[] -> [],[] (* should never happen, but see issue #183 *)
             | _ -> assert false
   in
   filter ([],[]) (task_tdecls task)
