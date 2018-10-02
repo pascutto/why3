@@ -573,8 +573,8 @@ let add_id id v info =
   | h::_ -> Hid.replace h id v
   | [] -> assert false
 
-let add_vs vs = add_id vs.vs_name
-let add_pv pv = add_vs pv.pv_vs
+let add_vs vs v info = add_id vs.vs_name v info
+let add_pv pv v info = add_vs pv.pv_vs v info
 
 let add_fundecl rs decl info =
   Debug.dprintf debug_interp "adding decl for %s@." rs.rs_name.id_string;
@@ -623,20 +623,6 @@ let rec interp_expr (info:info) (e:Mltree.expr) : value =
            raise CannotReduce)
   | Eapp (rs, le) -> begin
       Debug.dprintf debug_interp "Eapp %a@." Expr.print_rs rs;
-      let eval_call info vl e rs =
-        Debug.dprintf debug_interp "eval params@.";
-        let info' = cs_push info rs in
-        List.iter2
-          (fun e (id, _ty, ig) ->
-            assert (not ig);
-            let v = interp_expr info e in
-            Debug.dprintf debug_interp "arg %s : %a@."
-              id.id_string print_value v;
-            add_id id v info')
-          le vl;
-        let v = interp_expr info' e in
-        cs_pop info';
-        v in
       Debug.dprintf debug_interp "eval call@.";
       let res = try begin
         if Hrs.mem builtin_progs rs
@@ -649,11 +635,22 @@ let rec interp_expr (info:info) (e:Mltree.expr) : value =
                      with Not_found -> info.get_decl rs in
           Debug.dprintf debug_interp "decl found@.";
           match decl with
-          | Dlet (Lsym (rs, _ty, vl, e)) ->
-             eval_call info vl e rs
+          | Dlet (Lsym (rs, _ty, vl, e))
           | Dlet(Lrec([{rec_args = vl; rec_exp = e;
                         rec_sym = rs; rec_res=_ty}])) ->
-             eval_call info vl e rs
+              Debug.dprintf debug_interp "eval params@.";
+              let info' = cs_push info rs in
+              List.iter2
+                (fun e (id, _ty, ig) ->
+                  assert (not ig);
+                  let v = interp_expr info e in
+                  Debug.dprintf debug_interp "arg %s : %a@."
+                    id.id_string print_value v;
+                  add_id id v info')
+                le vl;
+              let v = interp_expr info' e in
+              cs_pop info';
+              v
           | Dlet (Lrec _) ->
              Debug.dprintf
                debug_interp "unhandled mutually recursive functions@.";
