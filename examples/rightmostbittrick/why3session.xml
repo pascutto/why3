@@ -4,7 +4,7 @@
 <why3session shape_version="5">
 <prover id="0" name="Z3" version="4.6.0" timelimit="1" steplimit="0" memlimit="1000"/>
 <prover id="1" name="Alt-Ergo" version="2.0.0" timelimit="5" steplimit="0" memlimit="1000"/>
-<prover id="3" name="CVC4" version="1.5" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="3" name="CVC4" version="1.5" timelimit="5" steplimit="0" memlimit="1000"/>
 <file name="../rightmostbittrick.mlw" proved="true">
 <theory name="Rmbt" proved="true">
  <goal name="VC rightmost_position_set" expl="VC for rightmost_position_set" proved="true">
@@ -50,7 +50,7 @@
   <proof prover="1"><result status="valid" time="0.28" steps="429"/></proof>
   </goal>
   <goal name="VC rightmost_bit_trick.6" expl="postcondition" proved="true">
-  <proof prover="3"><result status="valid" time="0.47"/></proof>
+  <proof prover="3"><result status="valid" time="4.13"/></proof>
   </goal>
   <goal name="VC rightmost_bit_trick.7" expl="postcondition" proved="true">
   <proof prover="1"><result status="valid" time="0.10" steps="134"/></proof>
