@@ -332,12 +332,28 @@ module Print = struct
             List.exists (rs_equal rs) its.itd_constructors in
           List.exists is_constructor its
       | _ -> false in
+    let n_args = List.length rs.rs_cty.cty_args in
     match query_syntax info.info_convert rs.rs_name,
           query_syntax info.info_syn rs.rs_name, pvl with
     | Some s, _, [{e_node = Econst _}] ->
         syntax_arguments s print_constant fmt pvl
-    | _, Some s, _ (* when is_local_id info rs.rs_name  *)->
-        syntax_arguments s (print_expr ~paren:true info) fmt pvl;
+    | _, Some s, _ when n_args > List.length pvl ->
+        (** Even if [rs] is partially applied, we still want to use the string
+         given by the driver. We eta-expand the partial application and call
+         [syntax_arguments] with [pvl] and a list of fresh auxiliary
+         pvsymbols, whose length is the difference between the number of given
+         effective arguments and the total of expected arguments. *)
+        let n_pvl = List.length pvl in
+        let rec fold_int f acc i =
+          if i <= 0 then acc else fold_int f (f acc) (i - 1) in
+        let crop_args = function [] -> assert false | _ :: r -> r in
+        let pvl_partial = fold_int crop_args rs.rs_cty.cty_args n_pvl in
+        let pvl_partial = Mltree.var_list_of_pv_list pvl_partial in
+        fprintf fmt "@[<hov 2>fun %a ->@ %a@]"
+          (print_list space (print_expr info)) pvl_partial
+          (syntax_arguments s (print_expr ~paren:true info)) (pvl@pvl_partial)
+    | _, Some s, _ ->
+        syntax_arguments s (print_expr ~paren:true info) fmt pvl
     | _, None, [t] when is_rs_tuple rs ->
         fprintf fmt "@[%a@]" (print_expr info) t
     | _, None, tl when is_rs_tuple rs ->

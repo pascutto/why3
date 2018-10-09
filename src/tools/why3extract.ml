@@ -115,10 +115,10 @@ let driver_file s =
 let opt_driver =
   try match List.rev_map driver_file !opt_driver with
   | [] ->
-    eprintf "Extraction driver (-D) is required.@.";
-    exit 1
-  | f::ef ->
-    Pdriver.load_driver env f ef
+      eprintf "Extraction driver (-D) is required.@.";
+      exit 1
+  | f::fe ->
+      Pdriver.load_driver env f fe
   with e when not (Debug.test_flag Debug.stack_trace) ->
     eprintf "%a@." Exn_printer.exn_printer e;
     exit 1
@@ -381,15 +381,13 @@ let () =
             let m = find_module_id mm id in
             Ident.Sid.iter do_preludes m.mod_used
           with Not_found -> ());
-         print_preludes id fmt thprelude
-       in
+         print_preludes id fmt thprelude in
        print_prelude pargs.Pdriver.prelude;
        let visit_m _ m =
          do_preludes m.mod_theory.Theory.th_name;
          let tm = translate_module m in
          let visit_id id _ = visit ~recurs:true mm id in
-         Ident.Mid.iter visit_id tm.Mltree.mod_known;
-       in
+         Ident.Mid.iter visit_id tm.Mltree.mod_known in
        Mstr.iter visit_m mm;
        let extract fmt { info_id = id } =
          let pm = find_module_id mm id in
