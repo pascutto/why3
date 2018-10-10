@@ -301,7 +301,7 @@ module Print = struct
     | To     -> fprintf fmt "to"
     | DownTo -> fprintf fmt "downto"
 
-  let rec print_apply_args info fmt = function
+  let rec print_apply_args ?(paren=false) info fmt = function
     | expr :: exprl, pv :: pvl ->
         if is_optional ~attrs:(pv_name pv).id_attrs then
           begin match expr.e_node with
@@ -312,7 +312,8 @@ module Print = struct
         else if is_named ~attrs:(pv_name pv).id_attrs then
           fprintf fmt "~%s:%a" (pv_name pv).id_string
             (print_expr ~paren:true info) expr
-        else fprintf fmt "%a" (print_expr ~paren:true info) expr;
+        else fprintf fmt (protect_on paren "%a")
+          (print_expr ~paren:true info) expr;
         if exprl <> [] then fprintf fmt "@ ";
         print_apply_args info fmt (exprl, pvl)
     | expr :: exprl, [] ->
@@ -320,7 +321,7 @@ module Print = struct
         print_apply_args info fmt (exprl, [])
     | [], _ -> ()
 
-  and print_apply info rs fmt pvl =
+  and print_apply ?(paren=false) info rs fmt pvl =
     let isfield =
       match rs.rs_field with
       | None   -> false
@@ -332,24 +333,24 @@ module Print = struct
             List.exists (rs_equal rs) its.itd_constructors in
           List.exists is_constructor its
       | _ -> false in
-    let n_args = List.length rs.rs_cty.cty_args in
+    let n_args_formal = List.length rs.rs_cty.cty_args in
+    let n_args_effect = List.length pvl in
     match query_syntax info.info_convert rs.rs_name,
           query_syntax info.info_syn rs.rs_name, pvl with
     | Some s, _, [{e_node = Econst _}] ->
         syntax_arguments s print_constant fmt pvl
-    | _, Some s, _ when n_args > List.length pvl ->
+    | _, Some s, _ when n_args_formal > n_args_effect ->
         (** Even if [rs] is partially applied, we still want to use the string
-         given by the driver. We eta-expand the partial application and call
+         defined in the driver. We eta-expand the partial application and call
          [syntax_arguments] with [pvl] and a list of fresh auxiliary
          pvsymbols, whose length is the difference between the number of given
          effective arguments and the total of expected arguments. *)
-        let n_pvl = List.length pvl in
         let rec fold_int f acc i =
           if i <= 0 then acc else fold_int f (f acc) (i - 1) in
         let crop_args = function [] -> assert false | _ :: r -> r in
-        let pvl_partial = fold_int crop_args rs.rs_cty.cty_args n_pvl in
+        let pvl_partial = fold_int crop_args rs.rs_cty.cty_args n_args_effect in
         let pvl_partial = Mltree.var_list_of_pv_list pvl_partial in
-        fprintf fmt "@[<hov 2>fun %a ->@ %a@]"
+        fprintf fmt (protect_on paren "@[<hov 2>fun %a ->@ %a@]")
           (print_list space (print_expr info)) pvl_partial
           (syntax_arguments s (print_expr ~paren:true info)) (pvl@pvl_partial)
     | _, Some s, _ ->
@@ -380,7 +381,7 @@ module Print = struct
     | _, _, tl ->
         fprintf fmt "@[<hov 2>%a %a@]"
           (print_lident info) rs.rs_name
-          (print_apply_args info) (tl, rs.rs_cty.cty_args)
+          (print_apply_args ~paren info) (tl, rs.rs_cty.cty_args)
   (* (print_list space (print_expr ~paren:true info)) tl *)
 
   and print_svar fmt s =
@@ -477,7 +478,7 @@ module Print = struct
               syntax_arguments s print_constant fmt pvl
           | _ ->
               fprintf fmt (protect_on paren "%a")
-                (print_apply info rs) pvl end
+                (print_apply ~paren:true info rs) pvl end
     | Ematch (e1, [p, e2], []) ->
         fprintf fmt (protect_on paren "let %a =@ %a in@ %a")
           (print_pat info) p (print_expr info) e1 (print_expr info) e2
