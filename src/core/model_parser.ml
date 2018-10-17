@@ -414,12 +414,34 @@ type raw_model_parser =
 **  Quering the model
 ***************************************************************
 *)
-let print_model_element ~print_attrs print_model_value me_name_trans fmt m_element =
+
+(* Adapt name of the model to potential labels applying to it: *)
+let apply_location_label ~at_loc ~attrs me_name =
+  let sats = Sattr.filter (fun x -> Strings.has_prefix "at" x.attr_string) attrs in
+  let _labels_added, me_name =
+    Sattr.fold (fun attr_at (labels_added, me_name) ->
+      match Strings.split ':' attr_at.attr_string with
+      | "at" :: label :: "loc" :: loc_file :: loc_line :: _col1 :: _col2 ->
+          let loc_line = int_of_string loc_line in
+          if at_loc = (Filename.basename loc_file, loc_line) &&
+             not (Sstr.mem label labels_added)
+          then
+            (Sstr.add label labels_added, me_name ^ " at " ^ label)
+          else
+            (labels_added, me_name)
+      | _ -> (labels_added, me_name))
+      sats (Sstr.empty, me_name)
+  in
+  me_name
+
+let print_model_element ~at_loc ~print_attrs print_model_value me_name_trans fmt m_element =
   match m_element.me_name.men_kind with
   | Error_message ->
     fprintf fmt "%s" m_element.me_name.men_name
   | _ ->
     let me_name = me_name_trans m_element.me_name in
+    let attrs = m_element.me_name.men_attrs in
+    let me_name = apply_location_label ~at_loc ~attrs me_name in
     if print_attrs then
       fprintf fmt  "%s, [%a] = %a"
         me_name
@@ -431,10 +453,16 @@ let print_model_element ~print_attrs print_model_value me_name_trans fmt m_eleme
         me_name
         print_model_value m_element.me_value
 
-let print_model_elements ~print_attrs ?(sep = "\n") print_model_value me_name_trans fmt m_elements =
-  Pp.print_list (fun fmt () -> Pp.string fmt sep) (print_model_element ~print_attrs print_model_value me_name_trans) fmt m_elements
+let print_model_elements ~at_loc ~print_attrs ?(sep = "\n")
+    print_model_value me_name_trans fmt m_elements
+  =
+  Pp.print_list (fun fmt () -> Pp.string fmt sep)
+    (print_model_element ~at_loc ~print_attrs print_model_value me_name_trans)
+    fmt m_elements
 
-let print_model_file ~print_attrs ~print_model_value fmt me_name_trans filename model_file =
+let print_model_file ~print_attrs ~print_model_value fmt
+    me_name_trans filename model_file
+  =
   (* Relativize does not work on nighly bench: using basename instead. It
      hides the local paths.  *)
   let filename = Filename.basename filename  in
@@ -442,7 +470,7 @@ let print_model_file ~print_attrs ~print_model_value fmt me_name_trans filename 
   IntMap.iter
     (fun line m_elements ->
       fprintf fmt "@\nLine %d:@\n" line;
-      print_model_elements ~print_attrs print_model_value me_name_trans fmt m_elements)
+      print_model_elements ~at_loc:(filename,line) ~print_attrs print_model_value me_name_trans fmt m_elements)
     model_file;
   fprintf fmt "@\n"
 
@@ -549,6 +577,7 @@ let add_offset off (loc, a) =
   (Loc.user_position f (l + off) fc lc, a)
 
 let interleave_line
+    ~filename
     ~print_attrs
     start_comment
     end_comment
@@ -566,7 +595,7 @@ let interleave_line
       asprintf "%s%s%a%s"
         (get_padding line)
         start_comment
-        (print_model_elements ~print_attrs ~sep:"; " print_model_value_human me_name_trans) model_elements
+        (print_model_elements ~at_loc:(filename,line_number) ~print_attrs ~sep:"; " print_model_value_human me_name_trans) model_elements
         end_comment in
 
     (* We need to know how many lines will be taken by the counterexample. This
@@ -598,8 +627,9 @@ let interleave_with_source
        the file because they contain extra ".." which cannot be reliably removed
        (because of potential symbolic link). So, we use the basename.
     *)
+    let rel_filename = Filename.basename rel_filename in
     let model_files =
-      StringMap.filter (fun k _ -> Filename.basename k = Filename.basename rel_filename)
+      StringMap.filter (fun k _ -> Filename.basename k = rel_filename)
         model.model_files
     in
     let model_file = snd (StringMap.choose model_files) in
@@ -609,7 +639,7 @@ let interleave_with_source
     in
     let (source_code, _, _, _, gen_loc) =
       List.fold_left
-        (interleave_line ~print_attrs
+        (interleave_line ~filename:rel_filename ~print_attrs
            start_comment end_comment me_name_trans model_file)
         ("", 1, 0, locations, [])
         (src_lines_up_to_last_cntexmp_el source_code model_file)

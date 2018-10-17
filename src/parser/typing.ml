@@ -215,6 +215,28 @@ let mk_closure crcmap loc ls =
   let vl = Lists.mapi mk_v ls.ls_args in
   DTquant (DTlambda, vl, [], mk (DTapp (ls, List.map mk_t vl)))
 
+let counterex_label_propagation ~loc ~qualid_app gvars crcmap at q =
+  match at with
+  | None (* qualid [q] is not under an `at` *) ->
+      qualid_app q []
+  | Some l ->
+      let v_at   = gvars at q   in
+      let v_glob = gvars None q in
+      begin match v_at, v_glob with
+      | Some v_at, Some v_glob when not (vs_equal v_at.pv_vs v_glob.pv_vs) ->
+        let locs =
+          let (s, l, c1, c2) = Loc.get loc in
+          Format.sprintf "%s:%d:%d:%d" s l c1 c2
+        in
+        let attr = create_attribute ("at:" ^ l ^ ":loc:" ^ locs) in
+        DTattr (Dterm.dterm crcmap ~loc (qualid_app q []), Sattr.singleton attr)
+        (* The location allows to know where the variable was assumed old
+           and not propagate the old for every point of the program where
+           this variable is defined with the same corresponding constant
+           ( *_vc_constant). *)
+      | _ (* Avoid adding label attributes for constants *) -> qualid_app q []
+      end
+
 (* track the use of labels *)
 let at_uses = Hstr.create 5
 
@@ -260,7 +282,10 @@ let rec dterm ns km crcmap gvars at denv {term_desc = desc; term_loc = loc} =
   in
   Dterm.dterm crcmap ~loc (match desc with
   | Ptree.Tident q ->
-      qualid_app q []
+      (* Should be equivalent to (except for added labels attributes):
+         qualid_app q []
+      *)
+      counterex_label_propagation ~loc ~qualid_app gvars crcmap at q
   | Ptree.Tidapp (q, tl) ->
       let tl = List.map (dterm ns km crcmap gvars at denv) tl in
       DTapp (find_lsymbol_ns ns q, tl)
