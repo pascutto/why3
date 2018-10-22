@@ -346,7 +346,7 @@ let split_model_trace_name mt_name =
   | first::second::_ -> (first, second)
   | [] -> ("", "")
 
-let create_model_element ~name ~value ?location ?term () =
+let create_model_element ~name ~value ~attrs ?location ?term () =
   let (name, type_s) = split_model_trace_name name in
   let me_kind = match type_s with
     | "result" -> Result
@@ -355,7 +355,7 @@ let create_model_element ~name ~value ?location ?term () =
   let me_name = {
     men_name = name;
     men_kind = me_kind;
-    men_attrs = match term with | None -> Sattr.empty | Some t -> t.t_attrs;
+    men_attrs = match term with | None -> attrs | Some t -> Sattr.union t.t_attrs attrs;
   } in
   {
     me_name = me_name;
@@ -407,7 +407,7 @@ type model_parser =  string -> Printer.printer_mapping -> model
 
 type raw_model_parser =
   Sstr.t -> ((string * string) list) Mstr.t -> string list ->
-    string -> model_element list
+    Ident.Sattr.t Mstr.t -> string -> model_element list
 
 (*
 ***************************************************************
@@ -417,11 +417,13 @@ type raw_model_parser =
 
 (* Adapt name of the model to potential labels applying to it: *)
 let apply_location_label ~at_loc ~attrs me_name =
-  let sats = Sattr.filter (fun x -> Strings.has_prefix "at" x.attr_string) attrs in
+  let sats =
+    Sattr.filter (fun x -> Strings.has_prefix "at" x.attr_string) attrs
+  in
   let _labels_added, me_name =
     Sattr.fold (fun attr_at (labels_added, me_name) ->
       match Strings.split ':' attr_at.attr_string with
-      | "at" :: label :: "loc" :: loc_file :: loc_line :: _col1 :: _col2 ->
+      | "at" :: label :: "loc" :: loc_file :: loc_line :: [] ->
           let loc_line = int_of_string loc_line in
           if at_loc = (Filename.basename loc_file, loc_line) &&
              not (Sstr.mem label labels_added)
@@ -796,12 +798,17 @@ and replace_projection_array const_function a =
 let build_model_rec (raw_model: model_element list) (term_map: Term.term Mstr.t) (model: model_files) =
   List.fold_left (fun model raw_element ->
     let raw_element_name = raw_element.me_name.men_name in
-    let raw_element_value = replace_projection (fun x -> (recover_name term_map x).men_name) raw_element.me_value in
+    let raw_element_value =
+      replace_projection
+        (fun x -> (recover_name term_map x).men_name)
+        raw_element.me_value
+    in
     try
       (
        let t = Mstr.find raw_element_name term_map in
+       let attrs = Sattr.union raw_element.me_name.men_attrs t.t_attrs in
        let model_element = {
-         me_name = construct_name (get_model_trace_string ~attrs:t.t_attrs) t.t_attrs;
+         me_name = construct_name (get_model_trace_string ~attrs:t.t_attrs) attrs;
          me_value = raw_element_value;
          me_location = t.t_loc;
          me_term = Some t;
@@ -917,7 +924,8 @@ let make_mp_from_raw (raw_mp:raw_model_parser) =
     let list_proj = printer_mapping.list_projections in
     let list_records = printer_mapping.list_records in
     let noarg_cons = printer_mapping.noarg_constructors in
-    let raw_model = raw_mp list_proj list_records noarg_cons input in
+    let set_str = printer_mapping.set_str in
+    let raw_model = raw_mp list_proj list_records noarg_cons set_str input in
     build_model raw_model printer_mapping
 
 let register_model_parser ~desc s p =
@@ -936,4 +944,4 @@ let list_model_parsers () =
 
 let () = register_model_parser
   ~desc:"Model@ parser@ with@ no@ output@ (used@ if@ the@ solver@ does@ not@ support@ models." "no_model"
-  (fun _ _ _ _ -> [])
+  (fun _ _ _ _ _ -> [])
