@@ -224,6 +224,37 @@ module Power
 end
 
 
+module InductivePr
+
+use int.Int
+
+inductive even int =
+| even_zero : even 0
+| even_pos : forall n. even (n-2) -> even n
+| even_neg : forall n. even (n+2) -> even n
+
+
+goal test: even 43
+
+end
+
+
+module RecursiveTy
+
+type t = A | B t
+
+use int.Int
+
+let rec function f (n:int) variant { n }=
+  if n <= 0 then A else B (f (n-1))
+  
+goal test: f 42 = B A
+
+end
+
+
+
+
 (*
 Local Variables:
 compile-command: "why3 ide demo-itp.mlw"
