@@ -77,6 +77,12 @@ let add_local_funs locals env =
       List.fold_left
         (fun acc (rs,ce) -> Mrs.add rs ce acc) env.funenv locals}
 
+let add_args args env =
+  { env with vsenv =
+      List.fold_left
+        (fun acc (pv, v) -> Mvs.add pv.pv_vs v acc) env.vsenv args}
+
+
 
 let bind_vs vs (v:value) env =
 (*
@@ -178,6 +184,18 @@ let eval_int_rel op ls l =
     end
   | _ -> constr ls l
 
+let rec v_equal v1 v2 =
+  match v1, v2 with
+  | Vnum i1, Vnum i2 -> i1 = i2
+  | Vconstr _, Vconstr _ -> assert false (* TODO to be done *)
+  | Vvoid, Vvoid -> true
+  | Vbool b1, Vbool b2 -> b1 = b2
+  | Varray a1, Varray a2 ->
+      Array.length a1 == Array.length a2 &&
+      let is_true = ref true in
+      Array.iter2 (fun x y -> is_true := !is_true && v_equal x y) a1 a2;
+      !is_true
+  | _ -> false
 
 let rec default_value_of_type env ity =
   match ity.ity_node with
@@ -419,7 +437,7 @@ let print_logic_result fmt r =
 
 type routine_defn =
   | Builtin of (rsymbol -> value list -> value)
-  | Function of (rsymbol * cexp) list * cexp
+  | Function of Ity.pvsymbol list * (rsymbol * cexp) list * cexp
   | Constructor of Pdecl.its_defn
   | Projection of Pdecl.its_defn
 
@@ -454,10 +472,12 @@ let find_global_definition kn rs =
   match (Ident.Mid.find rs.rs_name kn).Pdecl.pd_node with
   | Pdecl.PDtype dl -> find_constr_or_proj dl rs
   | Pdecl.PDlet (LDvar _) -> raise Not_found
-  | Pdecl.PDlet (LDsym(_,ce)) -> Function([],ce)
+  | Pdecl.PDlet (LDsym(s,ce)) ->
+      let args = s.rs_cty.cty_args in
+      Function(args, [],ce)
   | Pdecl.PDlet (LDrec dl) ->
     let locs = List.map (fun d -> (d.rec_rsym,d.rec_fun)) dl in
-    Function(locs, find_def rs dl)
+    Function([] (* TODO *), locs, find_def rs dl)
   | Pdecl.PDexn _ -> raise Not_found
   | Pdecl.PDpure -> raise Not_found
 
@@ -469,7 +489,7 @@ let find_definition env rs =
     try
       (* then try if it is a local function *)
       let f = Mrs.find rs env.funenv in
-      Function([],f)
+      Function([] (* TODO *) , [],f)
     with Not_found ->
       (* else look for a global function *)
       find_global_definition env.known rs
@@ -638,23 +658,21 @@ let rec eval_expr env (e : expr) : result =
         | _ -> r
     end
   | Eexn(_,e1) -> eval_expr env e1
-  | Eassert(_,_t) -> Normal Vvoid (* TODO *)
+  | Eassert(_,t) -> (*Normal Vvoid*) (* TODO *)
     (* TODO: do not eval t if no assertion check *)
-(*
-    if true then (* noassert *) Normal Vvoid
-    else
+      Format.eprintf "TODO term is : %a @." Pretty.print_term t;
       begin match (eval_term env t) with
       | Vbool true -> Normal Vvoid
       | Vbool false ->
         eprintf "@[Assertion failed at %a@]@."
           (Pp.print_option Pretty.print_loc) e.e_loc;
-        Irred e
+        Format.eprintf "TODO counterexample found @.";
+        (* TODO Irred e *) Normal Vvoid (* TODO here we continue because we do not check yet that the counterexample validates other assertions/requires/etc *)
       | _ ->
         Warning.emit "@[Warning: assertion cannot be evaluated at %a@]@."
           (Pp.print_option Pretty.print_loc) e.e_loc;
         Normal Vvoid
       end
-*)
   | Eghost e1 ->
     (* TODO: do not eval ghost if no assertion check *)
     eval_expr env e1
@@ -663,6 +681,50 @@ let rec eval_expr env (e : expr) : result =
     eprintf "@[[Exec] unsupported expression: @[%a@]@]@."
       (if Debug.test_flag debug then print_expr (* p_expr *) else print_expr) e;
     Irred e
+
+and eval_term env t =
+  match t.t_node with
+  | Tvar vs ->
+      Mvs.find vs env.vsenv
+  | Tconst c ->
+      (match c with
+      | Number.ConstInt ic -> Vnum (Number.compute_int_constant ic)
+      | _ -> assert false (* TODO *)
+      )
+      (* TODO deal with all stdilib interpretation of logical symbols as it is done with builtin program symbols in built_in_module ... *)
+  | Tapp (ls, [t1; t2]) when ls_equal ps_equ ls ->
+      let v1 = eval_term env t1 in
+      let v2 = eval_term env t2 in
+      Vbool (v_equal v1 v2)
+  | Tapp (ls, []) when ls_equal fs_bool_true ls ->
+      Vbool true
+  | Tapp (ls, []) when ls_equal fs_bool_false ls ->
+      Vbool false
+  | Tapp (ls, tl) ->
+      Format.eprintf "TODO ls = %a %d@." Pretty.print_ls ls (List.length tl);
+      assert false (* TODO *)
+  | Tif (t1, ttrue, tfalse) ->
+      let v1 = eval_term env t1 in
+      begin match v1 with
+      | Vbool true -> eval_term env ttrue
+      | Vbool false -> eval_term env tfalse
+      | _ -> assert false (* TODO when complete not being able to decide should not happen *)
+      end
+  | Tlet (t, tb) ->
+      let (vs, tb) = t_open_bound tb in
+      let vs_value = eval_term env t in
+      let env = {env with vsenv = Mvs.add vs vs_value env.vsenv} in
+      assert (false); (* TODO ok ? *)
+      eval_term env tb
+  | Tcase _ | Teps _ | Tquant _ | Tbinop _ -> assert false
+  | Tnot t ->
+      let v = eval_term env t in
+      begin match v with
+      | Vbool b -> Vbool (not b)
+      | _ -> assert false
+      end
+  | Ttrue -> Vbool true
+  | Tfalse -> Vbool false
 
 and exec_match env t ebl =
   let rec iter ebl =
@@ -682,7 +744,7 @@ and exec_call env rs args ity_result =
   let args' = List.map (fun pvs -> get_pvs env pvs) args in
   try
     match find_definition env rs with
-    | Function(locals,d) ->
+    | Function(_args_fun, locals,d) ->
       let env = add_local_funs locals env in
       begin
         match d.c_node with
@@ -740,8 +802,85 @@ and exec_call env rs args ity_result =
 
 
 
+let create_random ~env (arg: pvsymbol) =
+  let rec random_value_of_type env ity =
+    match ity.ity_node with
+    | Ityvar _ -> assert false
+    | Ityreg r ->
+        random_value_of_types env r.reg_its r.reg_args r.reg_regs
+    | Ityapp(ts,_,_) when its_equal ts its_int ->
+        let x = Random.int 100 in (* TODO *)
+        Vnum (BigInt.of_int x)
+    | Ityapp(ts,_,_) when its_equal ts its_real ->
+        assert false (* TODO *)
+    | Ityapp(ts,_,_) when its_equal ts its_bool ->
+        let x = Random.int 2 in
+        Vbool (x = 1)
+(*
+  | Ityapp(ts,_,_) when is_its_tuple ts ->
+    assert false (* TODO *)
+*)
+    | Ityapp(ts,l1,l2) ->
+        random_value_of_types env ts l1 l2
 
-let eval_global_expr env km locals e =
+  and random_value_of_types env ts l1 l2 =
+    try
+      let d = Pdecl.find_its_defn env.known ts in
+      match d.Pdecl.itd_constructors with
+      | [] -> assert false
+      | csl ->
+          let cs =
+            let rd = Random.int (List.length csl) in
+            List.nth csl rd
+          in
+          let subst = its_match_regs ts l1 l2 in
+          let tyl = List.map (ity_full_inst subst)
+              (List.map (fun pv -> pv.pv_ity) cs.rs_cty.cty_args)
+          in
+          let vl = List.map (random_value_of_type env) tyl in
+          Vconstr(cs, List.map (fun v -> Fmutable (ref v)) vl)
+    with Not_found -> assert false
+  in
+
+
+  random_value_of_type env arg.pv_ity
+(*
+  let arg_type = arg.pv_ity in
+  if Ity.ity_equal ity_int arg_type then
+    Vnum BigInt.zero (* TODO random *)
+  else
+    if Ity.ity_equal ity_bool arg_type then
+      Vbool false (* TODO random *)
+    else
+
+  match arg_type.ity_node with
+  | Ityreg _ ->
+      Format.eprintf "TODO cannot have mutable components in args for this tool";
+      assert false
+  | Ityapp (symbol, ity_l1, ity_l2) ->
+
+      Format.eprintf "TODO to be done. Too complex";
+      assert false
+  | Ityvar tv ->
+     Vvoid
+*)
+(*
+  | Vconstr of rsymbol * field list
+  | Vnum of BigInt.t
+  | Vbool of bool
+  | Vvoid
+  | Varray of value array
+*)
+
+let create_random_list ~env (args : pvsymbol list) =
+  List.map (fun x ->
+      let v = create_random ~env x in
+      Format.eprintf "TODO value = %a@." print_value v;
+      (x, v)) args
+
+let eval_global_expr _args (* TODO args *) env km locals e =
+  (* TODO NO. This fills a global hash table. This will result in error when
+     calling this function several times. *)
   get_builtin_progs env;
   let env = {
     known = km;
@@ -771,6 +910,10 @@ let eval_global_expr env km locals e =
   }
   in
   let env = add_local_funs locals env in
+  (* Return a list of pair with a random argument each time TODO *)
+  let _args = create_random_list ~env _args in
+  let env = add_args _args env in
+(*  TODO here we analyse e to know if this is a function which is not applied ?*)
   let res = eval_expr env e in
   res, global_env
 
@@ -779,7 +922,7 @@ let eval_global_expr env km locals e =
 let eval_global_symbol env m fmt rs =
   try
     match find_global_definition m.Pmodule.mod_known rs with
-    | Function(locals,d) ->
+    | Function(_args (* TODO use them *), locals,d) ->
       begin
         match d.c_node with
         | Capp _ -> assert false (* TODO ? *)
@@ -790,7 +933,7 @@ let eval_global_symbol env m fmt rs =
             fprintf fmt "@[<hov 2>   type:@ %a@]@."
               print_ity body.e_ity;
             let res, final_env =
-              eval_global_expr env
+              eval_global_expr _args env
                 m.Pmodule.mod_known
                 locals
                 body
@@ -798,7 +941,8 @@ let eval_global_symbol env m fmt rs =
             match res with
             | Normal _ ->
               fprintf fmt "@[<hov 2>   result:@ %a@\nglobals:@ %a@]@."
-                print_logic_result res print_vsenv final_env
+                print_logic_result res print_vsenv final_env;
+              if res = Normal (Vbool true) then assert false
             | Excep _ ->
               fprintf fmt "@[<hov 2>exceptional result:@ %a@\nglobals:@ %a@]@."
                 print_logic_result res print_vsenv final_env;

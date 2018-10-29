@@ -75,11 +75,15 @@ let do_input f =
   Queue.iter do_exec opt_exec
 
 let () =
+  for i = 0 to 1000 do
+    (* Random.init i; *)
+    Format.eprintf "TODO run: %d@." i;
   try
     Opt.iter do_input !opt_file
   with e when not (Debug.test_flag Debug.stack_trace) ->
     eprintf "%a@." Exn_printer.exn_printer e;
     exit 1
+done
 
 (*
 Local Variables:
