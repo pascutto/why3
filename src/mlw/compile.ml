@@ -326,7 +326,7 @@ module Translate = struct
                 let args' = List.map (fun (_, ty, _) -> ty) args in
                 let svar  = List.fold_left add_tvar Stv.empty args' in
                 add_tvar svar res in
-              let new_svar = Stv.diff svar new_svar in
+              let new_svar = Stv.diff new_svar svar in
               let ef = expr info (Stv.union svar new_svar) ef.e_mask ef in
               { ML.rec_sym  = rs1; ML.rec_args = args; ML.rec_exp  = ef;
                 ML.rec_res  = res; ML.rec_svar = new_svar; }
@@ -336,7 +336,7 @@ module Translate = struct
           let ein = expr info svar mask ein in
           let ml_letrec = ML.Elet (ML.Lrec rdefl, ein) in
           ML.mk_expr ml_letrec (ML.I e.e_ity) mask e.e_effect attrs
-        else expr info svar mask ein
+        else expr info svar mask ein (* if all definitions are ghost *)
     | Eexec ({c_node = Capp (rs, [])}, _)  when is_rs_tuple rs ->
         ML.e_unit
     | Eexec ({c_node = Capp (rs, pvl)}, _) when is_rs_tuple rs ->
