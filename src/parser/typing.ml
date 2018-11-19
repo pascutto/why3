@@ -1075,9 +1075,6 @@ and drec_defn muc denv fdl =
 
 (** Typing declarations *)
 
-open Pdecl
-open Pmodule
-
 let add_pdecl ~vc muc d =
   if Debug.test_flag Glob.flag then Sid.iter (Glob.def ~kind:"") d.pd_news;
   add_pdecl ~vc muc d
