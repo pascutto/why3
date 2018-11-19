@@ -766,22 +766,22 @@ let cl_tdecl cl inst td = match td.td_node with
   | Meta (id,al) -> Meta (id, List.map (cl_marg cl) al)
 
 let warn_clone_not_abstract loc th =
-  try
-    List.iter (fun d -> match d.td_node with
+  let has_abstract_symbols =
+    List.exists (fun d -> match d.td_node with
       | Decl d ->
         begin match d.d_node with
         | Dtype { ts_def = NoDef }
-        | Dparam _ -> raise Exit
-        | Dprop(Paxiom, _,_) -> raise Exit
-        | _ -> ()
+        | Dparam _ -> true
+        | Dprop(Paxiom, _,_) -> true
+        | _ -> false
         end
-      | _ -> ()
-    ) th.th_decls;
+      | _ -> false) th.th_decls
+  in
+  if not has_abstract_symbols then
     Warning.emit ~loc "cloned theory %a.%s does not contain \
         any abstract symbol; it should be used instead"
       (Pp.print_list (Pp.constant_string ".") Pp.string) th.th_path
       th.th_name.id_string
-  with Exit -> ()
 
 let clone_theory cl add_td acc th inst =
   let add acc td =
