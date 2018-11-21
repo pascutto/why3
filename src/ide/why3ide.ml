@@ -396,7 +396,7 @@ let window_title =
 
 let main_window : GWindow.window =
   let w = GWindow.window
-            ~allow_grow:true ~allow_shrink:true
+            (*~allow_grow:true ~allow_shrink:true*)
             ~width:gconfig.window_width
             ~height:gconfig.window_height
             ~title:window_title ()
