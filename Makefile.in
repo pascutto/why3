@@ -740,7 +740,7 @@ byte: bin/why3ide.byte
 opt:  bin/why3ide.opt
 
 bin/why3ide.opt bin/why3ide.byte: INCLUDES += -I @LABLGTK2LIB@
-bin/why3ide.opt bin/why3ide.byte: EXTLIBS += lablgtk lablgtksourceview2
+bin/why3ide.opt bin/why3ide.byte: EXTLIBS += lablgtk lablgtksourceview3
 bin/why3ide.byte: BLINKFLAGS += -custom
 
 bin/why3ide.opt: $(WHY3CMXA) src/ide/resetgc.o $(IDECMX)

@@ -739,7 +739,7 @@ let general_settings (c : t) (notebook:GPack.notebook) =
   in
   let saving_policy_box =
     GPack.button_box
-      `VERTICAL ~border_width:5 ~spacing:5
+      `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
       ~packing:saving_policy_frame#add ()
   in
   let saving_policy_box_pack =
@@ -806,7 +806,7 @@ let appearance_settings (c : t) (notebook:GPack.notebook) =
   in
   (* options for task display *)
   let display_options_box =
-    GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
+    GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
       ~packing:vb#add ()
   in
   let showfullcontext =
@@ -872,7 +872,7 @@ let appearance_settings (c : t) (notebook:GPack.notebook) =
   in
   let icon_sets_box =
     GPack.button_box
-      `VERTICAL ~border_width:5 ~spacing:5
+      `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
       ~packing:icon_sets_frame#add ()
   in
   let icon_sets_box_pack =
@@ -957,7 +957,7 @@ let provers_page c (notebook:GPack.notebook) =
     GBin.frame ~label:"Provers visible in the context menu" ~packing:hbox_pack ()
   in
   let provers_box =
-    GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
+    GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
       ~packing:frame#add () in
   let hidden_provers = Hashtbl.create 7 in
   Mprover.iter
@@ -1019,7 +1019,7 @@ let alternatives_frame c (notebook:GPack.notebook) =
     GBin.frame ~label:"Click to remove a setting" ~packing:page_pack ()
   in
   let box =
-    GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
+    GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
       ~packing:frame#add ()
   in
   let remove button p () =
@@ -1242,7 +1242,7 @@ let uninstalled_prover_dialog ~height ~callback c unknown =
   let prover_choosed = ref None in
   let set_prover prover () = prover_choosed := Some prover in
   let box =
-    GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
+    GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 *)
       ~packing:policy_frame#add ()
   in
   let choice_keep = GButton.radio_button
@@ -1266,7 +1266,7 @@ let uninstalled_prover_dialog ~height ~callback c unknown =
     if alternatives <> [] then
       let frame = GBin.frame ~label ~packing:vbox#add () in
       let box =
-        GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
+        GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 *)
           ~packing:frame#add ()
       in
       let iter_alter prover =

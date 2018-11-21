@@ -537,32 +537,32 @@ else
    fi
 fi
 
-# checking for lablgtksourceview2
+# checking for lablgtksourceview3
 if test "$enable_ide" = yes ; then
    DIR=
    if test "$USEOCAMLFIND" = yes; then
-      DIR=$(ocamlfind query lablgtk2.sourceview2)
+      DIR=$(ocamlfind query lablgtk2.sourceview3)
       if test -z "$DIR"; then
-         DIR=$(ocamlfind query lablgtksourceview2)
+         DIR=$(ocamlfind query lablgtksourceview3)
       fi
       if test -n "$DIR";then
-         echo "ocamlfind found lablgtksourceview2 in $DIR"
+         echo "ocamlfind found lablgtksourceview3 in $DIR"
          LABLGTKSV2LIB="$DIR"
       fi
    fi
    if test -z "$DIR"; then
       DIR="$OCAMLLIB/lablgtk2"
-      AC_CHECK_FILE($DIR/lablgtksourceview2.cma,,enable_ide=no)
+      AC_CHECK_FILE($DIR/lablgtksourceview3.cma,,enable_ide=no)
    fi
-   AC_CHECK_FILE($DIR/gSourceView2.cmi,,enable_ide=no)
+   AC_CHECK_FILE($DIR/gSourceView3.cmi,,enable_ide=no)
    if test "$enable_ide" = no; then
-      AC_MSG_WARN([Lib lablgtksourceview2 not found, IDE disabled.])
-      reason_ide=" (lablgtksourceview2 not found)"
+      AC_MSG_WARN([Lib lablgtksourceview3 not found, IDE disabled.])
+      reason_ide=" (lablgtksourceview3 not found)"
    fi
 fi
 
 if test "$enable_ide" = yes ; then
-   LABLGTK2PKG="lablgtk2 lablgtk2.init lablgtk2.sourceview2"
+   LABLGTK2PKG="lablgtk2 lablgtk2.init lablgtk2.sourceview3"
 else
    LABLGTK2PKG=
    LABLGTK2LIB=
