@@ -395,12 +395,8 @@ let window_title =
   | None -> "Why3 Interactive Proof Session"
 
 let main_window : GWindow.window =
-  let w = GWindow.window
-            (*~allow_grow:true ~allow_shrink:true*)
-            ~width:gconfig.window_width
-            ~height:gconfig.window_height
-            ~title:window_title ()
-  in
+  let w = GWindow.window ~title:window_title () in
+  w#resize ~width:gconfig.window_width ~height:gconfig.window_height;
   (* callback to record the new size of the main window when changed, so
    that on restart the window size is the same as the last session *)
   let (_ : GtkSignal.id) =
