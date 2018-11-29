@@ -739,7 +739,7 @@ $(IDECMO) $(IDECMX): INCLUDES += -I src/ide
 byte: bin/why3ide.byte
 opt:  bin/why3ide.opt
 
-bin/why3ide.opt bin/why3ide.byte: INCLUDES += -I @LABLGTK2LIB@
+bin/why3ide.opt bin/why3ide.byte: INCLUDES += -I @LABLGTK3LIB@
 bin/why3ide.opt bin/why3ide.byte: EXTLIBS += lablgtk lablgtksourceview3
 bin/why3ide.byte: BLINKFLAGS += -custom
 

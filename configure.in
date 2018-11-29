@@ -513,27 +513,27 @@ if test "$found_menhirlib" = no; then
    AC_MSG_ERROR([Library menhirLib not found.])
 fi
 
-# checking for lablgtk2
+# checking for lablgtk3
 if test "$enable_ide" != yes ; then
    reason_ide=" (disabled by user)"
 else
    DIR=
    if test "$USEOCAMLFIND" = yes; then
-      DIR=$(ocamlfind query lablgtk2)
+      DIR=$(ocamlfind query lablgtk3)
       if test -n "$DIR"; then
-         echo "ocamlfind found lablgtk2 in $DIR"
-         LABLGTK2LIB="$DIR"
+         echo "ocamlfind found lablgtk3 in $DIR"
+         LABLGTK3LIB="$DIR"
       fi
    fi
    if test -z "$DIR"; then
-      LABLGTK2LIB="+lablgtk2"
-      DIR="$OCAMLLIB/lablgtk2"
+      LABLGTK3LIB="+lablgtk3"
+      DIR="$OCAMLLIB/lablgtk3"
       AC_CHECK_FILE($DIR/lablgtk.cma,,enable_ide=no)
    fi
    AC_CHECK_FILE($DIR/gtkButton.cmi,,enable_ide=no)
    if test "$enable_ide" = no; then
-      AC_MSG_WARN([Lib lablgtk2 not found, IDE disabled.])
-      reason_ide=" (lablgtk2 not found)"
+      AC_MSG_WARN([Lib lablgtk3 not found, IDE disabled.])
+      reason_ide=" (lablgtk3 not found)"
    fi
 fi
 
@@ -541,7 +541,7 @@ fi
 if test "$enable_ide" = yes ; then
    DIR=
    if test "$USEOCAMLFIND" = yes; then
-      DIR=$(ocamlfind query lablgtk2.sourceview3)
+      DIR=$(ocamlfind query lablgtk3.sourceview3)
       if test -z "$DIR"; then
          DIR=$(ocamlfind query lablgtksourceview3)
       fi
@@ -551,7 +551,7 @@ if test "$enable_ide" = yes ; then
       fi
    fi
    if test -z "$DIR"; then
-      DIR="$OCAMLLIB/lablgtk2"
+      DIR="$OCAMLLIB/lablgtk3"
       AC_CHECK_FILE($DIR/lablgtksourceview3.cma,,enable_ide=no)
    fi
    AC_CHECK_FILE($DIR/gSourceView3.cmi,,enable_ide=no)
@@ -562,13 +562,13 @@ if test "$enable_ide" = yes ; then
 fi
 
 if test "$enable_ide" = yes ; then
-   LABLGTK2PKG="lablgtk2 lablgtk2.init lablgtk2.sourceview3"
+   LABLGTK3PKG="lablgtk3 lablgtk3.init lablgtk3.sourceview3"
 else
-   LABLGTK2PKG=
-   LABLGTK2LIB=
+   LABLGTK3PKG=
+   LABLGTK3LIB=
 fi
 
-dnl AC_CHECK_PROG(enable_ide,lablgtk2,yes,no) not always available (Win32)
+dnl AC_CHECK_PROG(enable_ide,lablgtk3,yes,no) not always available (Win32)
 
 dnl AC_CHECK_PROG(OCAMLWEB,ocamlweb,ocamlweb,true)
 
@@ -861,8 +861,8 @@ AC_SUBST(MENHIR)
 AC_SUBST(enable_profiling)
 
 AC_SUBST(enable_ide)
-AC_SUBST(LABLGTK2LIB)
-AC_SUBST(LABLGTK2PKG)
+AC_SUBST(LABLGTK3LIB)
+AC_SUBST(LABLGTK3PKG)
 
 AC_SUBST(enable_web_ide)
 AC_SUBST(enable_js_of_ocaml)
