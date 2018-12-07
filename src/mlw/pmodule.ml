@@ -155,6 +155,26 @@ let ns_find_pv ns s = match ns_find_prog_symbol ns s with
 let ns_find_rs ns s = match ns_find_prog_symbol ns s with
   | RS rs -> rs | _ -> raise Not_found
 
+(* Check if a symbol exists, if it does the namespace it was found in is
+   returned. *)
+let prog_symb_exists ns s =
+  match ns_find_its ns s with
+  | _ -> Found_its
+  | exception Not_found ->
+      match ns_find_xs ns s with
+      | _ -> Found_xs
+      | exception _ ->
+          match ns_find_prog_symbol ns s with
+          | _ -> Found_prog
+          | exception _ ->
+              match ns_find_pv ns s with
+              | _ -> Found_pv
+              | exception _ ->
+                  match ns_find_rs ns s with
+                  | _ -> Found_rs
+                  | exception _ ->
+                      Unfound
+
 (** {2 Module} *)
 
 type pmodule = {

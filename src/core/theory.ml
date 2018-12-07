@@ -74,6 +74,45 @@ let ns_find_ls = ns_find (fun ns -> ns.ns_ls)
 let ns_find_pr = ns_find (fun ns -> ns.ns_pr)
 let ns_find_ns = ns_find (fun ns -> ns.ns_ns)
 
+type ex_symb =
+  (* Logic symbol *)
+  | Found_ts
+  | Found_ls
+  | Found_pr
+  (* Program symbol *)
+  | Found_its
+  | Found_xs
+  | Found_prog
+  | Found_pv
+  | Found_rs
+  | Unfound
+
+let print_ex fmt ex =
+  Format.fprintf fmt (match ex with
+  | Found_ts -> "type"
+  | Found_ls -> "logical"
+  | Found_pr -> "property"
+  | Found_its -> "type"
+  | Found_xs -> "exception"
+  | Found_prog -> "program"
+  | Found_pv -> "program variable"
+  | Found_rs -> "routine"
+  | Unfound -> "Unfound")
+
+(* Check if the symbol exists, if it does the namespace it was found in is
+   returned. If it is not Unfound is raised TODO unfound *)
+let symbol_exists ns s =
+  match ns_find_ts ns s with
+  | _ -> Found_ts
+  | exception Not_found ->
+      match ns_find_ls ns s with
+      | _ -> Found_ls
+      | exception _ ->
+          match ns_find_pr ns s with
+          | _ -> Found_pr
+          | exception _ ->
+              Unfound
+
 (** Meta properties *)
 
 type meta_arg_type =

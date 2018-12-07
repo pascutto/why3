@@ -32,6 +32,23 @@ val ns_find_ls : namespace -> string list -> lsymbol
 val ns_find_pr : namespace -> string list -> prsymbol
 val ns_find_ns : namespace -> string list -> namespace
 
+type ex_symb =
+  (* Logic symbol *)
+  | Found_ts
+  | Found_ls
+  | Found_pr
+  (* Program symbol *)
+  | Found_its
+  | Found_xs
+  | Found_prog
+  | Found_pv
+  | Found_rs
+  | Unfound
+
+val print_ex: Pp.formatter -> ex_symb -> unit
+
+val symbol_exists: namespace -> string list -> ex_symb
+
 val import_namespace : namespace -> string list -> namespace
 
 (** {2 Meta properties} *)

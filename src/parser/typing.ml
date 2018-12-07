@@ -53,23 +53,52 @@ let string_list_of_qualid q =
     | Qident id -> id.id_str :: acc in
   sloq [] q
 
-(* [UnboundSymbol (s, q)]: s is the type of the qualid searched. It depends on
-   the namespace queried: find_*_ns. *)
-exception UnboundSymbol of (string * qualid)
+(* [UnboundSymbol (s, q, es)]: [s] is the type of the qualid searched, [q] is
+   the qualid search and [es] is not [None] if a qualid was found in a different
+   namespace with the same name. If so, it contains the type of such qualid.
+*)
+exception UnboundSymbol of (string * qualid * ex_symb option)
 
-let find_qualid ~ty get_id find ns q =
+type _ gen_namespace =
+  | Th_namespace:
+      Theory.namespace * Pmodule.namespace option ->
+        (Theory.namespace * Pmodule.namespace option) gen_namespace
+  | Mod_namespace:
+      Pmodule.namespace * Theory.namespace option ->
+        (Pmodule.namespace * Theory.namespace option) gen_namespace
+
+let find_qualid: type t1 t2.
+  ty:string -> ('a -> Ident.ident) -> (t1 -> string list -> 'a) ->
+    (t1*t2) gen_namespace -> Ptree.qualid -> 'a
+  = fun ~ty get_id find t q ->
   let sl = string_list_of_qualid q in
-  let r = try find ns sl with Not_found ->
-    Loc.error ~loc:(qloc q) (UnboundSymbol (ty, q)) in
+  let r =
+    match t with
+    | Th_namespace (ns, pns) ->
+      begin try find ns sl with
+          Not_found ->
+            let ex_symb = Opt.map ((fun sl ns -> prog_symb_exists ns sl) sl) pns in
+            Loc.error ~loc:(qloc q) (UnboundSymbol (ty, q, ex_symb))
+      end
+    | Mod_namespace (pns, ns) ->
+      begin try find pns sl with
+          Not_found ->
+            let ex_symb = Opt.map ((fun sl ns -> symbol_exists ns sl) sl) ns in
+            Loc.error ~loc:(qloc q) (UnboundSymbol (ty, q, ex_symb))
+      end
+  in
   if Debug.test_flag Glob.flag then Glob.use ~kind:"" (qloc_last q) (get_id r);
   r
 
 let find_prop_ns     ns q =
-  find_qualid ~ty:"property" (fun pr -> pr.pr_name) ns_find_pr ns q
+  let gen_ns = Th_namespace (ns, None) in
+  find_qualid ~ty:"property" (fun pr -> pr.pr_name) ns_find_pr gen_ns q
 let find_tysymbol_ns ns q =
-  find_qualid ~ty:"type"     (fun ts -> ts.ts_name) ns_find_ts ns q
+  let gen_ns = Th_namespace (ns, None) in
+  find_qualid ~ty:"type"     (fun ts -> ts.ts_name) ns_find_ts gen_ns q
 let find_lsymbol_ns  ns q =
-  find_qualid ~ty:"constant" (fun ls -> ls.ls_name) ns_find_ls ns q
+  let gen_ns = Th_namespace (ns, None) in
+  find_qualid ~ty:"constant" (fun ls -> ls.ls_name) ns_find_ls gen_ns q
 
 let find_fsymbol_ns ns q =
   let ls = find_lsymbol_ns ns q in
@@ -481,13 +510,18 @@ let ty_of_pty tuc = ty_of_pty (get_namespace tuc)
 
 let get_namespace muc = List.hd muc.Pmodule.muc_import
 
+let get_tuc_namespace muc = Theory.get_namespace muc.muc_theory
+
+let get_complete_namespace muc =
+  Mod_namespace (get_namespace muc, Some (get_tuc_namespace muc))
+
 let dterm muc =
   let uc = muc.muc_theory in
   dterm (Theory.get_namespace uc) uc.uc_known uc.uc_crcmap
 
-let find_xsymbol     muc q = find_xsymbol_ns     (get_namespace muc) q
-let find_itysymbol   muc q = find_itysymbol_ns   (get_namespace muc) q
-let find_prog_symbol muc q = find_prog_symbol_ns (get_namespace muc) q
+let find_xsymbol     muc q = find_xsymbol_ns     (get_complete_namespace muc) q
+let find_itysymbol   muc q = find_itysymbol_ns   (get_complete_namespace muc) q
+let find_prog_symbol muc q = find_prog_symbol_ns (get_complete_namespace muc) q
 
 let find_special muc test nm q =
   match find_prog_symbol muc q with
@@ -1393,7 +1427,7 @@ let type_inst ({muc_theory = tuc} as muc) ({mod_theory = t} as m) s =
         { s with mi_ls = Loc.try4 ~loc:(qloc p) Mls.add_new
             (ClashSymbol ls1.ls_name.id_string) ls1 ls2 s.mi_ls }
     | CSvsym (p,q) ->
-        let rs1 = find_prog_symbol_ns m.mod_export p in
+        let rs1 = find_prog_symbol_ns (Mod_namespace (m.mod_export, None)) p in
         let rs2 = find_prog_symbol muc q in
         begin match rs1, rs2 with
         | RS rs1, RS rs2 ->
@@ -1410,7 +1444,7 @@ let type_inst ({muc_theory = tuc} as muc) ({mod_theory = t} as m) s =
             Loc.errorm ~loc:(qloc q) "ambiguous notation"
         end
     | CSxsym (p,q) ->
-        let xs1 = find_xsymbol_ns m.mod_export p in
+        let xs1 = find_xsymbol_ns (Mod_namespace (m.mod_export, None)) p in
         let xs2 = find_xsymbol muc q in
         { s with mi_xs = Loc.try4 ~loc:(qloc p) Mxs.add_new
             (ClashSymbol xs1.xs_name.id_string) xs1 xs2 s.mi_xs }
@@ -1561,6 +1595,10 @@ let add_decl loc d =
 (** Exception printing *)
 
 let () = Exn_printer.register (fun fmt e -> match e with
-  | UnboundSymbol (s, q) ->
+  | UnboundSymbol (s, q, None) | UnboundSymbol (s, q, Some Unfound) ->
       Format.fprintf fmt "unbound %s symbol '%a'" s print_qualid q
+  | UnboundSymbol (s, q, Some ex_symb) ->
+      Format.fprintf fmt "unbound %s symbol '%a'.\nA %a symbol with the same \
+                          name was found: it is likely that you want to change \
+                          its definition." s print_qualid q print_ex ex_symb
   | _ -> raise e)

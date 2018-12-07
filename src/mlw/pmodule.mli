@@ -41,6 +41,8 @@ val ns_find_rs  : namespace -> string list -> rsymbol
 val ns_find_xs  : namespace -> string list -> xsymbol
 val ns_find_ns  : namespace -> string list -> namespace
 
+val prog_symb_exists: namespace -> string list -> ex_symb
+
 type overload =
   | FixedRes of ity (* t -> t -> ... -> T *)
   | SameType        (* t -> t -> ... -> t *)
