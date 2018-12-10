@@ -739,10 +739,9 @@ let general_settings (c : t) (notebook:GPack.notebook) =
   in
   let saving_policy_box =
     GPack.button_box
-      `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
+      `VERTICAL ~border_width:5 ~spacing:5
       ~packing:saving_policy_frame#add ()
   in
-  saving_policy_box#set_spacing 5;
   let saving_policy_box_pack =
     saving_policy_box#pack ?from:None ?expand:None ?fill:None ?padding:None
   in
@@ -807,10 +806,9 @@ let appearance_settings (c : t) (notebook:GPack.notebook) =
   in
   (* options for task display *)
   let display_options_box =
-    GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
+    GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
       ~packing:vb#add ()
   in
-  display_options_box#set_spacing 5;
   let showfullcontext =
     GButton.check_button ~label:"show full task context"
       ~packing:display_options_box#add ()
@@ -874,10 +872,9 @@ let appearance_settings (c : t) (notebook:GPack.notebook) =
   in
   let icon_sets_box =
     GPack.button_box
-      `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
+      `VERTICAL ~border_width:5 ~spacing:5
       ~packing:icon_sets_frame#add ()
   in
-  icon_sets_box#set_spacing 5;
   let icon_sets_box_pack =
     icon_sets_box#pack ?from:None ?expand:None ?fill:None ?padding:None
   in
@@ -960,9 +957,8 @@ let provers_page c (notebook:GPack.notebook) =
     GBin.frame ~label:"Provers visible in the context menu" ~packing:hbox_pack ()
   in
   let provers_box =
-    GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
+    GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
       ~packing:frame#add () in
-  provers_box#set_spacing 5;
   let hidden_provers = Hashtbl.create 7 in
   Mprover.iter
     (fun _ p ->
@@ -1023,10 +1019,9 @@ let alternatives_frame c (notebook:GPack.notebook) =
     GBin.frame ~label:"Click to remove a setting" ~packing:page_pack ()
   in
   let box =
-    GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 not in lablgtk3 *)
+    GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
       ~packing:frame#add ()
   in
-  box#set_spacing 5;
   let remove button p () =
     button#destroy ();
     c.config <- set_policies c.config (Mprover.remove p (get_policies c.config));
@@ -1247,10 +1242,9 @@ let uninstalled_prover_dialog ~height ~callback c unknown =
   let prover_choosed = ref None in
   let set_prover prover () = prover_choosed := Some prover in
   let box =
-    GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 *)
+    GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
       ~packing:policy_frame#add ()
   in
-  box#set_spacing 5;
   let choice_keep = GButton.radio_button
       ~label:"keep proofs as they are, do not try to play them"
       ~active:true
@@ -1272,10 +1266,9 @@ let uninstalled_prover_dialog ~height ~callback c unknown =
     if alternatives <> [] then
       let frame = GBin.frame ~label ~packing:vbox#add () in
       let box =
-        GPack.button_box `VERTICAL ~border_width:5 (* ~spacing:5 *)
+        GPack.button_box `VERTICAL ~border_width:5 ~spacing:5
           ~packing:frame#add ()
       in
-      box#set_spacing 5;
       let iter_alter prover =
         let choice_button =
           let label = Pp.string_of_wnl print_prover prover in

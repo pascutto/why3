@@ -511,6 +511,7 @@ let view_name_column =
   v#pack name_renderer;
   v#add_attribute name_renderer "text" name_column;
   (* v#set_sizing `AUTOSIZE; *)
+  v#set_expand true;
   v#set_resizable true;
   (*  v#set_max_width 1000;*)
   v
@@ -1745,11 +1746,10 @@ object (self)
     Opt.iter item#misc#set_tooltip_markup tooltip;
     item
   method add_separator () =
-  (* does not work in lablgtk3
     let item = GtkMenu.MenuItem.separator_create () in
     let item = new GMenu.menu_item item in
     item#misc#show ();
-    menu#append item; *)
+    menu#append item;
     ()
   method add_submenu ?use_mnemonic label =
     let m = GtkMenu.Menu.create [] in
