@@ -134,7 +134,7 @@ type is_destructed =
   | Param of Decl.decl
   | Goal_term of term
 
-(* [destruct_term ~original_decl ~decl_name t]: This destroys a headterm and
+(* [destruct_term ~decl_name t]: This destroys a headterm and
      generate an appropriate lists of goals/declarations that can be used by
      decl_goal_l.
 
@@ -144,43 +144,50 @@ type is_destructed =
    which are eventually converted to disjoint tasks.
 *)
 let destruct_term ~recursive (t: term) =
-  let original_decl = t in
   (* Standard way to know that a lsymbol is a constructor TODO ? *)
   let is_constructor l =
     l.ls_constr <> 0
   in
 
-  (* Main function *)
-  let rec destruct_term (t: term) =
-    let destruct_term_exception t =
+  (* Main recursive function:
+     [toplevel] when true, removing implications is allowed. Become false as
+     soon as we destruct non-implication construct
+  *)
+  let rec destruct_term ~toplevel (t: term) =
+    let destruct_term_exception ~toplevel t =
       if not recursive then [[Axiom_term t]] else
-        match destruct_term t with
+        match destruct_term ~toplevel t with
         | exception _ -> [[Axiom_term t]]
         | l -> l
     in
 
     match t.t_node with
     | Tbinop (Tand, t1, t2) ->
-        let l1 = destruct_term_exception t1 in
-        let l2 = destruct_term_exception t2 in
+        let l1 = destruct_term_exception ~toplevel:false t1 in
+        let l2 = destruct_term_exception ~toplevel:false t2 in
         (* For each parallel branch of l1 we have to append *all* parallel
-           branch of l2. *)
+           branch of l2 which are not new goals. In case of new goals, we are
+           not allowed to use the left/right conclusions to prove the goal.
+           Example:
+           H: (A -> (B /\ C) /\ (C -> A)
+           Goal g: C
+        *)
         (* TODO efficiency: this is not expected to work on very large terms
            with tons of Tand/Tor. *)
         List.fold_left (fun par_acc seq_list1 ->
             List.fold_left (fun par_acc seq_list2 ->
-                par_acc @ ([seq_list1 @ seq_list2])) par_acc l2
+                par_acc @ [seq_list1 @ seq_list2]) par_acc l2
           ) [] l1
     | Tbinop (Tor, t1, t2) ->
-        let l1 = destruct_term_exception t1 in
-        let l2 = destruct_term_exception t2 in
+        let l1 = destruct_term_exception ~toplevel:false t1 in
+        let l2 = destruct_term_exception ~toplevel:false t2 in
         (* The two branch are completely disjoint. We just concatenate them to
            ensure they are done in parallel *)
         l1 @ l2
-    | Tbinop (Timplies, t1, t2) ->
+    | Tbinop (Timplies, t1, t2) when toplevel ->
         (* The premises is converted to a goal. The rest is recursively
            destructed in parallel. *)
-        let l2 = destruct_term_exception t2 in
+        let l2 = destruct_term_exception ~toplevel t2 in
         [Goal_term t1] :: l2
     | Tquant (Texists, tb) ->
       let (vsl, tr, te) = Term.t_open_quant tb in
@@ -192,11 +199,10 @@ let destruct_term ~recursive (t: term) =
         (try
            let part_t = t_subst_single x tx te in
            let new_t = t_quant_close Texists tl tr part_t in
-           (* TODO remove original_decl here ? *)
            (* The recursive call is done after new symbols are introduced so we
               readd the new decls to every generated list. *)
-           let l_t = destruct_term_exception new_t in
-           List.map (fun x -> Axiom_term original_decl :: Param x_decl :: x) l_t
+           let l_t = destruct_term_exception ~toplevel:false new_t in
+           List.map (fun x -> Param x_decl :: x) l_t
          with
          | Ty.TypeMismatch (ty1, ty2) ->
              raise (Arg_trans_type ("destruct_exists", ty1, ty2)))
@@ -223,7 +229,7 @@ let destruct_term ~recursive (t: term) =
     | Tnot {t_node = Tapp (ls,
                   [{t_node = Tapp (cs1, _); _}; {t_node = Tapp (cs2, _); _}]); _}
         when ls_equal ls ps_equ && is_constructor cs1 && is_constructor cs2 ->
-      (* Cs1 [l1] <> Cs2 [l2] *)
+      (* Cs1 [l1] = Cs2 [l2] *)
       if ls_equal cs1 cs2 then
         [[Axiom_term t]]
       else
@@ -231,7 +237,7 @@ let destruct_term ~recursive (t: term) =
         [[]]
     | _ -> raise (Arg_trans ("destruct"))
   in
-  destruct_term t
+  destruct_term ~toplevel:true t
 
 (* Destruct the head term of an hypothesis if it is either
    conjunction, disjunction or exists *)
@@ -248,7 +254,6 @@ let destruct ~recursive pr : Task.task tlist =
   decl_goal_l (fun d ->
       match d.d_node with
       | Dprop (Paxiom, dpr, ht) when Ident.id_equal dpr.pr_name pr.pr_name ->
-          (* TODO solve the problem of original_decl not being a decl anymore ??? *)
           let decl_list = destruct_term ~recursive ht in
           List.map (fun l -> List.map (fun x ->
               match x with

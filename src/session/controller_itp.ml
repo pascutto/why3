@@ -176,9 +176,9 @@ module PSession = struct
     let s = x.tcont.controller_session in
     let n y acc = { x with tkind = y } :: acc in
     match x.tkind with
-    | Session -> "", Hstr.fold (fun _ f -> n (File f)) (get_files s) []
+    | Session -> "", Hfile.fold (fun _ f -> n (File f)) (get_files s) []
     | File f ->
-       (file_name f),
+       string_of_file_path (file_path f),
        List.fold_right (fun th -> n (Theory th)) (file_theories f) []
     | Theory th ->
        let id = theory_name th in
@@ -607,12 +607,14 @@ let create_file_rel_path c pr pn =
   let th = get_encapsulating_theory session (APn pn) in
   let th_name = (Session_itp.theory_name th).Ident.id_string in
   let f = get_encapsulating_file session (ATh th) in
-  let fn = Filename.chop_extension (Filename.basename (file_name f)) in
+  let fn = Filename.chop_extension (Session_itp.basename (file_path f)) in
   let file = Driver.file_of_task driver fn th_name task in
   let file = Filename.concat session_dir file in
   let file = Sysutil.uniquify file in
   let file = Sysutil.relativize_filename session_dir file in
-  file
+  match file with
+  | [f] -> f
+  | _ -> assert false
 
 let prepare_edition c ?file pn pr ~notification =
   let session = c.controller_session in
@@ -744,12 +746,13 @@ let schedule_transformation c id name args ~callback ~notification =
          (* if result is same as input task, consider it as a failure *)
          callback (TSfailed (id, NoProgress))
       | (Arg_trans _ | Arg_trans_decl _ | Arg_trans_missing _
-        | Arg_trans_term _ | Arg_trans_term2 _
+        | Arg_trans_term _ | Arg_trans_term2 _ | Arg_trans_term3 _
         | Arg_trans_pattern _ | Arg_trans_type _ | Arg_bad_hypothesis _
         | Cannot_infer_type _ | Unnecessary_terms _ | Parse_error _
         | Arg_expected _ | Arg_theory_not_found _ | Arg_expected_none _
         | Arg_qid_not_found _ | Arg_pr_not_found _ | Arg_error _
-        | Arg_parse_type_error _ | Unnecessary_arguments _) as e ->
+        | Arg_parse_type_error _ | Unnecessary_arguments _
+        | Reflection.NoReification ) as e ->
           callback (TSfailed (id, e))
       | e when not (Debug.test_flag Debug.stack_trace) ->
           (* "@[Exception raised in Session_itp.apply_trans_to_goal %s:@ %a@.@]"

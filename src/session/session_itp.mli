@@ -31,11 +31,16 @@ val print_proofNodeID : Format.formatter -> proofNodeID -> unit
 type transID
 type proofAttemptID
 val print_proofAttemptID : Format.formatter -> proofAttemptID -> unit
+type fileID
 
+module Hfile: Exthtbl.S with type key = fileID
 module Hpn: Exthtbl.S with type key = proofNodeID
 module Htn: Exthtbl.S with type key = transID
 module Hpan: Exthtbl.S with type key = proofAttemptID
 
+type file_path
+val string_of_file_path : file_path -> string
+val print_file_path : Format.formatter -> file_path -> unit
 
 (* Any proof node of the tree *)
 type any =
@@ -53,16 +58,21 @@ type notifier = any -> unit
 (** Session *)
 
 (* Get all the files in the session *)
-val get_files : session -> file Wstdlib.Hstr.t
+val get_files : session -> file Hfile.t
 (* Get a single file in the session using its name *)
-val get_file: session -> string -> file
+(* val get_file: session -> string -> file *)
 (* Get directory containing the session *)
 val get_dir : session -> string
 
 (** File *)
-val file_name : file -> string
+val file_id : file -> fileID
+val file_path : file -> file_path
 val file_format : file -> string option
 val file_theories : file -> theory list
+val system_path : session -> file -> string
+(** the system-dependent absolute path associated to that file *)
+
+val basename : file_path -> string
 
 (** Theory *)
 val theory_name : theory -> Ident.ident
@@ -160,13 +170,18 @@ val add_file_section :
 (** [add_file_section s fn ths] adds a new
     'file' section in session [s], named [fn], containing fresh theory
     subsections corresponding to theories [ths]. The tasks of each
-    theory nodes generated are computed using [Task.split_theory]. *)
+    theory nodes generated are computed using [Task.split_theory].
+
+    Note that this function does not read anything from the file
+    system. The file name [fn] is taken as is
+
+ *)
 
 val read_file :
   Env.env -> ?format:Env.fformat -> string -> Theory.theory list
 (* [read_file env ~format fn] parses the source file [fn], types it
-   and extract its theories.  Parse errors and typing errors are
-   signaled with exceptions.  *)
+   and extract its theories. A parse error or a typing error is
+   signaled with exceptions .  *)
 
 val merge_files :
   shape_version:int option ->
@@ -282,3 +297,19 @@ val change_prover : notifier -> session -> proofNodeID -> Whyconf.prover -> Whyc
    attempt using prover [opr] by the new prover [npr]. Proof attempt
    status is set to obsolete.
  *)
+
+(** Extra session update operations *)
+
+val find_file_from_path: session -> string list -> file
+(** raise [Not_found] of path does not appear in session *)
+
+val rename_file: session -> string -> string -> (string list) * (string list)
+(** [rename_file s from_file to_file] renames the
+    file section in session [s] named [from_file] into [to_file]
+    @return the paths relative to the session dir
+
+    Beware that this function does not have any effect on the user's
+    file system: if the considered files corresponds the real files,
+    they must be renamed independently. See for example the use in
+    [why3session/why3session_update].
+  *)
