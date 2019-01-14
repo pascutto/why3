@@ -14,36 +14,47 @@ open Term
 (* {2 Values} *)
 
 type value =
-| Term of term    (* invariant: is in normal form *)
-| Int of BigInt.t
+  | Term of term    (* invariant: is in normal form *)
+  | Int of BigInt.t
+  | Real of Number.real_value
 
 let v_attr_copy orig v =
   match v with
   | Int _ -> v
+  | Real _ -> v
   | Term t -> Term (t_attr_copy orig t)
-
-let ls_minus = ref ps_equ (* temporary *)
 
 let term_of_value v =
   match v with
   | Term t -> t
-  | Int n -> t_bigint_const n
+  | Int n -> t_int_const n
+  | Real Number.{ rv_sig = s; rv_pow2 = pow2; rv_pow5 = pow5 } -> t_real_const ~pow2 ~pow5 s
 
 exception NotNum
 
 let big_int_of_const c =
   match c with
-    | Number.ConstInt i -> Number.compute_int_constant i
-    | _ -> raise NotNum
+  | Number.ConstInt i -> Number.compute_int_constant i
+  | Number.ConstReal _ -> assert false
 
 let big_int_of_value v =
   match v with
   | Int n -> n
+  | Real _ -> assert false
   | Term { t_node = Tconst c } -> big_int_of_const c
-  | Term { t_node = Tapp (ls,[{ t_node = Tconst c }]) }
-    when ls_compare ls !ls_minus = 0 -> BigInt.minus (big_int_of_const c)
-  | _ -> raise NotNum
+  | Term _ -> raise NotNum
 
+let real_of_const c =
+  match c with
+  | Number.ConstReal i -> Number.compute_real_constant i
+  | Number.ConstInt _ -> assert false
+
+let real_of_value v =
+  match v with
+  | Real r -> r
+  | Int _ -> assert false
+  | Term { t_node = Tconst c } -> real_of_const c
+  | Term _ -> raise NotNum
 
 (* {2 Builtin symbols} *)
 
@@ -77,27 +88,16 @@ let eval_int_op op simpl ls l ty =
       with NotNum | Division_by_zero ->
         simpl ls t1 t2 ty
     end
-  | _ -> assert false (* t_app_value ls l ty *)
-
-(* unused anymore, for the moment
-let simpl_none ls t1 t2 ty =
-  t_app_value ls [t1;t2] ty
-*)
+  | _ -> assert false
 
 let simpl_add _ls t1 t2 _ty =
   if is_zero t1 then t2 else
   if is_zero t2 then t1 else
   raise Undetermined
-(*
-  t_app_value ls [t1;t2] ty
-*)
 
 let simpl_sub _ls t1 t2 _ty =
   if is_zero t2 then t1 else
   raise Undetermined
-(*
-  t_app_value ls [t1;t2] ty
-*)
 
 let simpl_mul _ls t1 t2 _ty =
   if is_zero t1 then t1 else
@@ -105,31 +105,19 @@ let simpl_mul _ls t1 t2 _ty =
   if is_one t1 then t2 else
   if is_one t2 then t1 else
   raise Undetermined
-(*
-  t_app_value ls [t1;t2] ty
-*)
 
 let simpl_divmod _ls t1 t2 _ty =
   if is_zero t1 then t1 else
   if is_one t2 then t1 else
   raise Undetermined
-(*
-  t_app_value ls [t1;t2] ty
-*)
 
 let simpl_minmax _ls v1 v2 _ty =
   match v1,v2 with
   | Term t1, Term t2 ->
     if t_equal t1 t2 then v1 else
       raise Undetermined
-  (*
-    t_app_value ls [v1;v2] ty
-  *)
   | _ ->
     raise Undetermined
-(*
-  t_app_value ls [v1;v2] ty
-*)
 
 let eval_int_rel op _ls l _ty =
   match l with
@@ -144,7 +132,6 @@ let eval_int_rel op _ls l _ty =
     (*        t_app_value ls l ty *)
     end
   | _ -> assert false
-    (* t_app_value ls l ty *)
 
 let eval_int_uop op _ls l _ty =
   match l with
@@ -158,6 +145,71 @@ let eval_int_uop op _ls l _ty =
     end
   | _ -> assert false
 
+let eval_real_op op simpl ls l ty =
+  match l with
+  | [t1; t2] ->
+    begin
+      try
+        let n1 = real_of_value t1 in
+        let n2 = real_of_value t2 in
+        Real (op n1 n2)
+      with NotNum | Division_by_zero ->
+        simpl ls t1 t2 ty
+    end
+  | _ -> assert false
+
+let real_mul Number.{ rv_sig = s1; rv_pow2 = p21; rv_pow5 = p51 } Number.{ rv_sig = s2; rv_pow2 = p22; rv_pow5 = p52 } =
+  let s = BigInt.mul s1 s2 in
+  let pow2 = BigInt.add p21 p22 in
+  let pow5 = BigInt.add p51 p52 in
+  Number.real_value ~pow2 ~pow5 s
+
+let real_0 = Number.real_value BigInt.zero
+let real_1 = Number.real_value BigInt.one
+
+let is_real t r =
+  try Number.compare_real (real_of_value t) r = 0
+  with NotNum -> false
+
+let simpl_real_mul _ls t1 t2 _ty =
+  if is_real t1 real_0 then t1 else
+  if is_real t2 real_0 then t2 else
+  if is_real t1 real_1 then t2 else
+  if is_real t2 real_1 then t1 else
+  raise Undetermined
+
+let real_pow Number.{ rv_sig = s1; rv_pow2 = p21; rv_pow5 = p51 } Number.{ rv_sig = s2; rv_pow2 = p22; rv_pow5 = p52 } =
+  if BigInt.le s1 BigInt.zero then
+    raise Undetermined
+  else if BigInt.lt p22 BigInt.zero || BigInt.lt p52 BigInt.zero then
+    raise NotNum
+  else
+    let s1 = try BigInt.to_int s1 with Failure _ -> raise NotNum in
+    let s2 = BigInt.mul s2 (BigInt.pow_int_pos_bigint 2 p22) in
+    let s2 = BigInt.mul s2 (BigInt.pow_int_pos_bigint 5 p52) in
+    let s =
+      if s1 = 1 then BigInt.one
+      else if BigInt.lt s2 BigInt.zero then raise NotNum
+      else BigInt.pow_int_pos_bigint s1 s2 in
+    let pow2 = BigInt.mul p21 s2 in
+    let pow5 = BigInt.mul p51 s2 in
+    Number.real_value ~pow2 ~pow5 s
+
+let simpl_real_pow _ls t1 _t2 _ty =
+  if is_real t1 real_1 then t1 else
+  raise Undetermined
+
+let real_from_int _ls l _ty =
+  match l with
+  | [t] ->
+    begin
+      try
+        let n = big_int_of_value t in
+        Real (Number.real_value n)
+      with NotNum ->
+        raise Undetermined
+    end
+  | _ -> assert false
 
 let built_in_theories =
   [
@@ -171,7 +223,7 @@ let built_in_theories =
     [ Ident.op_infix "+", None, eval_int_op BigInt.add simpl_add;
       Ident.op_infix "-", None, eval_int_op BigInt.sub simpl_sub;
       Ident.op_infix "*", None, eval_int_op BigInt.mul simpl_mul;
-      Ident.op_prefix "-", Some ls_minus, eval_int_uop BigInt.minus;
+      Ident.op_prefix "-", None, eval_int_uop BigInt.minus;
       Ident.op_infix "<", None, eval_int_rel BigInt.lt;
       Ident.op_infix "<=", None, eval_int_rel BigInt.le;
       Ident.op_infix ">", None, eval_int_rel BigInt.gt;
@@ -189,6 +241,12 @@ let built_in_theories =
     [ "div", None, eval_int_op BigInt.euclidean_div simpl_divmod;
       "mod", None, eval_int_op BigInt.euclidean_mod simpl_divmod;
     ] ;
+    ["real"], "Real", [],
+    [ Ident.op_infix "*", None, eval_real_op real_mul simpl_real_mul ] ;
+    ["real"], "FromInt", [],
+    [ "from_int", None, real_from_int ] ;
+    ["real"], "PowerReal", [],
+    [ "pow", None, eval_real_op real_pow simpl_real_pow ] ;
 (*
     ["map"],"Map", ["map", builtin_map_type],
     [ "const", Some ls_map_const, eval_map_const;
@@ -562,7 +620,7 @@ let rec reduce engine c =
               cont_stack = rem;
             }
         end
-      | Int _ -> assert false (* would be ill-typed *)
+      | (Int _ | Real _) -> assert false (* would be ill-typed *)
     end
   | [], (Klet _, _) :: _ -> assert false
   | t1 :: st, (Klet(v,t2,sigma), orig) :: rem ->
@@ -573,10 +631,10 @@ let rec reduce engine c =
         (Keval(t2, Mvs.add v t1 sigma), t_attr_copy orig t2) :: rem;
     }
   | [], (Kcase _, _) :: _ -> assert false
-  | Int _ :: _, (Kcase _, _) :: _ -> assert false
+  | (Int _ | Real _) :: _, (Kcase _, _) :: _ -> assert false
   | (Term t1) :: st, (Kcase(tbl,sigma), orig) :: rem ->
     reduce_match st t1 ~orig tbl sigma rem
-  | ([] | [_] | Int _ :: _ | Term _ :: Int _ :: _),
+  | ([] | [_] | (Int _ | Real _) :: _ | Term _ :: (Int _ | Real _) :: _),
     (Kbinop _, _) :: _ -> assert false
   | (Term t1) :: (Term t2) :: st, (Kbinop op, orig) :: rem ->
     incr(rec_step_limit);
@@ -584,7 +642,7 @@ let rec reduce engine c =
       cont_stack = rem;
     }
   | [], (Knot,_) :: _ -> assert false
-  | Int _ :: _ , (Knot,_) :: _ -> assert false
+  | (Int _ | Real _) :: _ , (Knot,_) :: _ -> assert false
   | (Term t) :: st, (Knot, orig) :: rem ->
     incr(rec_step_limit);
     { value_stack = Term (t_attr_copy orig (t_not_simp t)) :: st;
@@ -593,13 +651,13 @@ let rec reduce engine c =
   | st, (Kapp(ls,ty), orig) :: rem ->
     reduce_app engine st ~orig ls ty rem
   | [], (Keps _, _) :: _ -> assert false
-  | Int _ :: _ , (Keps _, _) :: _ -> assert false
+  | (Int _ | Real _) :: _ , (Keps _, _) :: _ -> assert false
   | Term t :: st, (Keps v, orig) :: rem ->
     { value_stack = Term (t_attr_copy orig (t_eps_close v t)) :: st;
       cont_stack = rem;
     }
   | [], (Kquant _, _) :: _ -> assert false
-  | Int _ :: _, (Kquant _, _) :: _ -> assert false
+  | (Int _ | Real _) :: _, (Kquant _, _) :: _ -> assert false
   | Term t :: st, (Kquant(q,vl,tr), orig) :: rem ->
     { value_stack = Term (t_attr_copy orig (t_quant_close_simp q vl tr t)) :: st;
       cont_stack = rem;
@@ -962,6 +1020,12 @@ and reduce_equ (* engine *) ~orig st v1 v2 cont =
       { value_stack = Term (t_attr_copy orig b) :: st;
         cont_stack = cont;
       }
+    | Real r1, Real r2 ->
+      let b = to_bool (Number.compare_real r1 r2 = 0) in
+      incr rec_step_limit;
+      { value_stack = Term (t_attr_copy orig b) :: st;
+        cont_stack = cont;
+      }
     | Int n, Term {t_node = Tconst c} | Term {t_node = Tconst c}, Int n ->
       begin
         try
@@ -973,7 +1037,20 @@ and reduce_equ (* engine *) ~orig st v1 v2 cont =
           }
         with NotNum -> raise Undetermined
       end
+    | Real r, Term {t_node = Tconst c} | Term {t_node = Tconst c}, Real r ->
+      begin
+        try
+          let r' = real_of_const c in
+          let b = to_bool (Number.compare_real r r' = 0) in
+          incr rec_step_limit;
+          { value_stack = Term (t_attr_copy orig b) :: st;
+            cont_stack = cont;
+          }
+        with NotNum -> raise Undetermined
+      end
+    | Real _, Term _ | Term _, Real _ -> raise Undetermined
     | Int _,  Term _ | Term _,  Int _ -> raise Undetermined
+    | Int _, Real _ | Real _, Int _ -> assert false
     | Term t1, Term t2 -> reduce_term_equ ~orig st t1 t2 cont
 (*
   with Undetermined ->
@@ -1088,9 +1165,10 @@ let normalize ?step_limit ~limit engine t0 =
     | _ ->
       if n = limit then
         begin
-          Warning.emit "reduction of term %a takes more than %d steps, aborted.@."
-            Pretty.print_term t0 limit;
-          reconstruct c
+          let t1 = reconstruct c in
+          Warning.emit "reduction of term %a takes more than %d steps, aborted at %a.@."
+            Pretty.print_term t0 limit Pretty.print_term t1;
+          t1
         end
       else begin
         match step_limit with
