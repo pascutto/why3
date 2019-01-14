@@ -330,14 +330,7 @@ let t_compare trigger attr t1 t2 =
           | Tvar v1, Tvar v2 ->
               comp_raise (vs_compare v1 v2)
           | Tconst c1, Tconst c2 ->
-              let open Number in
-              begin match c1, c2 with
-              | ConstInt { ic_negative = s1; ic_abs = IConstRaw b1 },
-                ConstInt { ic_negative = s2; ic_abs = IConstRaw b2 } ->
-                  perv_compare s1 s2;
-                  comp_raise (BigInt.compare b1 b2)
-              | _, _ -> perv_compare c1 c2
-              end
+              comp_raise (Number.compare_const c1 c2)
           | Tapp (s1,l1), Tapp (s2,l2) ->
               comp_raise (ls_compare s1 s2);
               List.iter2 (t_compare bnd vml1 vml2) l1 l2
@@ -854,9 +847,13 @@ let ps_app ps tl    = t_app ps tl None
 
 let t_nat_const n =
   assert (n >= 0);
-  t_const (Number.const_of_int n) ty_int
+  t_const (Number.int_const_of_int n) ty_int
 
-let t_bigint_const n = t_const (Number.const_of_big_int n) Ty.ty_int
+let t_int_const n =
+  t_const (Number.int_const n) Ty.ty_int
+
+let t_real_const ?pow2 ?pow5 s =
+  t_const Number.(ConstReal (RConstVal (real_value ?pow2 ?pow5 s))) Ty.ty_real
 
 exception InvalidIntegerLiteralType of ty
 exception InvalidRealLiteralType of ty
@@ -878,7 +875,7 @@ let check_literal c ty =
   | Number.ConstReal _ when ts_equal ts ts_real -> ()
   | Number.ConstReal x ->
      begin match ts.ts_def with
-           | Float fp -> Number.(check_float x.Number.rc_abs fp)
+           | Float fp -> Number.(check_float x fp)
            | _ -> raise (InvalidRealLiteralType ty)
      end
 

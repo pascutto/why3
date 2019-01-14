@@ -73,7 +73,7 @@ open Format
 let rec print_value fmt = function
   | Vvoid -> fprintf fmt "()"
   | Vbool b -> fprintf fmt "%b" b
-  | Vbigint i -> fprintf fmt "%a" Number.print_constant (Number.const_of_big_int i)
+  | Vbigint i -> Number.print_constant fmt (Number.int_const i)
   | Vint i -> fprintf fmt "%d" i
   | Vtuple l -> fprintf fmt "@[<hov 2>(%a)@]"
                         (Pp.print_list Pp.comma print_value) l
@@ -844,7 +844,7 @@ let rec value_of_term kn t =
 let rec term_of_value = function
   | Vbool true -> t_bool_true
   | Vbool false -> t_bool_false
-  | Vbigint i -> t_bigint_const i
+  | Vbigint i -> t_int_const i
   | Vint _ -> raise CannotReduce
   | Vtuple l -> t_tuple (List.map term_of_value l)
   | Vconstr (rs, lf) ->

@@ -114,8 +114,9 @@ module Print = struct
 
   let print_constant fmt e = begin match e.e_node with
     | Econst c ->
-        let s = BigInt.to_string (Number.compute_int_constant c) in
-        if c.Number.ic_negative then fprintf fmt "(%s)" s
+        let v = Number.compute_int_constant c in
+        let s = BigInt.to_string v in
+        if BigInt.lt v BigInt.zero then fprintf fmt "(%s)" s
         else fprintf fmt "%s" s
     | _ -> assert false end
 
