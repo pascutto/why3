@@ -39,17 +39,17 @@ tests: extract check-gmp
 	./build/minitests
 
 bench-tests: extract
-	gcc -O2 -Wall -Wno-unused-function -g -std=c11 tests.c $(CFILES) -Ibench-include -Irandom -fomit-frame-pointer -fno-tree-vectorize -lgmp -o build/bench-tests
+	gcc -O2 -Wall -Wno-unused-function -g -std=c11 tests.c $(CFILES) -Iinclude -Ibench-include -Irandom -fomit-frame-pointer -fno-tree-vectorize -lgmp -o build/bench-tests
 
 
 build/why3%bench: extract check-gmp
-	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -DTEST_WHY3 -DTEST_`echo $* | tr [:lower:] [:upper:]` tests.c $(CFILES) -I$(GMP_DIR) -Irandom -L$(GMP_LIB) -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -lgmp -o $@
+	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -DTEST_WHY3 -DTEST_`echo $* | tr [:lower:] [:upper:]` tests.c $(CFILES) -Iinclude -I$(GMP_DIR) -Irandom -L$(GMP_LIB) -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -lgmp -o $@
 
 build/gmp%bench: extract check-gmp
-	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -DTEST_GMP -DTEST_`echo $* | tr [:lower:] [:upper:]` tests.c $(CFILES) -I$(GMP_DIR) -Irandom -L$(GMP_LIB) -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -lgmp -o $@
+	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -DTEST_GMP -DTEST_`echo $* | tr [:lower:] [:upper:]` tests.c $(CFILES) -Iinclude -I$(GMP_DIR) -Irandom -L$(GMP_LIB) -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -lgmp -o $@
 
 build/minigmp%bench: extract
-	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -DTEST_MINIGMP -DTEST_`echo $* | tr [:lower:] [:upper:]` tests.c $(CFILES) -I$(GMP_DIR) -Imini-gmp -Irandom -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -o $@
+	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -DTEST_MINIGMP -DTEST_`echo $* | tr [:lower:] [:upper:]` tests.c $(CFILES) -Iinclude -I$(GMP_DIR) -Imini-gmp -Irandom -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -o $@
 
 alltests: tests build/why3addbench build/why3mulbench build/why3toombench build/why3divbench build/gmpaddbench build/gmpmulbench build/gmptoombench build/gmpdivbench build/minigmpaddbench build/minigmpmulbench build/minigmpdivbench build/minigmptoombench
 
