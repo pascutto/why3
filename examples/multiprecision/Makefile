@@ -21,20 +21,20 @@ why3:
 dir:
 	mkdir -p build
 
-MLWFILES= $(addsuffix .mlw, toom logical div mul sub add compare util)
+MLWFILES= $(addsuffix .mlw, sqrt toom logical div mul sub add compare util)
 
 cfiles: why3 dir
-	$(WHY3) extract -D c -L . --recursive --modular --interface -o build/ \
+	$(WHY3) extract -D wmpn.drv -D c -L . --recursive --modular --interface -o build/ \
 	wmpn.mlw
 	#$(MLWFILES)
 
 extract: why3 dir cfiles
 
-CFILES = build/uint64gmp.c build/toom.c build/div.c build/logical.c build/mul.c build/sub.c build/add.c build/compare.c build/util.c build/int32.c
+CFILES = build/uint64gmp.c build/fxp.c build/sqrt1.c build/toom.c build/div.c build/logical.c build/mul.c build/sub.c build/add.c build/compare.c build/util.c build/int32.c
 
 tests: extract check-gmp
-	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -pedantic tests.c $(CFILES) -I$(GMP_DIR) -Irandom -L$(GMP_LIB) -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -lgmp -o build/tests
-	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -pedantic -DCOMPARE_MINI tests.c $(CFILES) -I$(GMP_DIR) -Irandom -Imini-gmp -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -o build/minitests
+	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -pedantic tests.c $(CFILES) -Iinclude -I$(GMP_DIR) -Irandom -L$(GMP_LIB) -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -lgmp -o build/tests
+	gcc -O2 -Wall -Wno-unused-function -g -std=c11 -pedantic -DCOMPARE_MINI tests.c $(CFILES) -Iinclude -I$(GMP_DIR) -Irandom -Imini-gmp -fomit-frame-pointer -mtune=haswell -march=haswell -fno-tree-vectorize -o build/minitests
 	./build/tests
 	./build/minitests
 
