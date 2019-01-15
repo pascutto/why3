@@ -25,10 +25,11 @@ let v_attr_copy orig v =
   | Term t -> Term (t_attr_copy orig t)
 
 let term_of_value v =
+  let open Number in
   match v with
   | Term t -> t
   | Int n -> t_int_const n
-  | Real Number.{ rv_sig = s; rv_pow2 = pow2; rv_pow5 = pow5 } -> t_real_const ~pow2 ~pow5 s
+  | Real { rv_sig = s; rv_pow2 = pow2; rv_pow5 = pow5 } -> t_real_const ~pow2 ~pow5 s
 
 exception NotNum
 
@@ -158,11 +159,14 @@ let eval_real_op op simpl ls l ty =
     end
   | _ -> assert false
 
-let real_mul Number.{ rv_sig = s1; rv_pow2 = p21; rv_pow5 = p51 } Number.{ rv_sig = s2; rv_pow2 = p22; rv_pow5 = p52 } =
+let real_mul r1 r2 =
+  let open Number in
+  let { rv_sig = s1; rv_pow2 = p21; rv_pow5 = p51 } = r1 in
+  let { rv_sig = s2; rv_pow2 = p22; rv_pow5 = p52 } = r2 in
   let s = BigInt.mul s1 s2 in
   let pow2 = BigInt.add p21 p22 in
   let pow5 = BigInt.add p51 p52 in
-  Number.real_value ~pow2 ~pow5 s
+  real_value ~pow2 ~pow5 s
 
 let real_0 = Number.real_value BigInt.zero
 let real_1 = Number.real_value BigInt.one
@@ -178,7 +182,10 @@ let simpl_real_mul _ls t1 t2 _ty =
   if is_real t2 real_1 then t1 else
   raise Undetermined
 
-let real_pow Number.{ rv_sig = s1; rv_pow2 = p21; rv_pow5 = p51 } Number.{ rv_sig = s2; rv_pow2 = p22; rv_pow5 = p52 } =
+let real_pow r1 r2 =
+  let open Number in
+  let { rv_sig = s1; rv_pow2 = p21; rv_pow5 = p51 } = r1 in
+  let { rv_sig = s2; rv_pow2 = p22; rv_pow5 = p52 } = r2 in
   if BigInt.le s1 BigInt.zero then
     raise Undetermined
   else if BigInt.lt p22 BigInt.zero || BigInt.lt p52 BigInt.zero then
