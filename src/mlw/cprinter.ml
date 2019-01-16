@@ -813,7 +813,7 @@ module MLToC = struct
             begin match il.il_kind with
             | ILitHex -> Format.asprintf "0x%a" (Number.print_in_base 16 None) n
             | ILitOct -> Format.asprintf "0%a" (Number.print_in_base 8 None) n
-            | ILitBin -> Format.asprintf "0%a" (Number.print_in_base 2 None) n
+            | ILitBin -> Format.asprintf "0b%a" (Number.print_in_base 2 None) n
             | _ -> BigInt.to_string n
             end
          | _ ->
