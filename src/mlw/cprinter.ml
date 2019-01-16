@@ -805,8 +805,20 @@ module MLToC = struct
        let e = C.Evar (pv_name pv) in
        ([], return_or_expr env e)
     | Mltree.Econst ic ->
-      let n = Number.compute_int_constant ic in
-      let e = C.(Econst (Cint (BigInt.to_string n))) in
+       let n = Number.compute_int_constant ic in
+       let s =
+         let open Number in
+         match ic with
+         | IConstLit il when not il.il_neg ->
+            begin match il.il_kind with
+            | ILitHex -> Format.asprintf "0x%a" (Number.print_in_base 16 None) n
+            | ILitOct -> Format.asprintf "0%a" (Number.print_in_base 8 None) n
+            | ILitBin -> Format.asprintf "0%a" (Number.print_in_base 2 None) n
+            | _ -> BigInt.to_string n
+            end
+         | _ ->
+            BigInt.to_string n in
+       let e = C.(Econst (Cint s)) in
       ([], return_or_expr env e)
     | Eapp (rs, el)
          when is_struct_constructor info rs
