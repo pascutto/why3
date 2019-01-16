@@ -644,6 +644,7 @@ module MLToC = struct
   let field i = "__field_"^(string_of_int i)
 
   let structs : struct_def Hid.t = Hid.create 16
+  let aliases : C.ty Hid.t = Hid.create 16
 
   let rec ty_of_ty info ty = (*FIXME try to use only ML tys*)
     match ty.ty_node with
@@ -661,6 +662,9 @@ module MLToC = struct
            if tl = []
            then if is_ts_tuple ts
                 then C.Tvoid
+                else
+                  if Hid.mem aliases ts.ts_name
+                  then Hid.find aliases ts.ts_name
                 else try Tstruct (Hid.find structs ts.ts_name)
                      with Not_found -> Tnosyntax
            else C.Tnosyntax
@@ -679,8 +683,10 @@ module MLToC = struct
         | Some s -> C.Tsyntax (s, List.map (ty_of_mlty info) tl)
         | None ->
            if tl = []
-           then try Tstruct (Hid.find structs id)
-                with Not_found -> Tnosyntax
+           then if Hid.mem aliases id
+                then Hid.find aliases id
+                else try Tstruct (Hid.find structs id)
+                     with Not_found -> Tnosyntax
            else Tnosyntax
        end
     | Ttuple [] -> C.Tvoid
@@ -827,7 +833,7 @@ module MLToC = struct
            Snop sfields args in
        (defs, Sseq (inits, expr_or_return env st))
     | Eapp (rs, el) ->
-       Debug.dprintf debug_c_extraction "call to %s@." rs.rs_name.id_string;
+       (*Debug.dprintf debug_c_extraction "call to %s@." rs.rs_name.id_string;*)
        if is_rs_tuple rs && env.computes_return_value
        then begin
 	 let args =
@@ -1125,7 +1131,7 @@ module MLToC = struct
        end
 
   let translate_decl (info:info) (d:decl) ~header : C.definition list =
-    let translate_fun rs vl e =
+    let translate_fun rs mlty vl e =
       Debug.dprintf debug_c_extraction "print %s@." rs.rs_name.id_string;
       if rs_ghost rs
       then begin Debug.dprintf debug_c_extraction "is ghost@."; [] end
@@ -1157,7 +1163,9 @@ module MLToC = struct
                   acc && arity_zero ity.ity_node) true ity)
 	in
 	(* FIXME is it necessary to have arity 0 in regions ?*)
-	let rtype = ty_of_ty info (ty_of_ity rity) in
+        let rtype = try ty_of_mlty info mlty
+                    with Unsupported _ -> (*FIXME*)
+                      ty_of_ty info (ty_of_ity rity) in
         let rtype,sdecls =
           if rtype=C.Tnosyntax && is_simple_tuple rity
           then
@@ -1175,12 +1183,17 @@ module MLToC = struct
 	  sdecls@[C.Dfun (rs.rs_name, (rtype,params), (d,s))] in
     try
       begin match d with
-      | Dlet (Lsym(rs, _, vl, e)) -> translate_fun rs vl e
+      | Dlet (Lsym(rs, mlty, vl, e)) -> translate_fun rs mlty vl e
       | Dtype [{its_name=id; its_def=idef}] ->
          Debug.dprintf debug_c_extraction "PDtype %s@." id.id_string;
          begin
            match idef with
-           | Some (Dalias _ty) -> [] (*[C.Dtypedef (ty_of_mlty info ty, id)] *)
+           | Some (Dalias mlty) ->
+              let ty = ty_of_mlty info mlty in
+              Hid.replace aliases id ty;
+              []
+           (*TODO print actual typedef? *)
+           (*[C.Dtypedef (ty_of_mlty info ty, id)]*)
            | Some (Drecord pjl) ->
               let pjl =
                 List.filter
@@ -1206,7 +1219,7 @@ module MLToC = struct
          end
       | Dlet (Lrec rl) ->
          let translate_rdef rd =
-           translate_fun rd.rec_sym rd.rec_args rd.rec_exp in
+           translate_fun rd.rec_sym rd.rec_res rd.rec_args rd.rec_exp in
          let defs = List.flatten (List.map translate_rdef rl) in
          if header then defs
          else
