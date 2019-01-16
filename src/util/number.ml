@@ -394,9 +394,15 @@ let print_real_constant support fmt = function
   | RConstVal { rv_sig = i; rv_pow2 = p2; rv_pow5 = p5 } ->
       let (n,i) = if BigInt.lt i BigInt.zero then true, BigInt.abs i else false, i in
       let e = BigInt.min p2 p5 in
+      let e =
+        try (* if the decimal exponent is between 0 and 2, do not use it *)
+          let ei = BigInt.to_int e in
+          if 0 <= ei && ei <= 2 then BigInt.zero else e
+        with _ -> e in
       let i = BigInt.mul i (BigInt.pow_int_pos_bigint 2 (BigInt.sub p2 e)) in
       let i = BigInt.mul i (BigInt.pow_int_pos_bigint 5 (BigInt.sub p5 e)) in
-      print_real_literal support fmt RLitDec n (BigInt.to_string i) "" (Some (BigInt.to_string e))
+      let e = if BigInt.eq e BigInt.zero then None else Some (BigInt.to_string e) in
+      print_real_literal support fmt RLitDec n (BigInt.to_string i) "" e
   | RConstLit { rl_kind = k; rl_neg = n; rl_int = i; rl_frac = f; rl_exp = e } ->
       print_real_literal support fmt k n i f e
 
