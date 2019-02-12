@@ -8,3 +8,7 @@ constant b : int
 axiom H : a = b
 
 goal G : if a > 0 then true else false
+
+axiom I : if a > 0 then true else false
+
+goal J : a = b
