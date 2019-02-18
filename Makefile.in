@@ -411,17 +411,22 @@ PLUG_PRINTER =
 PLUG_TRANSFORM =
 PLUG_TPTP = tptp_ast tptp_parser tptp_typing tptp_lexer tptp_printer
 PLUG_PYTHON = py_ast py_parser py_lexer py_main
+PLUG_CERT = cert_syntax
 
-PLUGINS = genequlin dimacs tptp python
+PLUGINS = genequlin dimacs tptp python cert
 
 TPTPMODULES = $(addprefix plugins/tptp/, $(PLUG_TPTP))
 PYTHONMODULES = $(addprefix plugins/python/, $(PLUG_PYTHON))
+CERTMODULES = $(addprefix plugins/cert/, $(PLUG_CERT))
 
 TPTPCMO = $(addsuffix .cmo, $(TPTPMODULES))
 TPTPCMX = $(addsuffix .cmx, $(TPTPMODULES))
 
 PYTHONCMO = $(addsuffix .cmo, $(PYTHONMODULES))
 PYTHONCMX = $(addsuffix .cmx, $(PYTHONMODULES))
+
+CERTCMO = $(addsuffix .cmo, $(CERTMODULES))
+CERTCMX = $(addsuffix .cmx, $(CERTMODULES))
 
 ifeq (@enable_hypothesis_selection@,yes)
 PLUG_TRANSFORM += hypothesis_selection
@@ -436,13 +441,13 @@ endif
 PLUGMODULES = $(addprefix plugins/parser/, $(PLUG_PARSER)) \
 	      $(addprefix plugins/printer/, $(PLUG_PRINTER)) \
 	      $(addprefix plugins/transform/, $(PLUG_TRANSFORM)) \
-	      $(TPTPMODULES) $(PYTHONMODULES)
+	      $(TPTPMODULES) $(PYTHONMODULES) $(CERTMODULES)
 
 PLUGDEP = $(addsuffix .dep, $(PLUGMODULES))
 PLUGCMO = $(addsuffix .cmo, $(PLUGMODULES))
 PLUGCMX = $(addsuffix .cmx, $(PLUGMODULES))
 
-PLUGDIRS = parser printer transform tptp python
+PLUGDIRS = parser printer transform tptp python cert
 PLUGINCLUDES = $(addprefix -I plugins/, $(PLUGDIRS))
 
 $(PLUGDEP): DEPFLAGS += $(PLUGINCLUDES)
@@ -477,6 +482,8 @@ lib/plugins/tptp.cmxs: $(TPTPCMX)
 lib/plugins/tptp.cmo: $(TPTPCMO)
 lib/plugins/python.cmxs: $(PYTHONCMX)
 lib/plugins/python.cmo: $(PYTHONCMO)
+lib/plugins/cert.cmxs: $(CERTCMX)
+lib/plugins/cert.cmo: $(CERTCMO)
 
 # depend and clean targets
 
