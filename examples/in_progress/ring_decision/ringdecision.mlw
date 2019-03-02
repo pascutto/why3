@@ -211,8 +211,7 @@ function id (x:int) : int = x
 let predicate eq0_int (x:int) = x = 0
 
 
-clone export UnitaryCommutativeRingDecision with type C.t = int, constant C.zero = zero, constant C.one = one, function C.(-_) = (-_), function C.(+) = (+), function C.(*) = (*), type Z.t = int, constant Z.zero = zero, constant Z.one = one, function Z.(-_) = (-_), function Z.(+) = (+), function Z.(*) = (*), function morph = id, goal morph_zero, goal morph_one, goal morph_add, goal morph_mul, goal morph_inv, val eq0 = eq0_int,
-  axiom . (* FIXME: replace with "goal" and prove *)
+clone export UnitaryCommutativeRingDecision with type C.t = int, constant C.zero = zero, constant C.one = one, function C.(-_) = (-_), function C.(+) = (+), function C.(*) = (*), type Z.t = int, constant Z.zero = zero, constant Z.one = one, function Z.(-_) = (-_), function Z.(+) = (+), function Z.(*) = (*), function morph = id, val eq0 = eq0_int, goal .
 
 meta "compute_max_steps" 0x10000000
 
@@ -262,32 +261,28 @@ type a
 
 val constant rzero : r
 val constant rone : r
-val constant aone : a
-val ghost constant azero : a
+constant aone : a
+constant azero : a
 
 val function rplus r r : r
 val function rtimes r r : r
 val function ropp r : r
 
-val function aplus a a : a
-val function atimes a a : a
-val function aopp a : a
+function aplus a a : a
+function atimes a a : a
+function aopp a : a
 
 clone export AssocAlgebra with type r = r, type a = a, constant one = aone, constant A.zero = azero, constant R.zero = rzero, constant R.one = rone, function R.(+) = rplus, function R.(*) = rtimes, function R.(-_) = ropp, function (+) = aplus, function (*) = atimes, function A.(-_) = aopp, axiom .
-
-(*axiom azero_def: azero = A.zero*) (* FIXME *)
 
 type t = Var int | Add t t | Mul t t | Ext r t | Sub t t
 type vars = int -> a
 
-val function asub (x y:a) : a
-
-axiom asub_def: forall x y: a. asub x y = aplus x (aopp y)
+let ghost function asub (x y:a) = aplus x (aopp y)
 
 lemma ext_minone:
   forall a: a. ($) (ropp rone) a = aopp a
 
-let rec function interp (x: t) (y: vars) : a =
+let rec ghost function interp (x: t) (y: vars) : a =
   match x with
   | Var n -> y n
   | Add x1 x2 -> aplus (interp x1 y) (interp x2 y)
@@ -303,7 +298,7 @@ predicate eq (x1 x2:t) = forall y: vars. interp x1 y = interp x2 y
 type m = M r (list int)
 type t' = list m
 
-let rec function mon (x: list int) (y: vars) : a =
+let rec ghost function mon (x: list int) (y: vars) : a =
   match x with
   | Nil -> aone
   | Cons x l -> atimes (y x) (mon l y)
@@ -465,8 +460,7 @@ let predicate eq0_int (x:int) = x=0
 
 let function ($$) (x y:int) :int = x * y
 
-clone export AssocAlgebraDecision with type r = int, type a = int, val rzero = Int.zero, val rone = Int.one, val rplus = (+), val ropp = (-_), val rtimes = (*), val azero = Int.zero, val aone = Int.one, val aplus = (+), val aopp = (-_), val atimes = (*), val ($) = ($$), goal AUnitary, goal ANonTrivial, goal ExtDistSumA, goal ExtDistSumR, goal AssocMulExt, goal UnitExt, goal CommMulExt, val eq0 = eq0_int, goal A.MulAssoc.Assoc, goal A.Unit_def_l, goal A.Unit_def_r, goal A.Comm, goal A.Assoc,
-  axiom . (* FIXME: replace with "goal" and prove *)
+clone export AssocAlgebraDecision with type r = int, type a = int, val rzero = Int.zero, val rone = Int.one, val rplus = (+), val ropp = (-_), val rtimes = (*), constant azero = Int.zero, constant aone = Int.one, constant aplus = (+), constant aopp = (-_), constant atimes = (*), val ($) = ($$), val eq0 = eq0_int, goal .
 
 
 goal g: forall x y. x + y = y + x
