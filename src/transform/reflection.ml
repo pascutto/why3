@@ -643,7 +643,7 @@ let reflection_by_function do_trans s env = Trans.store (fun task ->
       let fn acc = function
         | [ MApr pr; MAstr s ] ->
            Debug.dprintf debug_refl "meta prog_decl %s %s@." pr.pr_name.id_string s;
-           if String.equal s fname
+           if s = fname
            then pr::acc
            else acc
         | _ -> assert false in
