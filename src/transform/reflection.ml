@@ -39,7 +39,8 @@ type reify_env = { kn: known_map;
                    env: Env.env;
                    interps: Sls.t; (* functions that were inverted*)
                    task: Task.task;
-                   bound_vars: Svs.t; (* bound variables, do not map them in a var map*)
+                   bound_vars: Svs.t;
+                   (* bound variables, do not map them in a var map*)
                    bound_fr: int; (* separate, negative index for bound vars*)
                  }
 
@@ -621,6 +622,8 @@ open Expr
 open Ity
 open Wstdlib
 open Mlinterp
+open Theory
+open Pmodule
 
 exception ReductionFail of reify_env
 
@@ -632,18 +635,30 @@ let reflection_by_function do_trans s env = Trans.store (fun task ->
   let g, prev = Task.task_separate_goal task in
   let g = Apply.term_decl g in
   let ths = Task.used_theories task in
+  let re_dot = Str.regexp_string "." in
+  let qs = Str.split re_dot s in
+  let fname = List.hd (List.rev qs) in
   let o =
-    Mid.fold
-      (fun _ th o ->
-        try
-          let pmod = Pmodule.restore_module th in
-          let rs = Pmodule.ns_find_rs pmod.Pmodule.mod_export [s] in
-          if o = None then Some (pmod, rs)
-          else (let es = Format.sprintf "module or function %s found twice" s in
-                raise (Arg_error es))
-        with Not_found -> o)
-      ths None in
-  let (_pmod, rs) = if o = None
+    try
+      let fn acc = function
+        | [ MApr pr; MAstr s ] ->
+           Debug.dprintf debug_refl "meta prog_decl %s %s@." pr.pr_name.id_string s;
+           if String.equal s fname
+           then pr::acc
+           else acc
+        | _ -> assert false in
+      begin match on_meta meta_prog_decl fn [] task with
+      | [] ->
+         Debug.dprintf debug_refl "symbol not found in current goal@.";
+         None
+      | pr :: _ ->
+         let th = Theory.restore_theory pr.pr_name in
+         Debug.dprintf debug_refl "symbol in theory %s@." th.th_name.id_string;
+         let pm = restore_module th in
+         Some (pm, ns_find_rs pm.mod_export qs) end
+    with
+      Not_found -> None in
+  let (pmod, rs) = if o = None
                     then (let es = Format.sprintf "Symbol %s not found@." s in
                           raise (Arg_error es))
                    else Opt.get o in
@@ -655,10 +670,10 @@ let reflection_by_function do_trans s env = Trans.store (fun task ->
   let mm = Mid.fold
              (fun id th acc ->
                try
-                 let pm = Pmodule.restore_module th in
+                 let pm = restore_module th in
                  Mstr.add id.id_string pm acc
                with Not_found -> acc)
-             ths Mstr.empty in
+             ths (Mstr.singleton pmod.mod_theory.th_name.id_string pmod) in
   Debug.dprintf debug_refl "module map built@.";
   let args = List.map (fun pv -> pv.pv_vs) rs.rs_cty.cty_args in
   let rec reify_post = function

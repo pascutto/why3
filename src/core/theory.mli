@@ -160,6 +160,8 @@ val restore_path : ident -> string list * string * string list
    If [id] is a theory name, the third component is an empty list.
    Raises [Not_found] if the ident was never declared in/as a theory. *)
 
+val restore_theory : ident -> theory
+
 (** {2 Declaration constructors} *)
 
 val create_decl : decl -> tdecl

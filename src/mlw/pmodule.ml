@@ -448,16 +448,47 @@ let add_use uc d = Sid.fold (fun id uc ->
   | Some n -> use_export uc (tuple_module n)
   | None -> uc) (Mid.set_diff d.pd_syms uc.muc_known) uc
 
+let attr_reflection = create_attribute "reflection"
+let meta_prog_decl = register_meta ~desc:"program declaration"
+                       "prog_decl" [MTprsymbol; MTstring]
+
+let pr_of_vcl : pdecl list -> prsymbol = function
+  | { pd_pure = { d_node = Dprop (Pgoal, pr, _)} :: _ } :: _ -> pr
+  | _ -> raise Not_found
+
 let mk_vc uc d = Vc.vc uc.muc_env uc.muc_known uc.muc_theory d
 
-let add_pdecl ?(warn=true) ~vc uc d =
+let rec add_pdecl ?(warn=true) ~vc uc d =
   let uc = add_use uc d in
   let dl = if vc then mk_vc uc d else [] in
   (* verification conditions must not add additional dependencies
      on built-in theories like TupleN or HighOrd. Also, we expect
      int.Int or any other library theory to be in the context:
      importing them automatically seems to be too invasive. *)
-  add_pdecl_raw ~warn (List.fold_left (add_pdecl_raw ~warn) uc dl) d
+  let uc = List.fold_left (add_pdecl_raw ~warn) uc dl in
+  let add_meta uc rs =
+    let pr = pr_of_vcl dl in
+    let id = id_derive
+               ~attrs:(Sattr.singleton attr_w_non_conservative_extension_no)
+               ("refl "^pr.pr_name.id_string) pr.pr_name in
+    let pr = create_prsymbol id in
+    let d = create_prop_decl Paxiom pr t_true in
+    let pd = create_pure_decl d in
+    let uc = add_pdecl ~vc:false uc pd in
+    add_meta uc meta_prog_decl [ MApr pr; MAstr rs.rs_name.id_string ] in
+  let is_rs_refl rs = Sattr.mem attr_reflection rs.rs_name.id_attrs in
+  let uc =
+    try
+      begin match d with
+      | { pd_node = PDlet (LDsym (rs, _)) }
+           when is_rs_refl rs ->
+        add_meta uc rs
+      | { pd_node = PDlet (LDrec rdl) }
+           when List.exists (fun rd -> is_rs_refl rd.rec_sym) rdl ->
+         List.fold_left (fun uc rd -> add_meta uc rd.rec_sym) uc rdl
+      | _ -> uc end
+    with Not_found -> uc in
+  add_pdecl_raw ~warn uc d
 
 (** {2 Cloning} *)
 

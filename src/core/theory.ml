@@ -409,8 +409,9 @@ let add_tdecl uc td = match td.td_node with
 
 (** Declarations *)
 
-let store_path, store_theory, restore_path =
+let store_path, store_theory, restore_path, restore_theory =
   let id_to_path = Wid.create 17 in
+  let id_to_th = Wid.create 17 in
   let store_path uc path id =
     (* this symbol already belongs to some theory *)
     if Wid.mem id_to_path id then () else
@@ -420,10 +421,15 @@ let store_path, store_theory, restore_path =
   let store_theory th =
     let id = th.th_name in
     (* this symbol is already a theory *)
-    if Wid.mem id_to_path id then () else
-    Wid.set id_to_path id (th.th_path, id.id_string, []) in
+    if Wid.mem id_to_path id then () else begin
+      Wid.set id_to_path id (th.th_path, id.id_string, []);
+      Sid.iter (fun id -> Wid.set id_to_th id th) th.th_local;
+      Wid.set id_to_th id th;
+    end
+  in
   let restore_path id = Wid.find id_to_path id in
-  store_path, store_theory, restore_path
+  let restore_theory id = Wid.find id_to_th id in
+  store_path, store_theory, restore_path, restore_theory
 
 let close_theory uc =
   let th = close_theory uc in

@@ -815,7 +815,7 @@ let rec simp_ctx (ctx: context') (g:equality') : (context, equality)
                  Cons (simp_eq eq) rt, rg
   end
 
-let decision (l:context') (g:equality')
+let decision [@reflection] (l:context') (g:equality')
   requires { valid_ctx' l }
   requires { valid_eq' g }
   requires { length l < 100000 }
@@ -1101,7 +1101,7 @@ let rec m_ctx (ctx:context') (g:equality') : (R.context', R.equality')
     (Cons (m_eq h) c',g')
     end
 
-let int_decision (l: context') (g: equality') : bool
+let int_decision [@reflection] (l: context') (g: equality') : bool
   requires { valid_ctx' l }
   requires { valid_eq' g }
   requires { length l < 100000 }
@@ -1545,7 +1545,7 @@ let rec function m_ctx (ctx:context') : R.context'
     r
     end
 
-let mp_decision (l: context') (g: equality') : bool
+let mp_decision [@reflection] (l: context') (g: equality') : bool
   requires { valid_ctx' l }
   requires { valid_eq' g }
   requires { length l < 100000 }
@@ -1957,7 +1957,7 @@ let prop_ctx (l:context') (g:equality') : (context', equality')
 
   use LinearDecisionRationalMP as R
 
-  let prop_mp_decision (l:context') (g:equality') : bool
+  let prop_mp_decision [@reflection] (l:context') (g:equality') : bool
     requires { valid_ctx' l }
     requires { valid_eq' g }
     requires { length l < 100000 }
@@ -2045,7 +2045,7 @@ function interp_fmla (f:fmla) (l:int) (b:int->value) : bool =
 function interp (f:fmla) (b: int -> value) : bool =
   interp_fmla f (-1) b
 
-let f (f:fmla) : bool
+let f [@reflection] (f:fmla) : bool
   ensures { result -> forall b. interp f b }
 = false
 end
