@@ -452,10 +452,6 @@ let attr_reflection = create_attribute "reflection"
 let meta_prog_decl = register_meta ~desc:"program declaration"
                        "prog_decl" [MTprsymbol; MTstring]
 
-let pr_of_vcl : pdecl list -> prsymbol = function
-  | { pd_pure = { d_node = Dprop (Pgoal, pr, _)} :: _ } :: _ -> pr
-  | _ -> raise Not_found
-
 let mk_vc uc d = Vc.vc uc.muc_env uc.muc_known uc.muc_theory d
 
 let rec add_pdecl ?(warn=true) ~vc uc d =
@@ -467,22 +463,22 @@ let rec add_pdecl ?(warn=true) ~vc uc d =
      importing them automatically seems to be too invasive. *)
   let uc = List.fold_left (add_pdecl_raw ~warn) uc dl in
   let add_meta uc rs =
-    let pr = pr_of_vcl dl in
     let id = id_derive
                ~attrs:(Sattr.singleton attr_w_non_conservative_extension_no)
-               ("refl "^pr.pr_name.id_string) pr.pr_name in
+               ("refl "^rs.rs_name.id_string) rs.rs_name in
     let pr = create_prsymbol id in
     let d = create_prop_decl Paxiom pr t_true in
     let pd = create_pure_decl d in
     let uc = add_pdecl ~vc:false uc pd in
     add_meta uc meta_prog_decl [ MApr pr; MAstr rs.rs_name.id_string ] in
+  let add_meta uc rs = try add_meta uc rs with ClashSymbol _ -> uc in
   let is_rs_refl rs = Sattr.mem attr_reflection rs.rs_name.id_attrs in
   let uc =
     try
       begin match d with
       | { pd_node = PDlet (LDsym (rs, _)) }
            when is_rs_refl rs ->
-        add_meta uc rs
+         add_meta uc rs
       | { pd_node = PDlet (LDrec rdl) }
            when List.exists (fun rd -> is_rs_refl rd.rec_sym) rdl ->
          List.fold_left (fun uc rd -> add_meta uc rd.rec_sym) uc rdl

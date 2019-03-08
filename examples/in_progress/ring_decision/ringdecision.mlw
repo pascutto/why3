@@ -446,7 +446,7 @@ let lemma norm' (x1 x2: t')
     ensures  { eq' x1 x2 }
 = ()
 
-let norm_f (x1 x2: t) : bool
+let norm_f [@reflection] (x1 x2: t) : bool
   ensures { forall y: vars. result = true -> interp x1 y = interp x2 y }
 = match normalize' (conv (Sub x1 x2)) with
   | Nil -> true
@@ -472,4 +472,3 @@ clone export AssocAlgebraDecision with type r = int, type a = int, val rzero = I
 goal g: forall x y. x + y = y + x
 goal h: forall x y z. x $$ (y * z) = (x $$ y) * z
 end
-
