@@ -1,0 +1,27 @@
+(executables
+        (public_names why3config why3execute why3extract why3prove why3realize why3wc)
+        (libraries why3)
+        (modules  why3config why3execute why3extract why3prove why3realize why3wc)
+        (flags -linkall -open Why3.V1)
+        (package why3)
+)
+
+(executable
+        (name main)
+        (public_name why3)
+        (libraries why3)
+        (modules main)
+        (flags -linkall -open Why3.V1)
+        (package why3)
+)
+
+
+(ocamllex why3wc)
+
+(executable
+        (public_name why3replay)
+        (libraries why3)
+        (modules why3replay unix_scheduler)
+        (flags -linkall -open Why3.V1)
+        (package why3)
+)

@@ -38,7 +38,7 @@ why3.conf
 /distrib
 /why3regtests.err
 /why3regtests.out
-/.merlin
+.merlin
 /src/jessie/.merlin
 
 # /bench/
