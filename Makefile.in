@@ -725,7 +725,7 @@ ifeq (@enable_ide@,yes)
 
 IDEGENERATED = src/ide/gtkcompat.ml
 
-IDE_FILES = gtkcompat gconfig ide_utils why3ide
+IDE_FILES = gtkcompat gconfig ide_utils why3_resetgc why3ide
 
 IDEMODULES = $(addprefix src/ide/, $(IDE_FILES))
 
