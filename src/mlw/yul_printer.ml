@@ -88,6 +88,315 @@ type info = {
   info_current_ph   : string list; (* current path *)
 }
 
+module EVM = struct
+
+  type instruction =
+   | STOP
+   | ADD
+   | SUB
+   | MUL
+   | DIV
+   | SDIV
+   | MOD
+   | SMOD
+   | EXP
+   | NOT
+   | LT
+   | GT
+   | SLT
+   | SGT
+   | EQ
+   | ISZERO
+   | AND
+   | OR
+   | XOR
+   | BYTE
+   | SHL
+   | SHR
+   | SAR
+   | ADDMOD
+   | MULMOD
+   | SIGNEXTEND
+   | KECCAK256
+   | ADDRESS
+   | BALANCE
+   | ORIGIN
+   | CALLER
+   | CALLVALUE
+   | CALLDATALOAD
+   | CALLDATASIZE
+   | CALLDATACOPY
+   | CODESIZE
+   | CODECOPY
+   | GASPRICE
+   | EXTCODESIZE
+   | EXTCODECOPY
+   | RETURNDATASIZE
+   | RETURNDATACOPY
+   | EXTCODEHASH
+   | BLOCKHASH
+   | COINBASE
+   | TIMESTAMP
+   | NUMBER
+   | DIFFICULTY
+   | GASLIMIT
+   | POP
+   | MLOAD
+   | MSTORE
+   | MSTORE8
+   | SLOAD
+   | SSTORE
+   | JUMP
+   | JUMPI
+   | PC
+   | MSIZE
+   | GAS
+   | JUMPDEST
+   | PUSH1
+   | PUSH2
+   | PUSH3
+   | PUSH4
+   | PUSH5
+   | PUSH6
+   | PUSH7
+   | PUSH8
+   | PUSH9
+   | PUSH10
+   | PUSH11
+   | PUSH12
+   | PUSH13
+   | PUSH14
+   | PUSH15
+   | PUSH16
+   | PUSH17
+   | PUSH18
+   | PUSH19
+   | PUSH20
+   | PUSH21
+   | PUSH22
+   | PUSH23
+   | PUSH24
+   | PUSH25
+   | PUSH26
+   | PUSH27
+   | PUSH28
+   | PUSH29
+   | PUSH30
+   | PUSH31
+   | PUSH32
+   | DUP1
+   | DUP2
+   | DUP3
+   | DUP4
+   | DUP5
+   | DUP6
+   | DUP7
+   | DUP8
+   | DUP9
+   | DUP10
+   | DUP11
+   | DUP12
+   | DUP13
+   | DUP14
+   | DUP15
+   | DUP16
+   | SWAP1
+   | SWAP2
+   | SWAP3
+   | SWAP4
+   | SWAP5
+   | SWAP6
+   | SWAP7
+   | SWAP8
+   | SWAP9
+   | SWAP10
+   | SWAP11
+   | SWAP12
+   | SWAP13
+   | SWAP14
+   | SWAP15
+   | SWAP16
+   | LOG0
+   | LOG1
+   | LOG2
+   | LOG3
+   | LOG4
+   | CREATE
+   | CALL
+   | CALLCODE
+   | RETURN
+   | DELEGATECALL
+   | STATICCALL
+   | CREATE2
+   | REVERT
+   | INVALID
+   | SELFDESTRUCT
+
+type price =
+  | PriceZero
+  | PriceVeryLow
+  | PriceLow
+  | PriceMid
+  | PriceHigh
+  | PriceSpecial
+  | PriceBase
+  | PriceExtCode
+  | PriceExt
+  | PriceBalance
+
+type info =
+  {
+    name: string;
+    pushed: int;
+    args: int;
+    ret: int;
+    sideeffects: bool;
+    price: price;
+  }
+
+let get_info = function
+  | STOP -> { name = "STOP"; pushed = 0; args = 0; ret = 0; sideeffects = true; price = PriceZero }
+  | ADD -> { name = "ADD"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | SUB -> { name = "SUB"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | MUL -> { name = "MUL"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow }
+  | DIV -> { name = "DIV"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow }
+  | SDIV -> { name = "SDIV"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow }
+  | MOD -> { name = "MOD"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow }
+  | SMOD -> { name = "SMOD"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow }
+  | EXP -> { name = "EXP"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceSpecial }
+  | NOT -> { name = "NOT"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | LT -> { name =  "LT"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | GT -> { name =  "GT"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | SLT -> { name = "SLT"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | SGT -> { name = "SGT"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | EQ -> { name =  "EQ"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | ISZERO -> { name = "ISZERO"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | AND -> { name = "AND"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | OR -> { name =  "OR"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | XOR -> { name = "XOR"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | BYTE -> { name = "BYTE"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | SHL -> { name = "SHL"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | SHR -> { name = "SHR"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | SAR -> { name = "SAR"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | ADDMOD -> { name = "ADDMOD"; pushed = 0; args = 3; ret = 1; sideeffects = false; price = PriceMid }
+  | MULMOD -> { name = "MULMOD"; pushed = 0; args = 3; ret = 1; sideeffects = false; price = PriceMid }
+  | SIGNEXTEND -> { name = "SIGNEXTEND"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow }
+  | KECCAK256 -> { name = "KECCAK256"; pushed = 0; args = 2; ret = 1; sideeffects = true; price = PriceSpecial }
+  | ADDRESS -> { name = "ADDRESS"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | BALANCE -> { name = "BALANCE"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceBalance }
+  | ORIGIN -> { name = "ORIGIN"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | CALLER -> { name = "CALLER"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | CALLVALUE -> { name = "CALLVALUE"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | CALLDATALOAD -> { name = "CALLDATALOAD"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | CALLDATASIZE -> { name = "CALLDATASIZE"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | CALLDATACOPY -> { name = "CALLDATACOPY"; pushed = 0; args = 3; ret = 0; sideeffects = true; price = PriceVeryLow }
+  | CODESIZE -> { name = "CODESIZE"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | CODECOPY -> { name = "CODECOPY"; pushed = 0; args = 3; ret = 0; sideeffects = true; price = PriceVeryLow }
+  | GASPRICE -> { name = "GASPRICE"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | EXTCODESIZE -> { name = "EXTCODESIZE"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceExtCode }
+  | EXTCODECOPY -> { name = "EXTCODECOPY"; pushed = 0; args = 4; ret = 0; sideeffects = true; price = PriceExtCode }
+  | RETURNDATASIZE -> { name = "RETURNDATASIZE"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | RETURNDATACOPY -> { name = "RETURNDATACOPY"; pushed = 0; args = 3; ret = 0; sideeffects = true; price = PriceVeryLow }
+  | EXTCODEHASH -> { name = "EXTCODEHASH"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceBalance }
+  | BLOCKHASH -> { name = "BLOCKHASH"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceExt }
+  | COINBASE -> { name = "COINBASE"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | TIMESTAMP -> { name = "TIMESTAMP"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | NUMBER -> { name = "NUMBER"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | DIFFICULTY -> { name = "DIFFICULTY"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | GASLIMIT -> { name = "GASLIMIT"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | POP -> { name = "POP"; pushed = 0; args = 1; ret = 0; sideeffects = false; price = PriceBase }
+  | MLOAD -> { name = "MLOAD"; pushed = 0; args = 1; ret = 1; sideeffects = true; price = PriceVeryLow }
+  | MSTORE -> { name = "MSTORE"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceVeryLow }
+  | MSTORE8 -> { name = "MSTORE8"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceVeryLow }
+  | SLOAD -> { name = "SLOAD"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceSpecial }
+  | SSTORE -> { name = "SSTORE"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceSpecial }
+  | JUMP -> { name = "JUMP"; pushed = 0; args = 1; ret = 0; sideeffects = true; price = PriceMid }
+  | JUMPI -> { name = "JUMPI"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceHigh }
+  | PC -> { name =  "PC"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | MSIZE -> { name = "MSIZE"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | GAS -> { name = "GAS"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
+  | JUMPDEST -> { name = "JUMPDEST"; pushed = 0; args = 0; ret = 0; sideeffects = true; price = PriceSpecial }
+  | PUSH1 -> { name = "PUSH1"; pushed = 1; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH2 -> { name = "PUSH2"; pushed = 2; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH3 -> { name = "PUSH3"; pushed = 3; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH4 -> { name = "PUSH4"; pushed = 4; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH5 -> { name = "PUSH5"; pushed = 5; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH6 -> { name = "PUSH6"; pushed = 6; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH7 -> { name = "PUSH7"; pushed = 7; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH8 -> { name = "PUSH8"; pushed = 8; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH9 -> { name = "PUSH9"; pushed = 9; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH10 -> { name = "PUSH10"; pushed = 10; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH11 -> { name = "PUSH11"; pushed = 11; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH12 -> { name = "PUSH12"; pushed = 12; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH13 -> { name = "PUSH13"; pushed = 13; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH14 -> { name = "PUSH14"; pushed = 14; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH15 -> { name = "PUSH15"; pushed = 15; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH16 -> { name = "PUSH16"; pushed = 16; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH17 -> { name = "PUSH17"; pushed = 17; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH18 -> { name = "PUSH18"; pushed = 18; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH19 -> { name = "PUSH19"; pushed = 19; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH20 -> { name = "PUSH20"; pushed = 20; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH21 -> { name = "PUSH21"; pushed = 21; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH22 -> { name = "PUSH22"; pushed = 22; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH23 -> { name = "PUSH23"; pushed = 23; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH24 -> { name = "PUSH24"; pushed = 24; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH25 -> { name = "PUSH25"; pushed = 25; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH26 -> { name = "PUSH26"; pushed = 26; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH27 -> { name = "PUSH27"; pushed = 27; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH28 -> { name = "PUSH28"; pushed = 28; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH29 -> { name = "PUSH29"; pushed = 29; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH30 -> { name = "PUSH30"; pushed = 30; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH31 -> { name = "PUSH31"; pushed = 31; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH32 -> { name = "PUSH32"; pushed = 32; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | DUP1 -> { name = "DUP1"; pushed = 0; args = 1; ret = 2; sideeffects = false; price = PriceVeryLow }
+  | DUP2 -> { name = "DUP2"; pushed = 0; args = 2; ret = 3; sideeffects = false; price = PriceVeryLow }
+  | DUP3 -> { name = "DUP3"; pushed = 0; args = 3; ret = 4; sideeffects = false; price = PriceVeryLow }
+  | DUP4 -> { name = "DUP4"; pushed = 0; args = 4; ret = 5; sideeffects = false; price = PriceVeryLow }
+  | DUP5 -> { name = "DUP5"; pushed = 0; args = 5; ret = 6; sideeffects = false; price = PriceVeryLow }
+  | DUP6 -> { name = "DUP6"; pushed = 0; args = 6; ret = 7; sideeffects = false; price = PriceVeryLow }
+  | DUP7 -> { name = "DUP7"; pushed = 0; args = 7; ret = 8; sideeffects = false; price = PriceVeryLow }
+  | DUP8 -> { name = "DUP8"; pushed = 0; args = 8; ret = 9; sideeffects = false; price = PriceVeryLow }
+  | DUP9 -> { name = "DUP9"; pushed = 0; args = 9; ret = 10; sideeffects = false; price = PriceVeryLow }
+  | DUP10 -> { name = "DUP10"; pushed = 0; args = 10; ret = 11; sideeffects = false; price = PriceVeryLow }
+  | DUP11 -> { name = "DUP11"; pushed = 0; args = 11; ret = 12; sideeffects = false; price = PriceVeryLow }
+  | DUP12 -> { name = "DUP12"; pushed = 0; args = 12; ret = 13; sideeffects = false; price = PriceVeryLow }
+  | DUP13 -> { name = "DUP13"; pushed = 0; args = 13; ret = 14; sideeffects = false; price = PriceVeryLow }
+  | DUP14 -> { name = "DUP14"; pushed = 0; args = 14; ret = 15; sideeffects = false; price = PriceVeryLow }
+  | DUP15 -> { name = "DUP15"; pushed = 0; args = 15; ret = 16; sideeffects = false; price = PriceVeryLow }
+  | DUP16 -> { name = "DUP16"; pushed = 0; args = 16; ret = 17; sideeffects = false; price = PriceVeryLow }
+  | SWAP1 -> { name = "SWAP1"; pushed = 0; args = 2; ret = 2; sideeffects = false; price = PriceVeryLow }
+  | SWAP2 -> { name = "SWAP2"; pushed = 0; args = 3; ret = 3; sideeffects = false; price = PriceVeryLow }
+  | SWAP3 -> { name = "SWAP3"; pushed = 0; args = 4; ret = 4; sideeffects = false; price = PriceVeryLow }
+  | SWAP4 -> { name = "SWAP4"; pushed = 0; args = 5; ret = 5; sideeffects = false; price = PriceVeryLow }
+  | SWAP5 -> { name = "SWAP5"; pushed = 0; args = 6; ret = 6; sideeffects = false; price = PriceVeryLow }
+  | SWAP6 -> { name = "SWAP6"; pushed = 0; args = 7; ret = 7; sideeffects = false; price = PriceVeryLow }
+  | SWAP7 -> { name = "SWAP7"; pushed = 0; args = 8; ret = 8; sideeffects = false; price = PriceVeryLow }
+  | SWAP8 -> { name = "SWAP8"; pushed = 0; args = 9; ret = 9; sideeffects = false; price = PriceVeryLow }
+  | SWAP9 -> { name = "SWAP9"; pushed = 0; args = 10; ret = 10; sideeffects = false; price = PriceVeryLow }
+  | SWAP10 -> { name = "SWAP10"; pushed = 0; args = 11; ret = 11; sideeffects = false; price = PriceVeryLow }
+  | SWAP11 -> { name = "SWAP11"; pushed = 0; args = 12; ret = 12; sideeffects = false; price = PriceVeryLow }
+  | SWAP12 -> { name = "SWAP12"; pushed = 0; args = 13; ret = 13; sideeffects = false; price = PriceVeryLow }
+  | SWAP13 -> { name = "SWAP13"; pushed = 0; args = 14; ret = 14; sideeffects = false; price = PriceVeryLow }
+  | SWAP14 -> { name = "SWAP14"; pushed = 0; args = 15; ret = 15; sideeffects = false; price = PriceVeryLow }
+  | SWAP15 -> { name = "SWAP15"; pushed = 0; args = 16; ret = 16; sideeffects = false; price = PriceVeryLow }
+  | SWAP16 -> { name = "SWAP16"; pushed = 0; args = 17; ret = 17; sideeffects = false; price = PriceVeryLow }
+  | LOG0 -> { name = "LOG0"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceSpecial }
+  | LOG1 -> { name = "LOG1"; pushed = 0; args = 3; ret = 0; sideeffects = true; price = PriceSpecial }
+  | LOG2 -> { name = "LOG2"; pushed = 0; args = 4; ret = 0; sideeffects = true; price = PriceSpecial }
+  | LOG3 -> { name = "LOG3"; pushed = 0; args = 5; ret = 0; sideeffects = true; price = PriceSpecial }
+  | LOG4 -> { name = "LOG4"; pushed = 0; args = 6; ret = 0; sideeffects = true; price = PriceSpecial }
+  | CREATE -> { name = "CREATE"; pushed = 0; args = 3; ret = 1; sideeffects = true; price = PriceSpecial }
+  | CALL -> { name = "CALL"; pushed = 0; args = 7; ret = 1; sideeffects = true; price = PriceSpecial }
+  | CALLCODE -> { name = "CALLCODE"; pushed = 0; args = 7; ret = 1; sideeffects = true; price = PriceSpecial }
+  | RETURN -> { name = "RETURN"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceZero }
+  | DELEGATECALL -> { name = "DELEGATECALL"; pushed = 0; args = 6; ret = 1; sideeffects = true; price = PriceSpecial }
+  | STATICCALL -> { name = "STATICCALL"; pushed = 0; args = 6; ret = 1; sideeffects = true; price = PriceSpecial }
+  | CREATE2 -> { name = "CREATE2"; pushed = 0; args = 4; ret = 1; sideeffects = true; price = PriceSpecial }
+  | REVERT -> { name = "REVERT"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceZero }
+  | INVALID -> { name = "INVALID"; pushed = 0; args = 0; ret = 0; sideeffects = true; price = PriceZero }
+  | SELFDESTRUCT -> { name = "SELFDESTRUCT"; pushed = 0; args = 1; ret = 0; sideeffects = true; price = PriceSpecial }
+
+end
 
 
 module Print = struct
