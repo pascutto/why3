@@ -37,6 +37,8 @@ type info = {
   info_current_ph   : string list; (* current path *)
 }
 
+
+
 module Print = struct
 
   open Mltree
@@ -203,7 +205,7 @@ module Print = struct
     let attrs = id.id_attrs in
     if is_optional ~attrs then print_vsty_opt info fmt id ty
     else if is_named ~attrs then print_vsty_named info fmt id ty
-    else fprintf fmt "(%a:@ %a)" (print_lident info) id
+    else fprintf fmt "%a:@ %a" (print_lident info) id
         (print_ty ~paren:false info) ty
 
   let print_tv_arg = print_tv
@@ -387,9 +389,9 @@ module Print = struct
           (print_expr info) e
     | Lsym (rs, res, args, ef) ->
         let is_result = true in (* todo when result is unit *)
-        fprintf fmt "@[<hov 2>function %a @[%a@] -> result:%a@ =@ @[%a@]@]"
+        fprintf fmt "@[<hov 2>function %a (@[%a@]) -> result:%a@ =@ @[%a@]@]"
           (print_lident info) rs.rs_name
-          (print_list space (print_vs_arg info)) args
+          (print_list comma (print_vs_arg info)) args
           (print_ty info) res (print_expr info ~is_result) ef;
         forget_vars args
     | Lrec rdef ->
