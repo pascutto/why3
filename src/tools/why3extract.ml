@@ -153,6 +153,10 @@ let print_preludes =
 
 let print_mdecls ?fname m mdecls deps =
   let pargs, printer = Pdriver.lookup_printer opt_driver in
+  let printer = match printer with
+    | Pdriver.DeclByDecl printer -> printer
+    | Pdriver.OnlyFlat _ -> invalid_arg "printer can't be used in this mode. Only flat allowed"
+  in
   let fg = printer.Pdriver.file_gen in
   let pr = printer.Pdriver.decl_printer in
   let test_decl_not_driver decl =
@@ -387,7 +391,6 @@ let () =
     | Flat ->
         let mm = Queue.fold flat_extraction Mstr.empty opt_queue in
         let (pargs, printer) = Pdriver.lookup_printer opt_driver in
-        let pr = printer.Pdriver.decl_printer in
         let cout = match opt_output with
           | None -> stdout
           | Some file -> open_out file in
@@ -409,11 +412,6 @@ let () =
           Ident.Mid.iter visit_id tm.Mltree.mod_known;
         in
         Mstr.iter visit_m mm;
-        let extract fmt { info_id = id } =
-          let pm = find_module_id mm id in
-          let m = translate_module pm in
-          let d = Ident.Mid.find id m.Mltree.mod_known in
-          pr pargs ~flat:true pm fmt d in
         let idl = List.rev !toextract in
         let is_local { info_id = id; info_rec = r } =
           let (path, m, _) = Pmodule.restore_path id in
@@ -421,7 +419,25 @@ let () =
         let idl = match opt_rec_single with
           | Single -> List.filter is_local idl
           | Recursive | RecursiveDeps -> idl in
-        Pp.print_list Pp.nothing extract fmt idl;
+        begin match printer with
+        | Pdriver.DeclByDecl printer ->
+            let pr = printer.Pdriver.decl_printer in
+            let extract fmt { info_id = id } =
+              let pm = find_module_id mm id in
+              let m = translate_module pm in
+              let d = Ident.Mid.find id m.Mltree.mod_known in
+              pr pargs ~flat:true pm fmt d in
+            Pp.print_list Pp.nothing extract fmt idl
+        | Pdriver.OnlyFlat printer ->
+            let pr = printer.Pdriver.decls_printer_only_flat in
+            let extract { info_id = id } =
+              let pm = find_module_id mm id in
+              let m = translate_module pm in
+              let d = Ident.Mid.find id m.Mltree.mod_known in
+              pm,d in
+            let idl = List.map extract idl in
+            pr pargs fmt idl;
+        end;
         if cout <> stdout then close_out cout
   with e when not (Debug.test_flag Debug.stack_trace) ->
     eprintf "%a@." Exn_printer.exn_printer e;

@@ -66,9 +66,20 @@ type printer =
     interf_printer  : interf_printer option;
     prelude_printer : prelude_printer; }
 
-val register_printer : string -> printer -> unit
+type printer_only_flat = {
+  desc_only_flat     : Pp.formatted;
+  file_gen_only_flat : filename_generator;
+  decls_printer_only_flat : printer_args -> (Pmodule.pmodule * Mltree.decl) list Pp.pp;
+}
 
-val lookup_printer : driver -> printer_args * printer
+type printer_spec =
+  | OnlyFlat of printer_only_flat
+  | DeclByDecl of printer
+
+val register_printer : string -> printer -> unit
+val register_printer_only_flat : string -> printer_only_flat -> unit
+
+val lookup_printer : driver -> printer_args * printer_spec
 
 val list_printers : unit -> (string * Pp.formatted) list
 

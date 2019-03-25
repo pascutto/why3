@@ -11,6 +11,57 @@
 
 (** Printer for extracted Yul code *)
 
+(** Currently we target strict-assembly instead of Yul,
+    because it is not mature enough. For example built-in functions
+    are not defined.
+*)
+
+(** From https://solidity.readthedocs.io/en/latest/assembly.html
+    ethereum Revision cc4d30a7
+
+AssemblyBlock = '{' AssemblyItem* '}'
+AssemblyItem =
+    Identifier |
+    AssemblyBlock |
+    AssemblyExpression |
+    AssemblyLocalDefinition |
+    AssemblyAssignment |
+    AssemblyStackAssignment |
+    LabelDefinition |
+    AssemblyIf |
+    AssemblySwitch |
+    AssemblyFunctionDefinition |
+    AssemblyFor |
+    'break' |
+    'continue' |
+    SubAssembly
+AssemblyExpression = AssemblyCall | Identifier | AssemblyLiteral
+AssemblyLiteral = NumberLiteral | StringLiteral | HexLiteral
+Identifier = [a-zA-Z_$] [a-zA-Z_0-9]*
+AssemblyCall = Identifier '(' ( AssemblyExpression ( ',' AssemblyExpression )* )? ')'
+AssemblyLocalDefinition = 'let' IdentifierOrList ( ':=' AssemblyExpression )?
+AssemblyAssignment = IdentifierOrList ':=' AssemblyExpression
+IdentifierOrList = Identifier | '(' IdentifierList ')'
+IdentifierList = Identifier ( ',' Identifier)*
+AssemblyStackAssignment = '=:' Identifier
+LabelDefinition = Identifier ':'
+AssemblyIf = 'if' AssemblyExpression AssemblyBlock
+AssemblySwitch = 'switch' AssemblyExpression AssemblyCase*
+    ( 'default' AssemblyBlock )?
+AssemblyCase = 'case' AssemblyExpression AssemblyBlock
+AssemblyFunctionDefinition = 'function' Identifier '(' IdentifierList? ')'
+    ( '->' '(' IdentifierList ')' )? AssemblyBlock
+AssemblyFor = 'for' ( AssemblyBlock | AssemblyExpression )
+    AssemblyExpression ( AssemblyBlock | AssemblyExpression ) AssemblyBlock
+SubAssembly = 'assembly' Identifier AssemblyBlock
+NumberLiteral = HexNumber | DecimalNumber
+HexLiteral = 'hex' ('"' ([0-9a-fA-F]{2})* '"' | '\'' ([0-9a-fA-F]{2})* '\'')
+StringLiteral = '"' ([^"\r\n\\] | '\\' .)* '"'
+HexNumber = '0x' [0-9a-fA-F]+
+DecimalNumber = [0-9]+
+
+*)
+
 open Compile
 open Format
 open Ident
@@ -205,8 +256,8 @@ module Print = struct
     let attrs = id.id_attrs in
     if is_optional ~attrs then print_vsty_opt info fmt id ty
     else if is_named ~attrs then print_vsty_named info fmt id ty
-    else fprintf fmt "%a:@ %a" (print_lident info) id
-        (print_ty ~paren:false info) ty
+    else fprintf fmt "%a" (print_lident info) id
+        (* (print_ty ~paren:false info) ty *)
 
   let print_tv_arg = print_tv
   let print_tv_args fmt = function
@@ -228,7 +279,7 @@ module Print = struct
 
   let rec print_pat ?(paren=false) info fmt = function
     | Pwild ->
-        fprintf fmt "_"
+        fprintf fmt "$wild"
     | Pvar {vs_name=id} ->
         (print_lident info) fmt id
     | Pas (p, {vs_name=id}) ->
@@ -383,16 +434,17 @@ module Print = struct
 
   and print_let_def ?(functor_arg=false) info fmt = function
     | Lvar (pv, e) ->
-        fprintf fmt "@[<hov 2>let %a : %a :=@ %a@]"
+        fprintf fmt "@[<hov 2>let %a :=@ %a@]"
           (print_lident info) (pv_name pv)
-          print_ity pv.pv_ity
+          (* print_ity pv.pv_ity *)
           (print_expr info) e
-    | Lsym (rs, res, args, ef) ->
+    | Lsym (rs, _res, args, ef) ->
         let is_result = true in (* todo when result is unit *)
-        fprintf fmt "@[<hov 2>function %a (@[%a@]) -> result:%a@ =@ @[%a@]@]"
+        fprintf fmt "@[<hov 2>function %a (@[%a@]) -> result@ {@[%a@]}@]"
           (print_lident info) rs.rs_name
           (print_list comma (print_vs_arg info)) args
-          (print_ty info) res (print_expr info ~is_result) ef;
+          (* (print_ty info) res *)
+          (print_expr info ~is_result) ef;
         forget_vars args
     | Lrec rdef ->
         let print_one fst fmt = function
@@ -679,8 +731,7 @@ end
 
 let print_decl =
   let memo = Hashtbl.create 16 in
-  fun pargs ?old ?fname ~flat ({mod_theory = th} as m) fmt d ->
-    ignore (old);
+  fun pargs fmt (({mod_theory = th} as m),d) ->
     let info = {
       info_syn          = pargs.Pdriver.syntax;
       info_literal      = pargs.Pdriver.literal;
@@ -688,29 +739,39 @@ let print_decl =
       info_current_mo   = Some m;
       info_th_known_map = th.th_known;
       info_mo_known_map = m.mod_known;
-      info_fname        = Opt.map Compile.clean_name fname;
-      info_flat         = flat;
+      info_fname        = None;
+      info_flat         = true;
       info_current_ph   = [];
     } in
     if not (Hashtbl.mem memo d) then begin Hashtbl.add memo d ();
       Print.print_decl info fmt d end
+
+let print_decls pargs fmt l =
+  Format.fprintf fmt "{%a}"
+  (Pp.print_list Pp.nothing (print_decl pargs)) l
+
 
 let ng suffix ?fname m =
   let mod_name = m.mod_theory.th_name.id_string in
   let path     = m.mod_theory.th_path in
   (module_name ?fname path mod_name) ^ suffix
 
-let file_gen = ng ".ml"
-let mli_gen = ng ".mli"
+let file_gen = ng ".yul"
 
 open Pdriver
 
 let yul_printer =
-  { desc            = "printer for YUL code";
-    file_gen        = file_gen;
-    decl_printer    = print_decl;
-    interf_gen      = Some mli_gen;
-    interf_printer  = None;
-    prelude_printer = print_empty_prelude }
+  { desc_only_flat      = "printer for YUL code";
+    file_gen_only_flat  = file_gen;
+    decls_printer_only_flat = print_decls;
+  }
 
-let () = Pdriver.register_printer "yul" yul_printer
+let () = Pdriver.register_printer_only_flat "yul" yul_printer
+
+
+(**
+
+let i = (Cryptokit.hash_string (Cryptokit.Hash.keccak 256) "g(uint256)");;
+let f j = Int32.shift_left (Int32.of_int (Char.code i.[j])) j;;
+
+*)

@@ -253,8 +253,17 @@ type printer =
     interf_printer  : interf_printer option;
     prelude_printer : prelude_printer; }
 
+type printer_only_flat = {
+  desc_only_flat     : Pp.formatted;
+  file_gen_only_flat : filename_generator;
+  decls_printer_only_flat : printer_args -> (Pmodule.pmodule * Mltree.decl) list Pp.pp;
+}
 
-let printers : printer Hstr.t = Hstr.create 17
+type printer_spec =
+  | OnlyFlat of printer_only_flat
+  | DeclByDecl of printer
+
+let printers : printer_spec Hstr.t = Hstr.create 17
 
 exception KnownPrinter of string
 exception UnknownPrinter of string
@@ -262,7 +271,11 @@ exception NoPrinter
 
 let register_printer s p =
   if Hstr.mem printers s then raise (KnownPrinter s);
-  Hstr.replace printers s p
+  Hstr.replace printers s (DeclByDecl p)
+
+let register_printer_only_flat s p =
+  if Hstr.mem printers s then raise (KnownPrinter s);
+  Hstr.replace printers s (OnlyFlat p)
 
 let lookup_printer drv =
   let p = match drv.drv_printer with
@@ -284,7 +297,7 @@ let lookup_printer drv =
   with Not_found -> raise (UnknownPrinter p)
 
 let list_printers () =
-  Hstr.fold (fun k { desc = desc; _ } acc -> (k,desc)::acc) printers []
+  Hstr.fold (fun k (DeclByDecl { desc = desc; _ } | OnlyFlat { desc_only_flat = desc; _ }) acc -> (k,desc)::acc) printers []
 
 (* exception report *)
 
