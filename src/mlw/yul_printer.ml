@@ -152,38 +152,38 @@ module EVM = struct
    | MSIZE
    | GAS
    | JUMPDEST
-   | PUSH1
-   | PUSH2
-   | PUSH3
-   | PUSH4
-   | PUSH5
-   | PUSH6
-   | PUSH7
-   | PUSH8
-   | PUSH9
-   | PUSH10
-   | PUSH11
-   | PUSH12
-   | PUSH13
-   | PUSH14
-   | PUSH15
-   | PUSH16
-   | PUSH17
-   | PUSH18
-   | PUSH19
-   | PUSH20
-   | PUSH21
-   | PUSH22
-   | PUSH23
-   | PUSH24
-   | PUSH25
-   | PUSH26
-   | PUSH27
-   | PUSH28
-   | PUSH29
-   | PUSH30
-   | PUSH31
-   | PUSH32
+   | PUSH1 of BigInt.t
+   | PUSH2 of BigInt.t
+   | PUSH3 of BigInt.t
+   | PUSH4 of BigInt.t
+   | PUSH5 of BigInt.t
+   | PUSH6 of BigInt.t
+   | PUSH7 of BigInt.t
+   | PUSH8 of BigInt.t
+   | PUSH9 of BigInt.t
+   | PUSH10 of BigInt.t
+   | PUSH11 of BigInt.t
+   | PUSH12 of BigInt.t
+   | PUSH13 of BigInt.t
+   | PUSH14 of BigInt.t
+   | PUSH15 of BigInt.t
+   | PUSH16 of BigInt.t
+   | PUSH17 of BigInt.t
+   | PUSH18 of BigInt.t
+   | PUSH19 of BigInt.t
+   | PUSH20 of BigInt.t
+   | PUSH21 of BigInt.t
+   | PUSH22 of BigInt.t
+   | PUSH23 of BigInt.t
+   | PUSH24 of BigInt.t
+   | PUSH25 of BigInt.t
+   | PUSH26 of BigInt.t
+   | PUSH27 of BigInt.t
+   | PUSH28 of BigInt.t
+   | PUSH29 of BigInt.t
+   | PUSH30 of BigInt.t
+   | PUSH31 of BigInt.t
+   | PUSH32 of BigInt.t
    | DUP1
    | DUP2
    | DUP3
@@ -316,38 +316,38 @@ let get_info = function
   | MSIZE -> { name = "MSIZE"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
   | GAS -> { name = "GAS"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase }
   | JUMPDEST -> { name = "JUMPDEST"; pushed = 0; args = 0; ret = 0; sideeffects = true; price = PriceSpecial }
-  | PUSH1 -> { name = "PUSH1"; pushed = 1; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH2 -> { name = "PUSH2"; pushed = 2; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH3 -> { name = "PUSH3"; pushed = 3; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH4 -> { name = "PUSH4"; pushed = 4; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH5 -> { name = "PUSH5"; pushed = 5; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH6 -> { name = "PUSH6"; pushed = 6; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH7 -> { name = "PUSH7"; pushed = 7; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH8 -> { name = "PUSH8"; pushed = 8; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH9 -> { name = "PUSH9"; pushed = 9; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH10 -> { name = "PUSH10"; pushed = 10; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH11 -> { name = "PUSH11"; pushed = 11; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH12 -> { name = "PUSH12"; pushed = 12; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH13 -> { name = "PUSH13"; pushed = 13; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH14 -> { name = "PUSH14"; pushed = 14; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH15 -> { name = "PUSH15"; pushed = 15; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH16 -> { name = "PUSH16"; pushed = 16; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH17 -> { name = "PUSH17"; pushed = 17; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH18 -> { name = "PUSH18"; pushed = 18; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH19 -> { name = "PUSH19"; pushed = 19; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH20 -> { name = "PUSH20"; pushed = 20; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH21 -> { name = "PUSH21"; pushed = 21; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH22 -> { name = "PUSH22"; pushed = 22; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH23 -> { name = "PUSH23"; pushed = 23; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH24 -> { name = "PUSH24"; pushed = 24; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH25 -> { name = "PUSH25"; pushed = 25; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH26 -> { name = "PUSH26"; pushed = 26; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH27 -> { name = "PUSH27"; pushed = 27; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH28 -> { name = "PUSH28"; pushed = 28; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH29 -> { name = "PUSH29"; pushed = 29; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH30 -> { name = "PUSH30"; pushed = 30; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH31 -> { name = "PUSH31"; pushed = 31; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
-  | PUSH32 -> { name = "PUSH32"; pushed = 32; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH1 _ -> { name = "PUSH1"; pushed = 1; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH2 _ -> { name = "PUSH2"; pushed = 2; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH3 _ -> { name = "PUSH3"; pushed = 3; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH4 _ -> { name = "PUSH4"; pushed = 4; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH5 _ -> { name = "PUSH5"; pushed = 5; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH6 _ -> { name = "PUSH6"; pushed = 6; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH7 _ -> { name = "PUSH7"; pushed = 7; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH8 _ -> { name = "PUSH8"; pushed = 8; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH9 _ -> { name = "PUSH9"; pushed = 9; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH10 _ -> { name = "PUSH10"; pushed = 10; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH11 _ -> { name = "PUSH11"; pushed = 11; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH12 _ -> { name = "PUSH12"; pushed = 12; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH13 _ -> { name = "PUSH13"; pushed = 13; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH14 _ -> { name = "PUSH14"; pushed = 14; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH15 _ -> { name = "PUSH15"; pushed = 15; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH16 _ -> { name = "PUSH16"; pushed = 16; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH17 _ -> { name = "PUSH17"; pushed = 17; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH18 _ -> { name = "PUSH18"; pushed = 18; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH19 _ -> { name = "PUSH19"; pushed = 19; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH20 _ -> { name = "PUSH20"; pushed = 20; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH21 _ -> { name = "PUSH21"; pushed = 21; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH22 _ -> { name = "PUSH22"; pushed = 22; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH23 _ -> { name = "PUSH23"; pushed = 23; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH24 _ -> { name = "PUSH24"; pushed = 24; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH25 _ -> { name = "PUSH25"; pushed = 25; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH26 _ -> { name = "PUSH26"; pushed = 26; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH27 _ -> { name = "PUSH27"; pushed = 27; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH28 _ -> { name = "PUSH28"; pushed = 28; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH29 _ -> { name = "PUSH29"; pushed = 29; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH30 _ -> { name = "PUSH30"; pushed = 30; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH31 _ -> { name = "PUSH31"; pushed = 31; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
+  | PUSH32 _ -> { name = "PUSH32"; pushed = 32; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow }
   | DUP1 -> { name = "DUP1"; pushed = 0; args = 1; ret = 2; sideeffects = false; price = PriceVeryLow }
   | DUP2 -> { name = "DUP2"; pushed = 0; args = 2; ret = 3; sideeffects = false; price = PriceVeryLow }
   | DUP3 -> { name = "DUP3"; pushed = 0; args = 3; ret = 4; sideeffects = false; price = PriceVeryLow }
@@ -398,6 +398,169 @@ let get_info = function
 
 end
 
+module EVMSimple = struct
+
+  type label = {
+    label_name: string;
+    mutable label_addr: int option;
+    (** set once all the code is known *)
+  }
+
+  type instruction =
+   | STOP
+   | ADD
+   | SUB
+   | MUL
+   | DIV
+   | SDIV
+   | MOD
+   | SMOD
+   | EXP
+   | NOT
+   | LT
+   | GT
+   | SLT
+   | SGT
+   | EQ
+   | ISZERO
+   | AND
+   | OR
+   | XOR
+   | BYTE
+   | SHL
+   | SHR
+   | SAR
+   | ADDMOD
+   | MULMOD
+   | SIGNEXTEND
+   | KECCAK256
+   | ADDRESS
+   | BALANCE
+   | ORIGIN
+   | CALLER
+   | CALLVALUE
+   | CALLDATALOAD
+   | CALLDATASIZE
+   | CALLDATACOPY
+   | CODESIZE
+   | CODECOPY
+   | GASPRICE
+   | EXTCODESIZE
+   | EXTCODECOPY
+   | RETURNDATASIZE
+   | RETURNDATACOPY
+   | EXTCODEHASH
+   | BLOCKHASH
+   | COINBASE
+   | TIMESTAMP
+   | NUMBER
+   | DIFFICULTY
+   | GASLIMIT
+   | POP
+   | MLOAD
+   | MSTORE
+   | MSTORE8
+   | SLOAD
+   | SSTORE
+   | JUMPDEST of label
+   | JUMP of label
+   | JUMPI of label
+   | PC
+   | MSIZE
+   | GAS
+   | PUSH1 of BigInt.t
+   | PUSH2 of BigInt.t
+   | PUSH3 of BigInt.t
+   | PUSH4 of BigInt.t
+   | PUSH5 of BigInt.t
+   | PUSH6 of BigInt.t
+   | PUSH7 of BigInt.t
+   | PUSH8 of BigInt.t
+   | PUSH9 of BigInt.t
+   | PUSH10 of BigInt.t
+   | PUSH11 of BigInt.t
+   | PUSH12 of BigInt.t
+   | PUSH13 of BigInt.t
+   | PUSH14 of BigInt.t
+   | PUSH15 of BigInt.t
+   | PUSH16 of BigInt.t
+   | PUSH17 of BigInt.t
+   | PUSH18 of BigInt.t
+   | PUSH19 of BigInt.t
+   | PUSH20 of BigInt.t
+   | PUSH21 of BigInt.t
+   | PUSH22 of BigInt.t
+   | PUSH23 of BigInt.t
+   | PUSH24 of BigInt.t
+   | PUSH25 of BigInt.t
+   | PUSH26 of BigInt.t
+   | PUSH27 of BigInt.t
+   | PUSH28 of BigInt.t
+   | PUSH29 of BigInt.t
+   | PUSH30 of BigInt.t
+   | PUSH31 of BigInt.t
+   | PUSH32 of BigInt.t
+   | DUP1
+   | DUP2
+   | DUP3
+   | DUP4
+   | DUP5
+   | DUP6
+   | DUP7
+   | DUP8
+   | DUP9
+   | DUP10
+   | DUP11
+   | DUP12
+   | DUP13
+   | DUP14
+   | DUP15
+   | DUP16
+   | SWAP1
+   | SWAP2
+   | SWAP3
+   | SWAP4
+   | SWAP5
+   | SWAP6
+   | SWAP7
+   | SWAP8
+   | SWAP9
+   | SWAP10
+   | SWAP11
+   | SWAP12
+   | SWAP13
+   | SWAP14
+   | SWAP15
+   | SWAP16
+   | LOG0
+   | LOG1
+   | LOG2
+   | LOG3
+   | LOG4
+   | CREATE
+   | CALL
+   | CALLCODE
+   | RETURN
+   | DELEGATECALL
+   | STATICCALL
+   | CREATE2
+   | REVERT
+   | INVALID
+   | SELFDESTRUCT
+
+  type asm = {
+    codes: instruction Queue.t;
+  }
+
+  type stack = {
+    asm: asm;
+    stack: int Ity.Mpv.t;
+    bottom: int;
+  }
+
+end
+
+open EVMSimple
 
 module Print = struct
 
@@ -808,6 +971,7 @@ module Print = struct
     | Eabsurd ->
         fprintf fmt (protect_on paren "assert false (* absurd *)")
     | Eapp (rs, []) when rs_equal rs rs_true ->
+        
         fprintf fmt "true:bool"
     | Eapp (rs, []) when rs_equal rs rs_false ->
         fprintf fmt "false:bool"
