@@ -796,29 +796,24 @@ let parse_notification_json j =
   with
   | Not_found -> raise (NotNotification "<from parse_notification_json>")
 
-let parse_json_object (s: string) =
-  let lb = Lexing.from_string s in
-  let x = Json_parser.value (fun x -> Json_lexer.read x) lb in
-  x
-
 let parse_notification (s: string) : notification =
-  let json = parse_json_object s in
+  let json = Json_lexer.parse_json_object s in
   parse_notification_json json
 
 let parse_request (s: string) : ide_request =
-  let json = parse_json_object s in
+  let json = Json_lexer.parse_json_object s in
   parse_request_json json
 
 
 let parse_list_notification (s: string): notification list =
-  let json = parse_json_object s in
+  let json = Json_lexer.parse_json_object s in
   match json with
   | List [Null] -> []
   | List l -> List.map parse_notification_json l
   | _ -> raise (NotNotification "Not list")
 
 let parse_list_request (s: string): ide_request list =
-  let json = parse_json_object s in
+  let json = Json_lexer.parse_json_object s in
   match json with
   | List l -> List.map parse_request_json l
   | _ -> raise (NotRequest "Not list")

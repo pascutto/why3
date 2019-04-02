@@ -64,3 +64,14 @@ and read_string buf =
     }
   | _ { raise (SyntaxError ("Illegal string character: " ^ (Buffer.contents buf) ^ Lexing.lexeme lexbuf)) }
   | eof { raise (SyntaxError ("String is not terminated")) }
+
+{
+
+let parse_json_object (s: string) =
+  let lb = Lexing.from_string s in
+  let x = Json_parser.value (fun x -> read x) lb in
+  x
+
+
+
+}
