@@ -621,7 +621,7 @@ module Print = struct
 
   let forget_let_defn = function
     | Lvar (v,_) -> forget_id v.pv_vs.vs_name
-    | Lsym (s,_,_,_) | Lany (s,_,_) -> forget_rs s
+    | Lsym (s,_,_,_,_) | Lany (s,_,_,_) -> forget_rs s
     | Lrec rdl -> List.iter (fun fd -> forget_rs fd.rec_sym) rdl
 
   let rec forget_pat = function
@@ -922,7 +922,7 @@ module Print = struct
           (print_lident info) (pv_name pv)
           (* print_ity pv.pv_ity *)
           (print_expr info) e
-    | Lsym (rs, _res, args, ef) ->
+    | Lsym (rs, _, _res, args, ef) ->
         let is_result = true in (* todo when result is unit *)
         fprintf fmt "@[<hov 2>function %a (@[%a@]) -> result@ {@[%a@]}@]"
           (print_lident info) rs.rs_name
@@ -940,11 +940,11 @@ module Print = struct
                 (print_fun_type_args info) (args, s, res, e);
               forget_vars args in
         print_list_next newline print_one fmt rdef;
-    | Lany (rs, res, []) when functor_arg ->
+    | Lany (rs, _, res, []) when functor_arg ->
         fprintf fmt "@[<hov 2>val %a : %a@]"
           (print_lident info) rs.rs_name
           (print_ty info) res;
-    | Lany (rs, res, args) when functor_arg ->
+    | Lany (rs, _, res, args) when functor_arg ->
         let print_ty_arg info fmt (_, ty, _) =
           fprintf fmt "@[%a@]" (print_ty info) ty in
         fprintf fmt "@[<hov 2>val %a : @[%a@] ->@ %a@]"
@@ -952,7 +952,7 @@ module Print = struct
           (print_list arrow (print_ty_arg info)) args
           (print_ty info) res;
         forget_vars args
-    | Lany ({rs_name}, _, _) -> check_val_in_drv info rs_name.id_loc rs_name
+    | Lany ({rs_name}, _, _, _) -> check_val_in_drv info rs_name.id_loc rs_name
 
   and print_expr ?(paren=false) ?(is_result=false) info  fmt e =
     if is_result then begin
