@@ -52,8 +52,8 @@ RUN opam repository add coq-released https://coq.inria.fr/opam/released --all-sw
 
 ARG opam_packages
 RUN opam install -y depext
-RUN opam depext --dry-run menhir conf-gtksourceview lablgtk ocamlgraph zarith camlzip alt-ergo
-RUN opam install -y menhir conf-gtksourceview lablgtk ocamlgraph zarith camlzip alt-ergo
+RUN opam depext --dry-run menhir conf-gtksourceview lablgtk ocamlgraph zarith camlzip alt-ergo dune
+RUN opam install -y menhir conf-gtksourceview lablgtk ocamlgraph zarith camlzip alt-ergo dune
 
 RUN test -z "$opam_packages" || opam depext --dry-run $opam_packages
 RUN test -z "$opam_packages" || opam install -y $opam_packages

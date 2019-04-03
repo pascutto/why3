@@ -18,10 +18,25 @@
 
 (ocamllex why3wc)
 
+(library
+        (name why3_unix_scheduler)
+        (modules unix_scheduler)
+        (libraries why3)
+        (flags -linkall -open Why3.V1)
+)
+
 (executable
         (public_name why3replay)
-        (libraries why3)
-        (modules why3replay unix_scheduler)
-        (flags -linkall -open Why3.V1)
+        (libraries why3 why3_unix_scheduler)
+        (modules why3replay)
+        (flags -linkall -open Why3.V1 -open Why3_unix_scheduler)
+        (package why3)
+)
+
+(executable
+        (public_name why3shell)
+        (modules why3shell)
+        (libraries why3 why3_unix_scheduler)
+        (flags -linkall -open Why3.V1 -open Why3_unix_scheduler)
         (package why3)
 )

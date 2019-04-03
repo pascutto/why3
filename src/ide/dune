@@ -16,3 +16,12 @@
        (modules why3_resetgc)
        (c_names resetgc)
 )
+
+(executable
+       (name why3web)
+       (public_name why3webserver)
+       (modules wserver why3web)
+       (libraries why3)
+       (flags -open Why3.V1 -linkall)
+       (package why3)
+)
