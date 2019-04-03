@@ -1,7 +1,7 @@
 (********************************************************************)
 (*                                                                  *)
 (*  The Why3 Verification Platform   /   The Why3 Development Team  *)
-(*  Copyright 2010-2018   --   Inria - CNRS - Paris-Sud University  *)
+(*  Copyright 2010-2019   --   Inria - CNRS - Paris-Sud University  *)
 (*                                                                  *)
 (*  This software is distributed under the terms of the GNU Lesser  *)
 (*  General Public License version 2.1, with the special exception  *)
@@ -302,8 +302,8 @@ let get_main () = (get_main (config ()).config)
 let sans_font_family = "Sans"
 let mono_font_family = "Monospace"
 
-let modifiable_sans_font_views = ref []
-let modifiable_mono_font_views = ref []
+let modifiable_sans_font_views : GObj.misc_ops list ref = ref []
+let modifiable_mono_font_views : GObj.misc_ops list ref = ref []
 
 let add_modifiable_sans_font_view v =
   modifiable_sans_font_views := v :: !modifiable_sans_font_views
@@ -317,8 +317,8 @@ let change_font size =
 *)
   let sff = sans_font_family ^ " " ^ string_of_int size in
   let mff = mono_font_family ^ " " ^ string_of_int size in
-  let sf = Pango.Font.from_string sff in
-  let mf = Pango.Font.from_string mff in
+  let sf = Gtkcompat.gpango_font_description_from_string sff in
+  let mf = Gtkcompat.gpango_font_description_from_string mff in
   List.iter (fun v -> v#modify_font sf) !modifiable_sans_font_views;
   List.iter (fun v -> v#modify_font mf) !modifiable_mono_font_views
 
@@ -633,7 +633,7 @@ let show_about_window ~parent () =
                 "Piotr Trojanek";
                 "Makarius Wenzel";
                ]
-      ~copyright:"Copyright 2010-2018 Inria, CNRS, Paris-Sud University"
+      ~copyright:"Copyright 2010-2019 Inria, CNRS, Paris-Sud University"
       ~license:("See file " ^ Filename.concat Config.datadir "LICENSE")
       ~website:"http://why3.lri.fr/"
       ~website_label:"http://why3.lri.fr/"

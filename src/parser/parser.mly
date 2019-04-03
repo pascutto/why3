@@ -1,7 +1,7 @@
 (********************************************************************)
 (*                                                                  *)
 (*  The Why3 Verification Platform   /   The Why3 Development Team  *)
-(*  Copyright 2010-2018   --   Inria - CNRS - Paris-Sud University  *)
+(*  Copyright 2010-2019   --   Inria - CNRS - Paris-Sud University  *)
 (*                                                                  *)
 (*  This software is distributed under the terms of the GNU Lesser  *)
 (*  General Public License version 2.1, with the special exception  *)
@@ -182,7 +182,7 @@
       before a letter. You can only use ' followed by _ or a number."
 
   let add_record_projections (d: Ptree.decl) =
-    let meta_id = {id_str = Theory.(meta_projection.meta_name);
+    let meta_id = {id_str = Theory.(meta_record.meta_name);
                    id_ats = [];
                    id_loc = Loc.dummy_position}
     in

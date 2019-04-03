@@ -1,7 +1,7 @@
 (********************************************************************)
 (*                                                                  *)
 (*  The Why3 Verification Platform   /   The Why3 Development Team  *)
-(*  Copyright 2010-2018   --   Inria - CNRS - Paris-Sud University  *)
+(*  Copyright 2010-2019   --   Inria - CNRS - Paris-Sud University  *)
 (*                                                                  *)
 (*  This software is distributed under the terms of the GNU Lesser  *)
 (*  General Public License version 2.1, with the special exception  *)
@@ -37,6 +37,10 @@ type printer_mapping = {
   list_projections: Ident.ident Mstr.t;
   (* List of projections as printed in the model. They corresponds to an ident
      which is kept so that we can approximate its used name in task. *)
+  list_fields: Ident.ident Mstr.t;
+  (* These corresponds to meta_record_def (tagged on field function definition).
+     The difference with projections is that you are not allowed to reconstruct
+     two projections into a record (at counterexample parsing level). *)
   list_records: ((string * string) list) Mstr.t;
   (* List of constructors with no arguments that can be confused for variables
      during parsing. *)

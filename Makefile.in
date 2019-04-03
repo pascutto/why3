@@ -1,7 +1,7 @@
 ####################################################################
 #                                                                  #
 #  The Why3 Verification Platform   /   The Why3 Development Team  #
-#  Copyright 2010-2018   --   Inria - CNRS - Paris-Sud University  #
+#  Copyright 2010-2019   --   Inria - CNRS - Paris-Sud University  #
 #                                                                  #
 #  This software is distributed under the terms of the GNU Lesser  #
 #  General Public License version 2.1, with the special exception  #
@@ -138,11 +138,16 @@ endif
 # main target
 ###############
 
-ifeq (@enable_why3_lib@,yes)
-all: @OCAMLBEST@
-else
-all:
-endif
+.PHONY: dune
+
+all: dune
+
+dune: src/util/config.ml
+	dune build @install
+	$(HIDE) mkdir -p bin
+
+clean::
+	dune clean
 
 plugins: plugins.@OCAMLBEST@
 opt: plugins.opt
@@ -312,10 +317,6 @@ lib/why3/why3.cmx: $(LIBCMX) lib/why3/why3.cmo
 
 # clean and depend
 
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(LIBDEP)
-endif
-
 depend: $(LIBDEP)
 
 CLEANDIRS += src $(addprefix src/, $(LIBDIRS))
@@ -479,11 +480,6 @@ lib/plugins/python.cmxs: $(PYTHONCMX)
 lib/plugins/python.cmo: $(PYTHONCMO)
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(PLUGDEP)
-endif
-
 depend: $(PLUGDEP)
 
 CLEANDIRS += plugins $(addprefix plugins/, $(PLUGDIRS)) lib/plugins
@@ -560,8 +556,9 @@ install-bin::
 
 install_local:: bin/why3 $(addprefix bin/,$(TOOLS_BIN))
 
-bin/%:	bin/%.@OCAMLBEST@
-	ln -sf $(notdir $<) $@
+#TODO use dune promote or dune exec
+bin/%:	dune
+	$(HIDE) cp _build/install/default/bin/$* $@
 
 install_local:: share/drivers share/stdlib
 
@@ -570,10 +567,6 @@ share/drivers:
 
 share/stdlib:
 	ln -snf ../stdlib share/stdlib
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(TOOLSDEP)
-endif
 
 depend: $(TOOLSDEP)
 
@@ -725,7 +718,7 @@ ifeq (@enable_ide@,yes)
 
 IDEGENERATED = src/ide/gtkcompat.ml
 
-IDE_FILES = gtkcompat gconfig ide_utils why3ide
+IDE_FILES = gtkcompat gconfig ide_utils why3_resetgc why3ide
 
 IDEMODULES = $(addprefix src/ide/, $(IDE_FILES))
 
@@ -755,11 +748,6 @@ src/ide/resetgc.o: src/ide/resetgc.c
 	$(HIDE)$(OCAMLC) -c -ccopt "-Wall -o $@" $<
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(IDEDEP)
-endif
-
 depend: $(IDEDEP)
 
 CLEANDIRS += src/ide
@@ -829,11 +817,6 @@ bin/why3webserver.byte: $(WHY3CMA) $(WEBSERVCMO)
 	$(HIDE)$(OCAMLC) $(BFLAGS) -o $@ $(BLINKFLAGS) -custom $^
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(WEBSERVDEP)
-endif
-
 depend: $(WEBSERVDEP)
 
 CLEANDIRS += src/ide
@@ -877,10 +860,6 @@ bin/why3session.byte: $(WHY3CMA) $(SESSIONCMO)
 
 # depend and clean targets
 
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(SESSIONDEP)
-endif
-
 depend: $(SESSIONDEP)
 
 CLEANDIRS += src/why3session
@@ -923,11 +902,6 @@ bin/why3shell.byte: $(WHY3CMA) $(SHELLCMO)
 	$(HIDE)$(OCAMLC) $(BFLAGS) -o $@ $(BLINKFLAGS) $^
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(SHELLDEP)
-endif
-
 depend: $(SHELLDEP)
 
 uninstall-bin::
@@ -1485,10 +1459,6 @@ install-lib::
 	$(INSTALL_DATA) $(wildcard $(addprefix lib/why3/why3extract., $(INSTALLED_LIB_EXTS))) \
 	  $(OCAMLINSTALLLIB)/why3
 
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(OCAMLLIBS_DEP)
-endif
-
 $(OCAMLLIBS_DEP): lib/ocaml/why3__BigInt_compat.ml
 
 depend: $(OCAMLLIBS_DEP)
@@ -1556,10 +1526,6 @@ bin/why3doc.opt: $(WHY3CMXA) $(WHY3DOCCMX)
 bin/why3doc.byte: $(WHY3CMA) $(WHY3DOCCMO)
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(WHY3DOCDEP)
-endif
 
 depend: $(WHY3DOCDEP)
 
@@ -1863,6 +1829,21 @@ test-session.opt: examples/use_api/create_session.ml lib/why3/why3.cmxa
 	printf "Test of Why3 API calls for Session module failed. Please fix it"; exit 2)
 	@rm -f test-session.opt why3session.xml why3shapes why3shapes.gz
 
+test-ce.byte: examples/use_api/counterexample.ml lib/why3/why3.cma
+	$(SHOW) 'Ocaml    $<'
+	$(HIDE)ocaml -I lib/why3 $(INCLUDES) $(EXTCMA) lib/why3/why3.cma $< > /dev/null\
+	|| (rm -f why3session.xml why3shapes why3shapes.gz;  \
+	printf "Test of Why3 API calls for counterexamples failed. Please fix it"; exit 2)
+	@rm -f why3session.xml why3shapes why3shapes.gz
+
+test-ce.opt: examples/use_api/counterexample.ml lib/why3/why3.cmxa
+	$(SHOW) 'Ocamlopt $<'
+	$(HIDE)($(OCAMLOPT) -o $@ -I lib/why3 $(INCLUDES) $(EXTCMXA) lib/why3/why3.cmxa  $< \
+	&& ./test-ce.opt > /dev/null) \
+	|| (rm -f test-ce.opt why3session.xml why3shapes why3shapes.gz; \
+	printf "Test of Why3 API calls for counterexamples failed. Please fix it"; exit 2)
+	@rm -f test-ce.opt why3session.xml why3shapes why3shapes.gz
+
 #only test the compilation of runstrat
 test-runstrat.byte: lib/why3/why3.cma lib/why3/META
 	OCAMLPATH=$(PWD)/lib $(MAKE) -C examples/use_api/runstrat clean
@@ -1924,6 +1905,10 @@ doc/generated/mlw_tree__%.ml: examples/use_api/mlw_tree.ml doc/extract_ocaml_cod
 doc/generated/transform__%.ml: examples/use_api/transform.ml doc/extract_ocaml_code
 	doc/extract_ocaml_code $* < $< > $@
 
+doc/generated/counterexample__%.ml: examples/use_api/counterexample.ml doc/extract_ocaml_code
+	doc/extract_ocaml_code $* < $< > $@
+
+
 OCAMLCODE_LOGIC = opening printformula declarepropvars declarepropatoms \
 	buildtask printtask buildtask2 \
 	getconf getanyaltergo getaltergo200 \
@@ -1941,11 +1926,15 @@ OCAMLCODE_MLWTREE = buildenv openmodule useimport \
 	source1 code1 helper1 source2 code2 source3 code3 \
 	closemodule checkingvcs
 
+OCAMLCODE_COUNTEREXAMPLES =  ce_declarepropvars ce_adaptgoals \
+	ce_get_cvc4ce ce_callprover ce_nobuiltin
+
 OCAMLCODE = \
 	$(addprefix doc/generated/logic__, $(addsuffix .ml, $(OCAMLCODE_LOGIC))) \
 	$(addprefix doc/generated/call_provers__, $(addsuffix .ml, $(OCAMLCODE_CALLPROVERS))) \
 	$(addprefix doc/generated/transform__, $(addsuffix .ml, $(OCAMLCODE_TRANSFORM))) \
 	$(addprefix doc/generated/mlw_tree__, $(addsuffix .ml, $(OCAMLCODE_MLWTREE))) \
+	$(addprefix doc/generated/counterexample__, $(addsuffix .ml, $(OCAMLCODE_COUNTEREXAMPLES))) \
 	doc/generated/whyconf__provertype.ml
 
 DOC = api glossary ide intro exec macros manpages install \

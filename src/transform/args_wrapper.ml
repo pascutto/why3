@@ -1,7 +1,7 @@
 (********************************************************************)
 (*                                                                  *)
 (*  The Why3 Verification Platform   /   The Why3 Development Team  *)
-(*  Copyright 2010-2018   --   Inria - CNRS - Paris-Sud University  *)
+(*  Copyright 2010-2019   --   Inria - CNRS - Paris-Sud University  *)
 (*                                                                  *)
 (*  This software is distributed under the terms of the GNU Lesser  *)
 (*  General Public License version 2.1, with the special exception  *)
@@ -318,20 +318,21 @@ let parse_theory env s =
 let trans_typ_tail: type a b c. (a -> b, c) trans_typ -> (b, c) trans_typ =
   fun t ->
     match t with
-    | Tint t      -> t
-    | Tty t       -> t
-    | Ttysymbol t -> t
-    | Tprsymbol t -> t
-    | Tprlist t   -> t
-    | Tlsymbol t  -> t
-    | Tsymbol t   -> t
-    | Tlist t     -> t
-    | Tterm t     -> t
-    | Tstring t   -> t
-    | Tformula t  -> t
-    | Ttheory t   -> t
-    | Ttermlist t -> t
-    | _           -> assert false
+    | Tint t       -> t
+    | Tty t        -> t
+    | Ttysymbol t  -> t
+    | Tprsymbol t  -> t
+    | Tprlist t    -> t
+    | Tlsymbol t   -> t
+    | Tsymbol t    -> t
+    | Tlist t      -> t
+    | Tterm t      -> t
+    | Tstring t    -> t
+    | Tformula t   -> t
+    | Ttheory t    -> t
+    | Ttermlist t  -> t
+    | Tidentlist t -> t
+    | _            -> assert false
 
 type _ trans_typ_is_l = Yes : (task list) trans_typ_is_l | No : task trans_typ_is_l
 
@@ -509,6 +510,10 @@ let rec wrap_to_store : type a b. (a, b) trans_typ -> a -> string list -> Env.en
         | Ttermlist t' ->
             let term_list = parse_and_type_list ~as_fmla:false s' tables in
             wrap_to_store t' (f (Some term_list)) tail env tables task
+        | Tidentlist t' ->
+            let list =
+              List.map (fun id -> id.Ptree.id_str) (parse_list_ident s') in
+            wrap_to_store t' (f (Some list)) tail env tables task
         | _ -> raise (Arg_expected (string_of_trans_typ t', s'))
        end
     | Topt (_, t'), _ ->

@@ -38,8 +38,9 @@ why3.conf
 /distrib
 /why3regtests.err
 /why3regtests.out
-/.merlin
+.merlin
 /src/jessie/.merlin
+/why3*.install
 
 # /bench/
 /bench/programs/good/booleans/
@@ -339,3 +340,4 @@ pvsbin/
 
 /trash
 trywhy3.tar.gz
+/_build/

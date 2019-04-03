@@ -1,7 +1,7 @@
 (********************************************************************)
 (*                                                                  *)
 (*  The Why3 Verification Platform   /   The Why3 Development Team  *)
-(*  Copyright 2010-2018   --   Inria - CNRS - Paris-Sud University  *)
+(*  Copyright 2010-2019   --   Inria - CNRS - Paris-Sud University  *)
 (*                                                                  *)
 (*  This software is distributed under the terms of the GNU Lesser  *)
 (*  General Public License version 2.1, with the special exception  *)
@@ -291,11 +291,12 @@ type model_parser =  string -> Printer.printer_mapping -> model
 *)
 
 type raw_model_parser =
-  Ident.ident Wstdlib.Mstr.t -> ((string * string) list) Wstdlib.Mstr.t ->
+  Ident.ident Wstdlib.Mstr.t -> Ident.ident Wstdlib.Mstr.t -> ((string * string) list) Wstdlib.Mstr.t ->
     string list -> Ident.Sattr.t Wstdlib.Mstr.t -> string -> model_element list
 (** Parses the input string into model elements.
     [raw_model_parser: proj->record_map->noarg_cons->s->mel]
     [proj]: is the list of projections
+    [list_field]: is the list of field function definition
     [record_map]: is a map associating the name of printed projections to the
       fields (couple of printed field and model_trace name).
     [noarg_cons]: List of constructors with no arguments (collected to avoid

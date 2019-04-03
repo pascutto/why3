@@ -1,0 +1,27 @@
+(executable
+       (public_name why3ide)
+       (modules gtkcompat gconfig ide_utils why3ide)
+       (libraries why3 why3_resetgc
+                (select gtkcompat.ml from
+                  (lablgtk3 lablgtk3-sourceview3 -> gtkcompat3.ml )
+                  (lablgtk2 lablgtk2.sourceview2 -> gtkcompat2.ml )
+                )
+       )
+       (flags -open Why3.V1 -linkall)
+       (package why3-ide)
+)
+
+(library
+       (name why3_resetgc)
+       (modules why3_resetgc)
+       (c_names resetgc)
+)
+
+(executable
+       (name why3web)
+       (public_name why3webserver)
+       (modules wserver why3web)
+       (libraries why3)
+       (flags -open Why3.V1 -linkall)
+       (package why3)
+)

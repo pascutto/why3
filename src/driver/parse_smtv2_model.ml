@@ -1,7 +1,7 @@
 (********************************************************************)
 (*                                                                  *)
 (*  The Why3 Verification Platform   /   The Why3 Development Team  *)
-(*  Copyright 2010-2018   --   Inria - CNRS - Paris-Sud University  *)
+(*  Copyright 2010-2019   --   Inria - CNRS - Paris-Sud University  *)
 (*                                                                  *)
 (*  This software is distributed under the terms of the GNU Lesser  *)
 (*  General Public License version 2.1, with the special exception  *)
@@ -57,9 +57,9 @@ let do_parsing model =
        l;
      Wstdlib.Mstr.empty
 
-let do_parsing list_proj list_records noarg_constructors set_str model =
+let do_parsing list_proj list_fields list_records noarg_constructors set_str model =
   let m = do_parsing model in
-  Collect_data_model.create_list list_proj list_records noarg_constructors set_str m
+  Collect_data_model.create_list list_proj list_fields list_records noarg_constructors set_str m
 
 (* Parses the model returned by CVC4, Z3 or Alt-ergo.
    Returns the list of pairs term - value *)
@@ -67,7 +67,7 @@ let do_parsing list_proj list_records noarg_constructors set_str model =
    match on "I don't know". But we also need to begin
    parsing on a fresh new line ".*" ensures it *)
 let parse : raw_model_parser =
-  fun list_proj list_records noarg_constructors set_str input ->
+  fun list_proj list_fields list_records noarg_constructors set_str input ->
   try
 (*    let r = Str.regexp "unknown\\|sat\\|\\(I don't know.*\\)" in
     ignore (Str.search_forward r input 0);
@@ -75,7 +75,7 @@ let parse : raw_model_parser =
     let nr = Str.regexp "^)+" in
     let res = Str.search_backward nr input (String.length input) in
     let model_string = String.sub input 0 (res + String.length (Str.matched_string input)) in
-    do_parsing list_proj list_records noarg_constructors set_str model_string
+    do_parsing list_proj list_fields list_records noarg_constructors set_str model_string
   with
   | Not_found -> []
 

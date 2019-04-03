@@ -1,7 +1,7 @@
 (********************************************************************)
 (*                                                                  *)
 (*  The Why3 Verification Platform   /   The Why3 Development Team  *)
-(*  Copyright 2010-2018   --   Inria - CNRS - Paris-Sud University  *)
+(*  Copyright 2010-2019   --   Inria - CNRS - Paris-Sud University  *)
 (*                                                                  *)
 (*  This software is distributed under the terms of the GNU Lesser  *)
 (*  General Public License version 2.1, with the special exception  *)
@@ -1175,7 +1175,7 @@ module MLToC = struct
 	  sdecls@[C.Dfun (rs.rs_name, (rtype,params), (d,s))] in
     try
       begin match d with
-      | Dlet (Lsym(rs, _, vl, e)) -> translate_fun rs vl e
+      | Dlet (Lsym(rs, _, _, vl, e)) -> translate_fun rs vl e
       | Dtype [{its_name=id; its_def=idef}] ->
          Debug.dprintf debug_c_extraction "PDtype %s@." id.id_string;
          begin
