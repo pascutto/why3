@@ -292,6 +292,12 @@ MENHIRVERSION=`$MENHIR --version | sed -n -e 's,.*version *\(.*\)$,\1,p'`
 AX_VERSION_GE([$MENHIRVERSION], 20151112, [],
   [AC_MSG_ERROR(You need Menhir 20151112 or higher.)])
 
+
+AC_CHECK_PROG(DUNE,dune,dune,no)
+if test "$DUNE" = no ; then
+	AC_MSG_ERROR(Cannot find dune.)
+fi
+
 ## Where are the library we need
 # we look for ocamlfind; if not present, we just don't use it to find
 # libraries
