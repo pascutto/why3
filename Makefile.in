@@ -144,6 +144,7 @@ all: dune
 
 dune: src/util/config.ml
 	dune build @install
+	$(HIDE) mkdir -p bin
 
 clean::
 	dune clean
@@ -555,8 +556,9 @@ install-bin::
 
 install_local:: bin/why3 $(addprefix bin/,$(TOOLS_BIN))
 
-bin/%:	bin/%.@OCAMLBEST@
-	ln -sf $(notdir $<) $@
+#TODO use dune promote or dune exec
+bin/%:	dune
+	$(HIDE) cp _build/install/default/bin/$* $@
 
 install_local:: share/drivers share/stdlib
 
