@@ -138,11 +138,15 @@ endif
 # main target
 ###############
 
-ifeq (@enable_why3_lib@,yes)
-all: @OCAMLBEST@
-else
-all:
-endif
+.PHONY: dune
+
+all: dune
+
+dune: src/util/config.ml
+	dune build @install
+
+clean::
+	dune clean
 
 plugins: plugins.@OCAMLBEST@
 opt: plugins.opt
@@ -312,10 +316,6 @@ lib/why3/why3.cmx: $(LIBCMX) lib/why3/why3.cmo
 
 # clean and depend
 
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(LIBDEP)
-endif
-
 depend: $(LIBDEP)
 
 CLEANDIRS += src $(addprefix src/, $(LIBDIRS))
@@ -479,11 +479,6 @@ lib/plugins/python.cmxs: $(PYTHONCMX)
 lib/plugins/python.cmo: $(PYTHONCMO)
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(PLUGDEP)
-endif
-
 depend: $(PLUGDEP)
 
 CLEANDIRS += plugins $(addprefix plugins/, $(PLUGDIRS)) lib/plugins
@@ -570,10 +565,6 @@ share/drivers:
 
 share/stdlib:
 	ln -snf ../stdlib share/stdlib
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(TOOLSDEP)
-endif
 
 depend: $(TOOLSDEP)
 
@@ -755,11 +746,6 @@ src/ide/resetgc.o: src/ide/resetgc.c
 	$(HIDE)$(OCAMLC) -c -ccopt "-Wall -o $@" $<
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(IDEDEP)
-endif
-
 depend: $(IDEDEP)
 
 CLEANDIRS += src/ide
@@ -829,11 +815,6 @@ bin/why3webserver.byte: $(WHY3CMA) $(WEBSERVCMO)
 	$(HIDE)$(OCAMLC) $(BFLAGS) -o $@ $(BLINKFLAGS) -custom $^
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(WEBSERVDEP)
-endif
-
 depend: $(WEBSERVDEP)
 
 CLEANDIRS += src/ide
@@ -877,10 +858,6 @@ bin/why3session.byte: $(WHY3CMA) $(SESSIONCMO)
 
 # depend and clean targets
 
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(SESSIONDEP)
-endif
-
 depend: $(SESSIONDEP)
 
 CLEANDIRS += src/why3session
@@ -923,11 +900,6 @@ bin/why3shell.byte: $(WHY3CMA) $(SHELLCMO)
 	$(HIDE)$(OCAMLC) $(BFLAGS) -o $@ $(BLINKFLAGS) $^
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(SHELLDEP)
-endif
-
 depend: $(SHELLDEP)
 
 uninstall-bin::
@@ -1485,10 +1457,6 @@ install-lib::
 	$(INSTALL_DATA) $(wildcard $(addprefix lib/why3/why3extract., $(INSTALLED_LIB_EXTS))) \
 	  $(OCAMLINSTALLLIB)/why3
 
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(OCAMLLIBS_DEP)
-endif
-
 $(OCAMLLIBS_DEP): lib/ocaml/why3__BigInt_compat.ml
 
 depend: $(OCAMLLIBS_DEP)
@@ -1556,10 +1524,6 @@ bin/why3doc.opt: $(WHY3CMXA) $(WHY3DOCCMX)
 bin/why3doc.byte: $(WHY3CMA) $(WHY3DOCCMO)
 
 # depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(WHY3DOCDEP)
-endif
 
 depend: $(WHY3DOCDEP)
 
