@@ -62,6 +62,7 @@ val first_nth : ('a -> 'b option) -> 'a list -> int * 'b
 
 val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
 val iteri : (int -> 'a -> unit) -> 'a list -> unit
+val iter_right : ('a -> unit) -> 'a list -> unit
 val fold_lefti : ('a -> int -> 'b -> 'a) -> 'a -> 'b list -> 'a
 (** similar to List.map, List.iter and List.fold_left,
     but with element index passed as extra argument (in 0..len-1) *)

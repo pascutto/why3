@@ -110,6 +110,13 @@ let iteri f l =
   in
   iter 0 l
 
+let iter_right f l =
+  let rec iter = function
+    | [] -> ()
+    | x :: l -> iter l; f x
+  in
+  iter l
+
 let mapi f l =
   let rec map i = function
     | [] -> []

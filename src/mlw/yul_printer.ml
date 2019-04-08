@@ -63,16 +63,13 @@ DecimalNumber = [0-9]+
 *)
 
 open Compile
-open Format
 open Ident
-open Pp
 open Ity
 open Term
 open Expr
 open Ty
 open Theory
 open Pmodule
-open Wstdlib
 open Pdecl
 open Printer
 
@@ -231,6 +228,150 @@ module EVM = struct
    | REVERT
    | INVALID
    | SELFDESTRUCT
+
+  let equal a b =
+    match a,b with
+    | STOP, STOP -> true
+    | ADD, ADD -> true
+    | SUB, SUB -> true
+    | MUL, MUL -> true
+    | DIV, DIV -> true
+    | SDIV, SDIV -> true
+    | MOD, MOD -> true
+    | SMOD, SMOD -> true
+    | EXP, EXP -> true
+    | NOT, NOT -> true
+    | LT, LT -> true
+    | GT, GT -> true
+    | SLT, SLT -> true
+    | SGT, SGT -> true
+    | EQ, EQ -> true
+    | ISZERO, ISZERO -> true
+    | AND, AND -> true
+    | OR, OR -> true
+    | XOR, XOR -> true
+    | BYTE, BYTE -> true
+    | SHL, SHL -> true
+    | SHR, SHR -> true
+    | SAR, SAR -> true
+    | ADDMOD, ADDMOD -> true
+    | MULMOD, MULMOD -> true
+    | SIGNEXTEND, SIGNEXTEND -> true
+    | KECCAK256, KECCAK256 -> true
+    | ADDRESS, ADDRESS -> true
+    | BALANCE, BALANCE -> true
+    | ORIGIN, ORIGIN -> true
+    | CALLER, CALLER -> true
+    | CALLVALUE, CALLVALUE -> true
+    | CALLDATALOAD, CALLDATALOAD -> true
+    | CALLDATASIZE, CALLDATASIZE -> true
+    | CALLDATACOPY, CALLDATACOPY -> true
+    | CODESIZE, CODESIZE -> true
+    | CODECOPY, CODECOPY -> true
+    | GASPRICE, GASPRICE -> true
+    | EXTCODESIZE, EXTCODESIZE -> true
+    | EXTCODECOPY, EXTCODECOPY -> true
+    | RETURNDATASIZE, RETURNDATASIZE -> true
+    | RETURNDATACOPY, RETURNDATACOPY -> true
+    | EXTCODEHASH, EXTCODEHASH -> true
+    | BLOCKHASH, BLOCKHASH -> true
+    | COINBASE, COINBASE -> true
+    | TIMESTAMP, TIMESTAMP -> true
+    | NUMBER, NUMBER -> true
+    | DIFFICULTY, DIFFICULTY -> true
+    | GASLIMIT, GASLIMIT -> true
+    | POP, POP -> true
+    | MLOAD, MLOAD -> true
+    | MSTORE, MSTORE -> true
+    | MSTORE8, MSTORE8 -> true
+    | SLOAD, SLOAD -> true
+    | SSTORE, SSTORE -> true
+    | JUMPDEST, JUMPDEST -> true
+    | JUMP, JUMP -> true
+    | JUMPI, JUMPI -> true
+    | PC, PC -> true
+    | MSIZE, MSIZE -> true
+    | GAS, GAS -> true
+    | PUSH1 x, PUSH1 y -> BigInt.compare x y = 0
+    | PUSH2 x, PUSH2 y -> BigInt.compare x y = 0
+    | PUSH3 x, PUSH3 y -> BigInt.compare x y = 0
+    | PUSH4 x, PUSH4 y -> BigInt.compare x y = 0
+    | PUSH5 x, PUSH5 y -> BigInt.compare x y = 0
+    | PUSH6 x, PUSH6 y -> BigInt.compare x y = 0
+    | PUSH7 x, PUSH7 y -> BigInt.compare x y = 0
+    | PUSH8 x, PUSH8 y -> BigInt.compare x y = 0
+    | PUSH9 x, PUSH9 y -> BigInt.compare x y = 0
+    | PUSH10 x, PUSH10 y -> BigInt.compare x y = 0
+    | PUSH11 x, PUSH11 y -> BigInt.compare x y = 0
+    | PUSH12 x, PUSH12 y -> BigInt.compare x y = 0
+    | PUSH13 x, PUSH13 y -> BigInt.compare x y = 0
+    | PUSH14 x, PUSH14 y -> BigInt.compare x y = 0
+    | PUSH15 x, PUSH15 y -> BigInt.compare x y = 0
+    | PUSH16 x, PUSH16 y -> BigInt.compare x y = 0
+    | PUSH17 x, PUSH17 y -> BigInt.compare x y = 0
+    | PUSH18 x, PUSH18 y -> BigInt.compare x y = 0
+    | PUSH19 x, PUSH19 y -> BigInt.compare x y = 0
+    | PUSH20 x, PUSH20 y -> BigInt.compare x y = 0
+    | PUSH21 x, PUSH21 y -> BigInt.compare x y = 0
+    | PUSH22 x, PUSH22 y -> BigInt.compare x y = 0
+    | PUSH23 x, PUSH23 y -> BigInt.compare x y = 0
+    | PUSH24 x, PUSH24 y -> BigInt.compare x y = 0
+    | PUSH25 x, PUSH25 y -> BigInt.compare x y = 0
+    | PUSH26 x, PUSH26 y -> BigInt.compare x y = 0
+    | PUSH27 x, PUSH27 y -> BigInt.compare x y = 0
+    | PUSH28 x, PUSH28 y -> BigInt.compare x y = 0
+    | PUSH29 x, PUSH29 y -> BigInt.compare x y = 0
+    | PUSH30 x, PUSH30 y -> BigInt.compare x y = 0
+    | PUSH31 x, PUSH31 y -> BigInt.compare x y = 0
+    | PUSH32 x, PUSH32 y -> BigInt.compare x y = 0
+    | DUP1, DUP1 -> true
+    | DUP2, DUP2 -> true
+    | DUP3, DUP3 -> true
+    | DUP4, DUP4 -> true
+    | DUP5, DUP5 -> true
+    | DUP6, DUP6 -> true
+    | DUP7, DUP7 -> true
+    | DUP8, DUP8 -> true
+    | DUP9, DUP9 -> true
+    | DUP10, DUP10 -> true
+    | DUP11, DUP11 -> true
+    | DUP12, DUP12 -> true
+    | DUP13, DUP13 -> true
+    | DUP14, DUP14 -> true
+    | DUP15, DUP15 -> true
+    | DUP16, DUP16 -> true
+    | SWAP1, SWAP1 -> true
+    | SWAP2, SWAP2 -> true
+    | SWAP3, SWAP3 -> true
+    | SWAP4, SWAP4 -> true
+    | SWAP5, SWAP5 -> true
+    | SWAP6, SWAP6 -> true
+    | SWAP7, SWAP7 -> true
+    | SWAP8, SWAP8 -> true
+    | SWAP9, SWAP9 -> true
+    | SWAP10, SWAP10 -> true
+    | SWAP11, SWAP11 -> true
+    | SWAP12, SWAP12 -> true
+    | SWAP13, SWAP13 -> true
+    | SWAP14, SWAP14 -> true
+    | SWAP15, SWAP15 -> true
+    | SWAP16, SWAP16 -> true
+    | LOG0, LOG0 -> true
+    | LOG1, LOG1 -> true
+    | LOG2, LOG2 -> true
+    | LOG3, LOG3 -> true
+    | LOG4, LOG4 -> true
+    | CREATE, CREATE -> true
+    | CALL, CALL -> true
+    | CALLCODE, CALLCODE -> true
+    | RETURN, RETURN -> true
+    | DELEGATECALL, DELEGATECALL -> true
+    | STATICCALL, STATICCALL -> true
+    | CREATE2, CREATE2 -> true
+    | REVERT, REVERT -> true
+    | INVALID, INVALID -> true
+    | SELFDESTRUCT, SELFDESTRUCT -> true
+    | _ -> false
 
 type price =
   | PriceZero
@@ -397,13 +538,493 @@ let get_info = function
   | INVALID -> { name = "INVALID"; pushed = 0; args = 0; ret = 0; sideeffects = true; price = PriceZero; code = 0xfe; }
   | SELFDESTRUCT -> { name = "SELFDESTRUCT"; pushed = 0; args = 1; ret = 0; sideeffects = true; price = PriceSpecial; code = 0xff; }
 
+let size instr =
+  1 + (get_info instr).pushed
+
+let sizel l =
+  List.fold_left (fun acc e -> acc + (size e)) 0 l
+
+let pp_binary buf = function
+   | STOP
+   | ADD
+   | SUB
+   | MUL
+   | DIV
+   | SDIV
+   | MOD
+   | SMOD
+   | EXP
+   | NOT
+   | LT
+   | GT
+   | SLT
+   | SGT
+   | EQ
+   | ISZERO
+   | AND
+   | OR
+   | XOR
+   | BYTE
+   | SHL
+   | SHR
+   | SAR
+   | ADDMOD
+   | MULMOD
+   | SIGNEXTEND
+   | KECCAK256
+   | ADDRESS
+   | BALANCE
+   | ORIGIN
+   | CALLER
+   | CALLVALUE
+   | CALLDATALOAD
+   | CALLDATASIZE
+   | CALLDATACOPY
+   | CODESIZE
+   | CODECOPY
+   | GASPRICE
+   | EXTCODESIZE
+   | EXTCODECOPY
+   | RETURNDATASIZE
+   | RETURNDATACOPY
+   | EXTCODEHASH
+   | BLOCKHASH
+   | COINBASE
+   | TIMESTAMP
+   | NUMBER
+   | DIFFICULTY
+   | GASLIMIT
+   | POP
+   | MLOAD
+   | MSTORE
+   | MSTORE8
+   | SLOAD
+   | SSTORE
+   | JUMP
+   | JUMPI
+   | PC
+   | MSIZE
+   | GAS
+   | JUMPDEST
+   | DUP1
+   | DUP2
+   | DUP3
+   | DUP4
+   | DUP5
+   | DUP6
+   | DUP7
+   | DUP8
+   | DUP9
+   | DUP10
+   | DUP11
+   | DUP12
+   | DUP13
+   | DUP14
+   | DUP15
+   | DUP16
+   | SWAP1
+   | SWAP2
+   | SWAP3
+   | SWAP4
+   | SWAP5
+   | SWAP6
+   | SWAP7
+   | SWAP8
+   | SWAP9
+   | SWAP10
+   | SWAP11
+   | SWAP12
+   | SWAP13
+   | SWAP14
+   | SWAP15
+   | SWAP16
+   | LOG0
+   | LOG1
+   | LOG2
+   | LOG3
+   | LOG4
+   | CREATE
+   | CALL
+   | CALLCODE
+   | RETURN
+   | DELEGATECALL
+   | STATICCALL
+   | CREATE2
+   | REVERT
+   | INVALID
+   | SELFDESTRUCT as op ->
+       Buffer.add_char buf (Char.chr (get_info op).code)
+   | PUSH1 i
+   | PUSH2 i
+   | PUSH3 i
+   | PUSH4 i
+   | PUSH5 i
+   | PUSH6 i
+   | PUSH7 i
+   | PUSH8 i
+   | PUSH9 i
+   | PUSH10 i
+   | PUSH11 i
+   | PUSH12 i
+   | PUSH13 i
+   | PUSH14 i
+   | PUSH15 i
+   | PUSH16 i
+   | PUSH17 i
+   | PUSH18 i
+   | PUSH19 i
+   | PUSH20 i
+   | PUSH21 i
+   | PUSH22 i
+   | PUSH23 i
+   | PUSH24 i
+   | PUSH25 i
+   | PUSH26 i
+   | PUSH27 i
+   | PUSH28 i
+   | PUSH29 i
+   | PUSH30 i
+   | PUSH31 i
+   | PUSH32 i as op ->
+       let i = ref i in
+       let _256 = BigInt.of_int 256 in
+       let s = Bytes.make ((get_info op).pushed + 1) '-' in
+       Bytes.set s 0 (Char.chr (get_info op).code);
+       for j=(get_info op).pushed downto 1 do
+         let d,m = BigInt.euclidean_div_mod !i _256 in
+         i := d;
+         Bytes.set s j (Char.chr (BigInt.to_int m));
+       done;
+       Buffer.add_bytes buf s
+
+let string_hex n =
+  assert (0 <= n && n < 256);
+  Printf.sprintf "%02x" n
+
+let _256 = BigInt.of_int 256
+let rec print_int_hex size d acc =
+  if size < 1 then acc
+  else
+    let d,m = BigInt.euclidean_div_mod d _256 in
+    let s = string_hex (BigInt.to_int m) in
+    print_int_hex (size-1) d (s^acc)
+
+let print_int_hex size d = print_int_hex size d ""
+
+let pp_ascii buf = function
+   | STOP
+   | ADD
+   | SUB
+   | MUL
+   | DIV
+   | SDIV
+   | MOD
+   | SMOD
+   | EXP
+   | NOT
+   | LT
+   | GT
+   | SLT
+   | SGT
+   | EQ
+   | ISZERO
+   | AND
+   | OR
+   | XOR
+   | BYTE
+   | SHL
+   | SHR
+   | SAR
+   | ADDMOD
+   | MULMOD
+   | SIGNEXTEND
+   | KECCAK256
+   | ADDRESS
+   | BALANCE
+   | ORIGIN
+   | CALLER
+   | CALLVALUE
+   | CALLDATALOAD
+   | CALLDATASIZE
+   | CALLDATACOPY
+   | CODESIZE
+   | CODECOPY
+   | GASPRICE
+   | EXTCODESIZE
+   | EXTCODECOPY
+   | RETURNDATASIZE
+   | RETURNDATACOPY
+   | EXTCODEHASH
+   | BLOCKHASH
+   | COINBASE
+   | TIMESTAMP
+   | NUMBER
+   | DIFFICULTY
+   | GASLIMIT
+   | POP
+   | MLOAD
+   | MSTORE
+   | MSTORE8
+   | SLOAD
+   | SSTORE
+   | JUMP
+   | JUMPI
+   | PC
+   | MSIZE
+   | GAS
+   | JUMPDEST
+   | DUP1
+   | DUP2
+   | DUP3
+   | DUP4
+   | DUP5
+   | DUP6
+   | DUP7
+   | DUP8
+   | DUP9
+   | DUP10
+   | DUP11
+   | DUP12
+   | DUP13
+   | DUP14
+   | DUP15
+   | DUP16
+   | SWAP1
+   | SWAP2
+   | SWAP3
+   | SWAP4
+   | SWAP5
+   | SWAP6
+   | SWAP7
+   | SWAP8
+   | SWAP9
+   | SWAP10
+   | SWAP11
+   | SWAP12
+   | SWAP13
+   | SWAP14
+   | SWAP15
+   | SWAP16
+   | LOG0
+   | LOG1
+   | LOG2
+   | LOG3
+   | LOG4
+   | CREATE
+   | CALL
+   | CALLCODE
+   | RETURN
+   | DELEGATECALL
+   | STATICCALL
+   | CREATE2
+   | REVERT
+   | INVALID
+   | SELFDESTRUCT as op ->
+       let s = string_hex (get_info op).code in
+       Buffer.add_string buf s
+   | PUSH1 i
+   | PUSH2 i
+   | PUSH3 i
+   | PUSH4 i
+   | PUSH5 i
+   | PUSH6 i
+   | PUSH7 i
+   | PUSH8 i
+   | PUSH9 i
+   | PUSH10 i
+   | PUSH11 i
+   | PUSH12 i
+   | PUSH13 i
+   | PUSH14 i
+   | PUSH15 i
+   | PUSH16 i
+   | PUSH17 i
+   | PUSH18 i
+   | PUSH19 i
+   | PUSH20 i
+   | PUSH21 i
+   | PUSH22 i
+   | PUSH23 i
+   | PUSH24 i
+   | PUSH25 i
+   | PUSH26 i
+   | PUSH27 i
+   | PUSH28 i
+   | PUSH29 i
+   | PUSH30 i
+   | PUSH31 i
+   | PUSH32 i as op ->
+       let info = get_info op in
+       let size = info.pushed in
+       assert ( BigInt.sign i >= 0  || size = 32 );
+       Buffer.add_string buf (string_hex info.code);
+       Buffer.add_string buf (print_int_hex size i)
+
+let print_human fmt = function
+  | STOP
+  | ADD
+  | SUB
+  | MUL
+  | DIV
+  | SDIV
+  | MOD
+  | SMOD
+  | EXP
+  | NOT
+  | LT
+  | GT
+  | SLT
+  | SGT
+  | EQ
+  | ISZERO
+  | AND
+  | OR
+  | XOR
+  | BYTE
+  | SHL
+  | SHR
+  | SAR
+  | ADDMOD
+  | MULMOD
+  | SIGNEXTEND
+  | KECCAK256
+  | ADDRESS
+  | BALANCE
+  | ORIGIN
+  | CALLER
+  | CALLVALUE
+  | CALLDATALOAD
+  | CALLDATASIZE
+  | CALLDATACOPY
+  | CODESIZE
+  | CODECOPY
+  | GASPRICE
+  | EXTCODESIZE
+  | EXTCODECOPY
+  | RETURNDATASIZE
+  | RETURNDATACOPY
+  | EXTCODEHASH
+  | BLOCKHASH
+  | COINBASE
+  | TIMESTAMP
+  | NUMBER
+  | DIFFICULTY
+  | GASLIMIT
+  | POP
+  | MLOAD
+  | MSTORE
+  | MSTORE8
+  | SLOAD
+  | SSTORE
+  | JUMP
+  | JUMPI
+  | PC
+  | MSIZE
+  | GAS
+  | JUMPDEST
+  | DUP1
+  | DUP2
+  | DUP3
+  | DUP4
+  | DUP5
+  | DUP6
+  | DUP7
+  | DUP8
+  | DUP9
+  | DUP10
+  | DUP11
+  | DUP12
+  | DUP13
+  | DUP14
+  | DUP15
+  | DUP16
+  | SWAP1
+  | SWAP2
+  | SWAP3
+  | SWAP4
+  | SWAP5
+  | SWAP6
+  | SWAP7
+  | SWAP8
+  | SWAP9
+  | SWAP10
+  | SWAP11
+  | SWAP12
+  | SWAP13
+  | SWAP14
+  | SWAP15
+  | SWAP16
+  | LOG0
+  | LOG1
+  | LOG2
+  | LOG3
+  | LOG4
+  | CREATE
+  | CALL
+  | CALLCODE
+  | RETURN
+  | DELEGATECALL
+  | STATICCALL
+  | CREATE2
+  | REVERT
+  | INVALID
+  | SELFDESTRUCT as op ->
+      Format.pp_print_string fmt (get_info op).name
+  | PUSH1 i
+  | PUSH2 i
+  | PUSH3 i
+  | PUSH4 i
+  | PUSH5 i
+  | PUSH6 i
+  | PUSH7 i
+  | PUSH8 i
+  | PUSH9 i
+  | PUSH10 i
+  | PUSH11 i
+  | PUSH12 i
+  | PUSH13 i
+  | PUSH14 i
+  | PUSH15 i
+  | PUSH16 i
+  | PUSH17 i
+  | PUSH18 i
+  | PUSH19 i
+  | PUSH20 i
+  | PUSH21 i
+  | PUSH22 i
+  | PUSH23 i
+  | PUSH24 i
+  | PUSH25 i
+  | PUSH26 i
+  | PUSH27 i
+  | PUSH28 i
+  | PUSH29 i
+  | PUSH30 i
+  | PUSH31 i
+  | PUSH32 i as op ->
+      let info = get_info op in
+      let size = info.pushed in
+      Format.fprintf fmt "%s(%s)"
+        (get_info op).name
+        (print_int_hex size i)
+
+  let print_humanl fmt l =
+    Format.fprintf fmt "%a@." (Pp.print_list Pp.comma print_human) l
+
+  let print_code fmt l =
+    let buf = Buffer.create 100 in
+    List.iter (pp_ascii buf) l;
+    Format.pp_print_string fmt (Buffer.contents buf);
+    Format.pp_flush_formatter fmt
+
+
 end
 
 module EVMSimple = struct
 
   type label = {
     label_name: string;
-    mutable label_addr: int option;
+    mutable label_addr: BigInt.t;
     (** set once all the code is known *)
   }
 
@@ -465,6 +1086,7 @@ module EVMSimple = struct
    | SSTORE
    | JUMPDEST of label
    | JUMP of label
+   | JUMPDYN
    | JUMPI of label
    | PC
    | MSIZE
@@ -549,208 +1171,734 @@ module EVMSimple = struct
    | INVALID
    | SELFDESTRUCT
 
+  let equal a b =
+    match a,b with
+    | STOP, STOP -> true
+    | ADD, ADD -> true
+    | SUB, SUB -> true
+    | MUL, MUL -> true
+    | DIV, DIV -> true
+    | SDIV, SDIV -> true
+    | MOD, MOD -> true
+    | SMOD, SMOD -> true
+    | EXP, EXP -> true
+    | NOT, NOT -> true
+    | LT, LT -> true
+    | GT, GT -> true
+    | SLT, SLT -> true
+    | SGT, SGT -> true
+    | EQ, EQ -> true
+    | ISZERO, ISZERO -> true
+    | AND, AND -> true
+    | OR, OR -> true
+    | XOR, XOR -> true
+    | BYTE, BYTE -> true
+    | SHL, SHL -> true
+    | SHR, SHR -> true
+    | SAR, SAR -> true
+    | ADDMOD, ADDMOD -> true
+    | MULMOD, MULMOD -> true
+    | SIGNEXTEND, SIGNEXTEND -> true
+    | KECCAK256, KECCAK256 -> true
+    | ADDRESS, ADDRESS -> true
+    | BALANCE, BALANCE -> true
+    | ORIGIN, ORIGIN -> true
+    | CALLER, CALLER -> true
+    | CALLVALUE, CALLVALUE -> true
+    | CALLDATALOAD, CALLDATALOAD -> true
+    | CALLDATASIZE, CALLDATASIZE -> true
+    | CALLDATACOPY, CALLDATACOPY -> true
+    | CODESIZE, CODESIZE -> true
+    | CODECOPY, CODECOPY -> true
+    | GASPRICE, GASPRICE -> true
+    | EXTCODESIZE, EXTCODESIZE -> true
+    | EXTCODECOPY, EXTCODECOPY -> true
+    | RETURNDATASIZE, RETURNDATASIZE -> true
+    | RETURNDATACOPY, RETURNDATACOPY -> true
+    | EXTCODEHASH, EXTCODEHASH -> true
+    | BLOCKHASH, BLOCKHASH -> true
+    | COINBASE, COINBASE -> true
+    | TIMESTAMP, TIMESTAMP -> true
+    | NUMBER, NUMBER -> true
+    | DIFFICULTY, DIFFICULTY -> true
+    | GASLIMIT, GASLIMIT -> true
+    | POP, POP -> true
+    | MLOAD, MLOAD -> true
+    | MSTORE, MSTORE -> true
+    | MSTORE8, MSTORE8 -> true
+    | SLOAD, SLOAD -> true
+    | SSTORE, SSTORE -> true
+    | JUMPDEST l1, JUMPDEST l2 -> l1 == l2
+    | JUMP l1, JUMP l2 -> l1 == l2
+    | JUMPDYN, JUMPDYN -> true
+    | JUMPI l1, JUMPI l2 -> l1 == l2
+    | PC, PC -> true
+    | MSIZE, MSIZE -> true
+    | GAS, GAS -> true
+    | PUSH1 x, PUSH1 y -> BigInt.compare x y = 0
+    | PUSH2 x, PUSH2 y -> BigInt.compare x y = 0
+    | PUSH3 x, PUSH3 y -> BigInt.compare x y = 0
+    | PUSH4 x, PUSH4 y -> BigInt.compare x y = 0
+    | PUSH5 x, PUSH5 y -> BigInt.compare x y = 0
+    | PUSH6 x, PUSH6 y -> BigInt.compare x y = 0
+    | PUSH7 x, PUSH7 y -> BigInt.compare x y = 0
+    | PUSH8 x, PUSH8 y -> BigInt.compare x y = 0
+    | PUSH9 x, PUSH9 y -> BigInt.compare x y = 0
+    | PUSH10 x, PUSH10 y -> BigInt.compare x y = 0
+    | PUSH11 x, PUSH11 y -> BigInt.compare x y = 0
+    | PUSH12 x, PUSH12 y -> BigInt.compare x y = 0
+    | PUSH13 x, PUSH13 y -> BigInt.compare x y = 0
+    | PUSH14 x, PUSH14 y -> BigInt.compare x y = 0
+    | PUSH15 x, PUSH15 y -> BigInt.compare x y = 0
+    | PUSH16 x, PUSH16 y -> BigInt.compare x y = 0
+    | PUSH17 x, PUSH17 y -> BigInt.compare x y = 0
+    | PUSH18 x, PUSH18 y -> BigInt.compare x y = 0
+    | PUSH19 x, PUSH19 y -> BigInt.compare x y = 0
+    | PUSH20 x, PUSH20 y -> BigInt.compare x y = 0
+    | PUSH21 x, PUSH21 y -> BigInt.compare x y = 0
+    | PUSH22 x, PUSH22 y -> BigInt.compare x y = 0
+    | PUSH23 x, PUSH23 y -> BigInt.compare x y = 0
+    | PUSH24 x, PUSH24 y -> BigInt.compare x y = 0
+    | PUSH25 x, PUSH25 y -> BigInt.compare x y = 0
+    | PUSH26 x, PUSH26 y -> BigInt.compare x y = 0
+    | PUSH27 x, PUSH27 y -> BigInt.compare x y = 0
+    | PUSH28 x, PUSH28 y -> BigInt.compare x y = 0
+    | PUSH29 x, PUSH29 y -> BigInt.compare x y = 0
+    | PUSH30 x, PUSH30 y -> BigInt.compare x y = 0
+    | PUSH31 x, PUSH31 y -> BigInt.compare x y = 0
+    | PUSH32 x, PUSH32 y -> BigInt.compare x y = 0
+    | DUP1, DUP1 -> true
+    | DUP2, DUP2 -> true
+    | DUP3, DUP3 -> true
+    | DUP4, DUP4 -> true
+    | DUP5, DUP5 -> true
+    | DUP6, DUP6 -> true
+    | DUP7, DUP7 -> true
+    | DUP8, DUP8 -> true
+    | DUP9, DUP9 -> true
+    | DUP10, DUP10 -> true
+    | DUP11, DUP11 -> true
+    | DUP12, DUP12 -> true
+    | DUP13, DUP13 -> true
+    | DUP14, DUP14 -> true
+    | DUP15, DUP15 -> true
+    | DUP16, DUP16 -> true
+    | SWAP1, SWAP1 -> true
+    | SWAP2, SWAP2 -> true
+    | SWAP3, SWAP3 -> true
+    | SWAP4, SWAP4 -> true
+    | SWAP5, SWAP5 -> true
+    | SWAP6, SWAP6 -> true
+    | SWAP7, SWAP7 -> true
+    | SWAP8, SWAP8 -> true
+    | SWAP9, SWAP9 -> true
+    | SWAP10, SWAP10 -> true
+    | SWAP11, SWAP11 -> true
+    | SWAP12, SWAP12 -> true
+    | SWAP13, SWAP13 -> true
+    | SWAP14, SWAP14 -> true
+    | SWAP15, SWAP15 -> true
+    | SWAP16, SWAP16 -> true
+    | LOG0, LOG0 -> true
+    | LOG1, LOG1 -> true
+    | LOG2, LOG2 -> true
+    | LOG3, LOG3 -> true
+    | LOG4, LOG4 -> true
+    | CREATE, CREATE -> true
+    | CALL, CALL -> true
+    | CALLCODE, CALLCODE -> true
+    | RETURN, RETURN -> true
+    | DELEGATECALL, DELEGATECALL -> true
+    | STATICCALL, STATICCALL -> true
+    | CREATE2, CREATE2 -> true
+    | REVERT, REVERT -> true
+    | INVALID, INVALID -> true
+    | SELFDESTRUCT, SELFDESTRUCT -> true
+    | _ -> false
+
+  let get_info = function
+   | STOP -> EVM.get_info EVM.STOP
+   | ADD -> EVM.get_info EVM.ADD
+   | SUB -> EVM.get_info EVM.SUB
+   | MUL -> EVM.get_info EVM.MUL
+   | DIV -> EVM.get_info EVM.DIV
+   | SDIV -> EVM.get_info EVM.SDIV
+   | MOD -> EVM.get_info EVM.MOD
+   | SMOD -> EVM.get_info EVM.SMOD
+   | EXP -> EVM.get_info EVM.EXP
+   | NOT -> EVM.get_info EVM.NOT
+   | LT -> EVM.get_info EVM.LT
+   | GT -> EVM.get_info EVM.GT
+   | SLT -> EVM.get_info EVM.SLT
+   | SGT -> EVM.get_info EVM.SGT
+   | EQ -> EVM.get_info EVM.EQ
+   | ISZERO -> EVM.get_info EVM.ISZERO
+   | AND -> EVM.get_info EVM.AND
+   | OR -> EVM.get_info EVM.OR
+   | XOR -> EVM.get_info EVM.XOR
+   | BYTE -> EVM.get_info EVM.BYTE
+   | SHL -> EVM.get_info EVM.SHL
+   | SHR -> EVM.get_info EVM.SHR
+   | SAR -> EVM.get_info EVM.SAR
+   | ADDMOD -> EVM.get_info EVM.ADDMOD
+   | MULMOD -> EVM.get_info EVM.MULMOD
+   | SIGNEXTEND -> EVM.get_info EVM.SIGNEXTEND
+   | KECCAK256 -> EVM.get_info EVM.KECCAK256
+   | ADDRESS -> EVM.get_info EVM.ADDRESS
+   | BALANCE -> EVM.get_info EVM.BALANCE
+   | ORIGIN -> EVM.get_info EVM.ORIGIN
+   | CALLER -> EVM.get_info EVM.CALLER
+   | CALLVALUE -> EVM.get_info EVM.CALLVALUE
+   | CALLDATALOAD -> EVM.get_info EVM.CALLDATALOAD
+   | CALLDATASIZE -> EVM.get_info EVM.CALLDATASIZE
+   | CALLDATACOPY -> EVM.get_info EVM.CALLDATACOPY
+   | CODESIZE -> EVM.get_info EVM.CODESIZE
+   | CODECOPY -> EVM.get_info EVM.CODECOPY
+   | GASPRICE -> EVM.get_info EVM.GASPRICE
+   | EXTCODESIZE -> EVM.get_info EVM.EXTCODESIZE
+   | EXTCODECOPY -> EVM.get_info EVM.EXTCODECOPY
+   | RETURNDATASIZE -> EVM.get_info EVM.RETURNDATASIZE
+   | RETURNDATACOPY -> EVM.get_info EVM.RETURNDATACOPY
+   | EXTCODEHASH -> EVM.get_info EVM.EXTCODEHASH
+   | BLOCKHASH -> EVM.get_info EVM.BLOCKHASH
+   | COINBASE -> EVM.get_info EVM.COINBASE
+   | TIMESTAMP -> EVM.get_info EVM.TIMESTAMP
+   | NUMBER -> EVM.get_info EVM.NUMBER
+   | DIFFICULTY -> EVM.get_info EVM.DIFFICULTY
+   | GASLIMIT -> EVM.get_info EVM.GASLIMIT
+   | POP -> EVM.get_info EVM.POP
+   | MLOAD -> EVM.get_info EVM.MLOAD
+   | MSTORE -> EVM.get_info EVM.MSTORE
+   | MSTORE8 -> EVM.get_info EVM.MSTORE8
+   | SLOAD -> EVM.get_info EVM.SLOAD
+   | SSTORE -> EVM.get_info EVM.SSTORE
+   | JUMP _ -> EVM.get_info EVM.JUMP
+   | JUMPDYN -> EVM.get_info EVM.JUMP
+   | JUMPI _ -> EVM.get_info EVM.JUMPI
+   | PC -> EVM.get_info EVM.PC
+   | MSIZE -> EVM.get_info EVM.MSIZE
+   | GAS -> EVM.get_info EVM.GAS
+   | JUMPDEST _ -> EVM.get_info EVM.JUMPDEST
+   | PUSH1 x -> EVM.get_info (EVM.PUSH1 x)
+   | PUSH2 x -> EVM.get_info (EVM.PUSH2 x)
+   | PUSH3 x -> EVM.get_info (EVM.PUSH3 x)
+   | PUSH4 x -> EVM.get_info (EVM.PUSH4 x)
+   | PUSH5 x -> EVM.get_info (EVM.PUSH5 x)
+   | PUSH6 x -> EVM.get_info (EVM.PUSH6 x)
+   | PUSH7 x -> EVM.get_info (EVM.PUSH7 x)
+   | PUSH8 x -> EVM.get_info (EVM.PUSH8 x)
+   | PUSH9 x -> EVM.get_info (EVM.PUSH9 x)
+   | PUSH10 x -> EVM.get_info (EVM.PUSH10 x)
+   | PUSH11 x -> EVM.get_info (EVM.PUSH11 x)
+   | PUSH12 x -> EVM.get_info (EVM.PUSH12 x)
+   | PUSH13 x -> EVM.get_info (EVM.PUSH13 x)
+   | PUSH14 x -> EVM.get_info (EVM.PUSH14 x)
+   | PUSH15 x -> EVM.get_info (EVM.PUSH15 x)
+   | PUSH16 x -> EVM.get_info (EVM.PUSH16 x)
+   | PUSH17 x -> EVM.get_info (EVM.PUSH17 x)
+   | PUSH18 x -> EVM.get_info (EVM.PUSH18 x)
+   | PUSH19 x -> EVM.get_info (EVM.PUSH19 x)
+   | PUSH20 x -> EVM.get_info (EVM.PUSH20 x)
+   | PUSH21 x -> EVM.get_info (EVM.PUSH21 x)
+   | PUSH22 x -> EVM.get_info (EVM.PUSH22 x)
+   | PUSH23 x -> EVM.get_info (EVM.PUSH23 x)
+   | PUSH24 x -> EVM.get_info (EVM.PUSH24 x)
+   | PUSH25 x -> EVM.get_info (EVM.PUSH25 x)
+   | PUSH26 x -> EVM.get_info (EVM.PUSH26 x)
+   | PUSH27 x -> EVM.get_info (EVM.PUSH27 x)
+   | PUSH28 x -> EVM.get_info (EVM.PUSH28 x)
+   | PUSH29 x -> EVM.get_info (EVM.PUSH29 x)
+   | PUSH30 x -> EVM.get_info (EVM.PUSH30 x)
+   | PUSH31 x -> EVM.get_info (EVM.PUSH31 x)
+   | PUSH32 x -> EVM.get_info (EVM.PUSH32 x)
+   | DUP1 -> EVM.get_info EVM.DUP1
+   | DUP2 -> EVM.get_info EVM.DUP2
+   | DUP3 -> EVM.get_info EVM.DUP3
+   | DUP4 -> EVM.get_info EVM.DUP4
+   | DUP5 -> EVM.get_info EVM.DUP5
+   | DUP6 -> EVM.get_info EVM.DUP6
+   | DUP7 -> EVM.get_info EVM.DUP7
+   | DUP8 -> EVM.get_info EVM.DUP8
+   | DUP9 -> EVM.get_info EVM.DUP9
+   | DUP10 -> EVM.get_info EVM.DUP10
+   | DUP11 -> EVM.get_info EVM.DUP11
+   | DUP12 -> EVM.get_info EVM.DUP12
+   | DUP13 -> EVM.get_info EVM.DUP13
+   | DUP14 -> EVM.get_info EVM.DUP14
+   | DUP15 -> EVM.get_info EVM.DUP15
+   | DUP16 -> EVM.get_info EVM.DUP16
+   | SWAP1 -> EVM.get_info EVM.SWAP1
+   | SWAP2 -> EVM.get_info EVM.SWAP2
+   | SWAP3 -> EVM.get_info EVM.SWAP3
+   | SWAP4 -> EVM.get_info EVM.SWAP4
+   | SWAP5 -> EVM.get_info EVM.SWAP5
+   | SWAP6 -> EVM.get_info EVM.SWAP6
+   | SWAP7 -> EVM.get_info EVM.SWAP7
+   | SWAP8 -> EVM.get_info EVM.SWAP8
+   | SWAP9 -> EVM.get_info EVM.SWAP9
+   | SWAP10 -> EVM.get_info EVM.SWAP10
+   | SWAP11 -> EVM.get_info EVM.SWAP11
+   | SWAP12 -> EVM.get_info EVM.SWAP12
+   | SWAP13 -> EVM.get_info EVM.SWAP13
+   | SWAP14 -> EVM.get_info EVM.SWAP14
+   | SWAP15 -> EVM.get_info EVM.SWAP15
+   | SWAP16 -> EVM.get_info EVM.SWAP16
+   | LOG0 -> EVM.get_info EVM.LOG0
+   | LOG1 -> EVM.get_info EVM.LOG1
+   | LOG2 -> EVM.get_info EVM.LOG2
+   | LOG3 -> EVM.get_info EVM.LOG3
+   | LOG4 -> EVM.get_info EVM.LOG4
+   | CREATE -> EVM.get_info EVM.CREATE
+   | CALL -> EVM.get_info EVM.CALL
+   | CALLCODE -> EVM.get_info EVM.CALLCODE
+   | RETURN -> EVM.get_info EVM.RETURN
+   | DELEGATECALL -> EVM.get_info EVM.DELEGATECALL
+   | STATICCALL -> EVM.get_info EVM.STATICCALL
+   | CREATE2 -> EVM.get_info EVM.CREATE2
+   | REVERT -> EVM.get_info EVM.REVERT
+   | INVALID -> EVM.get_info EVM.INVALID
+   | SELFDESTRUCT -> EVM.get_info EVM.SELFDESTRUCT
+
+  let pc_to_num pc =
+    let n = BigInt.num_digits pc in
+    n / 8
+
+  let pc_to_push pc =
+    let n = pc_to_num pc in
+    match n with
+    | 0 -> EVM.PUSH1 pc
+    | 1 -> EVM.PUSH2 pc
+    | 2 -> EVM.PUSH3 pc
+    | 3 -> EVM.PUSH4 pc
+    | 4 -> EVM.PUSH5 pc
+    | 5 -> EVM.PUSH6 pc
+    | 6 -> EVM.PUSH7 pc
+    | 7 -> EVM.PUSH8 pc
+    | 8 -> EVM.PUSH9 pc
+    | 9 -> EVM.PUSH10 pc
+    | 10 -> EVM.PUSH11 pc
+    | 11 -> EVM.PUSH12 pc
+    | 12 -> EVM.PUSH13 pc
+    | 13 -> EVM.PUSH14 pc
+    | 14 -> EVM.PUSH15 pc
+    | 15 -> EVM.PUSH16 pc
+    | 16 -> EVM.PUSH17 pc
+    | 17 -> EVM.PUSH18 pc
+    | 18 -> EVM.PUSH19 pc
+    | 19 -> EVM.PUSH20 pc
+    | 20 -> EVM.PUSH21 pc
+    | 21 -> EVM.PUSH22 pc
+    | 22 -> EVM.PUSH23 pc
+    | 23 -> EVM.PUSH24 pc
+    | 24 -> EVM.PUSH25 pc
+    | 25 -> EVM.PUSH26 pc
+    | 26 -> EVM.PUSH27 pc
+    | 27 -> EVM.PUSH28 pc
+    | 28 -> EVM.PUSH29 pc
+    | 29 -> EVM.PUSH30 pc
+    | 30 -> EVM.PUSH31 pc
+    | 31 -> EVM.PUSH32 pc
+    | _ -> assert false
+
+  let num_to_push i =
+    if BigInt.sign i < 0 then
+      PUSH32 i
+    else
+      let n = pc_to_num i in
+      match n with
+      | 0 -> PUSH1 i
+      | 1 -> PUSH2 i
+      | 2 -> PUSH3 i
+      | 3 -> PUSH4 i
+      | 4 -> PUSH5 i
+      | 5 -> PUSH6 i
+      | 6 -> PUSH7 i
+      | 7 -> PUSH8 i
+      | 8 -> PUSH9 i
+      | 9 -> PUSH10 i
+      | 10 -> PUSH11 i
+      | 11 -> PUSH12 i
+      | 12 -> PUSH13 i
+      | 13 -> PUSH14 i
+      | 14 -> PUSH15 i
+      | 15 -> PUSH16 i
+      | 16 -> PUSH17 i
+      | 17 -> PUSH18 i
+      | 18 -> PUSH19 i
+      | 19 -> PUSH20 i
+      | 20 -> PUSH21 i
+      | 21 -> PUSH22 i
+      | 22 -> PUSH23 i
+      | 23 -> PUSH24 i
+      | 24 -> PUSH25 i
+      | 25 -> PUSH26 i
+      | 26 -> PUSH27 i
+      | 27 -> PUSH28 i
+      | 28 -> PUSH29 i
+      | 29 -> PUSH30 i
+      | 30 -> PUSH31 i
+      | 31 -> PUSH32 i
+      | _ -> assert false
+
+
+  let swap i =
+    match i - 2 with
+    | x when x < 0 -> invalid_arg "nothing to swap: swap smaller than 2"
+    | 0 -> SWAP1
+    | 1 -> SWAP2
+    | 2 -> SWAP3
+    | 3 -> SWAP4
+    | 4 -> SWAP5
+    | 5 -> SWAP6
+    | 6 -> SWAP7
+    | 7 -> SWAP8
+    | 8 -> SWAP9
+    | 9 -> SWAP10
+    | 10 -> SWAP11
+    | 11 -> SWAP12
+    | 12 -> SWAP13
+    | 13 -> SWAP14
+    | 14 -> SWAP15
+    | 15 -> SWAP16
+    | _ -> invalid_arg "Can't swap that much"
+
+  let to_evm = function
+   | STOP -> [EVM.STOP]
+   | ADD -> [EVM.ADD]
+   | SUB -> [EVM.SUB]
+   | MUL -> [EVM.MUL]
+   | DIV -> [EVM.DIV]
+   | SDIV -> [EVM.SDIV]
+   | MOD -> [EVM.MOD]
+   | SMOD -> [EVM.SMOD]
+   | EXP -> [EVM.EXP]
+   | NOT -> [EVM.NOT]
+   | LT -> [EVM.LT]
+   | GT -> [EVM.GT]
+   | SLT -> [EVM.SLT]
+   | SGT -> [EVM.SGT]
+   | EQ -> [EVM.EQ]
+   | ISZERO -> [EVM.ISZERO]
+   | AND -> [EVM.AND]
+   | OR -> [EVM.OR]
+   | XOR -> [EVM.XOR]
+   | BYTE -> [EVM.BYTE]
+   | SHL -> [EVM.SHL]
+   | SHR -> [EVM.SHR]
+   | SAR -> [EVM.SAR]
+   | ADDMOD -> [EVM.ADDMOD]
+   | MULMOD -> [EVM.MULMOD]
+   | SIGNEXTEND -> [EVM.SIGNEXTEND]
+   | KECCAK256 -> [EVM.KECCAK256]
+   | ADDRESS -> [EVM.ADDRESS]
+   | BALANCE -> [EVM.BALANCE]
+   | ORIGIN -> [EVM.ORIGIN]
+   | CALLER -> [EVM.CALLER]
+   | CALLVALUE -> [EVM.CALLVALUE]
+   | CALLDATALOAD -> [EVM.CALLDATALOAD]
+   | CALLDATASIZE -> [EVM.CALLDATASIZE]
+   | CALLDATACOPY -> [EVM.CALLDATACOPY]
+   | CODESIZE -> [EVM.CODESIZE]
+   | CODECOPY -> [EVM.CODECOPY]
+   | GASPRICE -> [EVM.GASPRICE]
+   | EXTCODESIZE -> [EVM.EXTCODESIZE]
+   | EXTCODECOPY -> [EVM.EXTCODECOPY]
+   | RETURNDATASIZE -> [EVM.RETURNDATASIZE]
+   | RETURNDATACOPY -> [EVM.RETURNDATACOPY]
+   | EXTCODEHASH -> [EVM.EXTCODEHASH]
+   | BLOCKHASH -> [EVM.BLOCKHASH]
+   | COINBASE -> [EVM.COINBASE]
+   | TIMESTAMP -> [EVM.TIMESTAMP]
+   | NUMBER -> [EVM.NUMBER]
+   | DIFFICULTY -> [EVM.DIFFICULTY]
+   | GASLIMIT -> [EVM.GASLIMIT]
+   | POP -> [EVM.POP]
+   | MLOAD -> [EVM.MLOAD]
+   | MSTORE -> [EVM.MSTORE]
+   | MSTORE8 -> [EVM.MSTORE8]
+   | SLOAD -> [EVM.SLOAD]
+   | SSTORE -> [EVM.SSTORE]
+   | JUMP label -> [pc_to_push label.label_addr;EVM.JUMP]
+   | JUMPDYN -> [EVM.JUMP]
+   | JUMPI label -> [pc_to_push label.label_addr;EVM.JUMPI]
+   | PC -> [EVM.PC]
+   | MSIZE -> [EVM.MSIZE]
+   | GAS -> [EVM.GAS]
+   | JUMPDEST _ -> [EVM.JUMPDEST]
+   | PUSH1 x -> [(EVM.PUSH1 x)]
+   | PUSH2 x -> [(EVM.PUSH2 x)]
+   | PUSH3 x -> [(EVM.PUSH3 x)]
+   | PUSH4 x -> [(EVM.PUSH4 x)]
+   | PUSH5 x -> [(EVM.PUSH5 x)]
+   | PUSH6 x -> [(EVM.PUSH6 x)]
+   | PUSH7 x -> [(EVM.PUSH7 x)]
+   | PUSH8 x -> [(EVM.PUSH8 x)]
+   | PUSH9 x -> [(EVM.PUSH9 x)]
+   | PUSH10 x -> [(EVM.PUSH10 x)]
+   | PUSH11 x -> [(EVM.PUSH11 x)]
+   | PUSH12 x -> [(EVM.PUSH12 x)]
+   | PUSH13 x -> [(EVM.PUSH13 x)]
+   | PUSH14 x -> [(EVM.PUSH14 x)]
+   | PUSH15 x -> [(EVM.PUSH15 x)]
+   | PUSH16 x -> [(EVM.PUSH16 x)]
+   | PUSH17 x -> [(EVM.PUSH17 x)]
+   | PUSH18 x -> [(EVM.PUSH18 x)]
+   | PUSH19 x -> [(EVM.PUSH19 x)]
+   | PUSH20 x -> [(EVM.PUSH20 x)]
+   | PUSH21 x -> [(EVM.PUSH21 x)]
+   | PUSH22 x -> [(EVM.PUSH22 x)]
+   | PUSH23 x -> [(EVM.PUSH23 x)]
+   | PUSH24 x -> [(EVM.PUSH24 x)]
+   | PUSH25 x -> [(EVM.PUSH25 x)]
+   | PUSH26 x -> [(EVM.PUSH26 x)]
+   | PUSH27 x -> [(EVM.PUSH27 x)]
+   | PUSH28 x -> [(EVM.PUSH28 x)]
+   | PUSH29 x -> [(EVM.PUSH29 x)]
+   | PUSH30 x -> [(EVM.PUSH30 x)]
+   | PUSH31 x -> [(EVM.PUSH31 x)]
+   | PUSH32 x -> [(EVM.PUSH32 x)]
+   | DUP1 -> [EVM.DUP1]
+   | DUP2 -> [EVM.DUP2]
+   | DUP3 -> [EVM.DUP3]
+   | DUP4 -> [EVM.DUP4]
+   | DUP5 -> [EVM.DUP5]
+   | DUP6 -> [EVM.DUP6]
+   | DUP7 -> [EVM.DUP7]
+   | DUP8 -> [EVM.DUP8]
+   | DUP9 -> [EVM.DUP9]
+   | DUP10 -> [EVM.DUP10]
+   | DUP11 -> [EVM.DUP11]
+   | DUP12 -> [EVM.DUP12]
+   | DUP13 -> [EVM.DUP13]
+   | DUP14 -> [EVM.DUP14]
+   | DUP15 -> [EVM.DUP15]
+   | DUP16 -> [EVM.DUP16]
+   | SWAP1 -> [EVM.SWAP1]
+   | SWAP2 -> [EVM.SWAP2]
+   | SWAP3 -> [EVM.SWAP3]
+   | SWAP4 -> [EVM.SWAP4]
+   | SWAP5 -> [EVM.SWAP5]
+   | SWAP6 -> [EVM.SWAP6]
+   | SWAP7 -> [EVM.SWAP7]
+   | SWAP8 -> [EVM.SWAP8]
+   | SWAP9 -> [EVM.SWAP9]
+   | SWAP10 -> [EVM.SWAP10]
+   | SWAP11 -> [EVM.SWAP11]
+   | SWAP12 -> [EVM.SWAP12]
+   | SWAP13 -> [EVM.SWAP13]
+   | SWAP14 -> [EVM.SWAP14]
+   | SWAP15 -> [EVM.SWAP15]
+   | SWAP16 -> [EVM.SWAP16]
+   | LOG0 -> [EVM.LOG0]
+   | LOG1 -> [EVM.LOG1]
+   | LOG2 -> [EVM.LOG2]
+   | LOG3 -> [EVM.LOG3]
+   | LOG4 -> [EVM.LOG4]
+   | CREATE -> [EVM.CREATE]
+   | CALL -> [EVM.CALL]
+   | CALLCODE -> [EVM.CALLCODE]
+   | RETURN -> [EVM.RETURN]
+   | DELEGATECALL -> [EVM.DELEGATECALL]
+   | STATICCALL -> [EVM.STATICCALL]
+   | CREATE2 -> [EVM.CREATE2]
+   | REVERT -> [EVM.REVERT]
+   | INVALID -> [EVM.INVALID]
+   | SELFDESTRUCT -> [EVM.SELFDESTRUCT]
+
+  let of_json = function
+   | Json_base.String "STOP" -> STOP
+   | Json_base.String "ADD" -> ADD
+   | Json_base.String "SUB" -> SUB
+   | Json_base.String "MUL" -> MUL
+   | Json_base.String "DIV" -> DIV
+   | Json_base.String "SDIV" -> SDIV
+   | Json_base.String "MOD" -> MOD
+   | Json_base.String "SMOD" -> SMOD
+   | Json_base.String "EXP" -> EXP
+   | Json_base.String "NOT" -> NOT
+   | Json_base.String "LT" -> LT
+   | Json_base.String "GT" -> GT
+   | Json_base.String "SLT" -> SLT
+   | Json_base.String "SGT" -> SGT
+   | Json_base.String "EQ" -> EQ
+   | Json_base.String "ISZERO" -> ISZERO
+   | Json_base.String "AND" -> AND
+   | Json_base.String "OR" -> OR
+   | Json_base.String "XOR" -> XOR
+   | Json_base.String "BYTE" -> BYTE
+   | Json_base.String "SHL" -> SHL
+   | Json_base.String "SHR" -> SHR
+   | Json_base.String "SAR" -> SAR
+   | Json_base.String "ADDMOD" -> ADDMOD
+   | Json_base.String "MULMOD" -> MULMOD
+   | Json_base.String "SIGNEXTEND" -> SIGNEXTEND
+   | Json_base.String "KECCAK256" -> KECCAK256
+   | Json_base.String "ADDRESS" -> ADDRESS
+   | Json_base.String "BALANCE" -> BALANCE
+   | Json_base.String "ORIGIN" -> ORIGIN
+   | Json_base.String "CALLER" -> CALLER
+   | Json_base.String "CALLVALUE" -> CALLVALUE
+   | Json_base.String "CALLDATALOAD" -> CALLDATALOAD
+   | Json_base.String "CALLDATASIZE" -> CALLDATASIZE
+   | Json_base.String "CALLDATACOPY" -> CALLDATACOPY
+   | Json_base.String "CODESIZE" -> CODESIZE
+   | Json_base.String "CODECOPY" -> CODECOPY
+   | Json_base.String "GASPRICE" -> GASPRICE
+   | Json_base.String "EXTCODESIZE" -> EXTCODESIZE
+   | Json_base.String "EXTCODECOPY" -> EXTCODECOPY
+   | Json_base.String "RETURNDATASIZE" -> RETURNDATASIZE
+   | Json_base.String "RETURNDATACOPY" -> RETURNDATACOPY
+   | Json_base.String "EXTCODEHASH" -> EXTCODEHASH
+   | Json_base.String "BLOCKHASH" -> BLOCKHASH
+   | Json_base.String "COINBASE" -> COINBASE
+   | Json_base.String "TIMESTAMP" -> TIMESTAMP
+   | Json_base.String "NUMBER" -> NUMBER
+   | Json_base.String "DIFFICULTY" -> DIFFICULTY
+   | Json_base.String "GASLIMIT" -> GASLIMIT
+   | Json_base.String "POP" -> POP
+   | Json_base.String "MLOAD" -> MLOAD
+   | Json_base.String "MSTORE" -> MSTORE
+   | Json_base.String "MSTORE8" -> MSTORE8
+   | Json_base.String "SLOAD" -> SLOAD
+   | Json_base.String "SSTORE" -> SSTORE
+   | Json_base.String "PC" -> PC
+   | Json_base.String "MSIZE" -> MSIZE
+   | Json_base.String "GAS" -> GAS
+   | Json_base.List [Json_base.String "PUSH1"; Json_base.Int x] -> (PUSH1 (BigInt.of_int x))
+   | Json_base.String "DUP1" -> DUP1
+   | Json_base.String "DUP2" -> DUP2
+   | Json_base.String "DUP3" -> DUP3
+   | Json_base.String "DUP4" -> DUP4
+   | Json_base.String "DUP5" -> DUP5
+   | Json_base.String "DUP6" -> DUP6
+   | Json_base.String "DUP7" -> DUP7
+   | Json_base.String "DUP8" -> DUP8
+   | Json_base.String "DUP9" -> DUP9
+   | Json_base.String "DUP10" -> DUP10
+   | Json_base.String "DUP11" -> DUP11
+   | Json_base.String "DUP12" -> DUP12
+   | Json_base.String "DUP13" -> DUP13
+   | Json_base.String "DUP14" -> DUP14
+   | Json_base.String "DUP15" -> DUP15
+   | Json_base.String "DUP16" -> DUP16
+   | Json_base.String "SWAP1" -> SWAP1
+   | Json_base.String "SWAP2" -> SWAP2
+   | Json_base.String "SWAP3" -> SWAP3
+   | Json_base.String "SWAP4" -> SWAP4
+   | Json_base.String "SWAP5" -> SWAP5
+   | Json_base.String "SWAP6" -> SWAP6
+   | Json_base.String "SWAP7" -> SWAP7
+   | Json_base.String "SWAP8" -> SWAP8
+   | Json_base.String "SWAP9" -> SWAP9
+   | Json_base.String "SWAP10" -> SWAP10
+   | Json_base.String "SWAP11" -> SWAP11
+   | Json_base.String "SWAP12" -> SWAP12
+   | Json_base.String "SWAP13" -> SWAP13
+   | Json_base.String "SWAP14" -> SWAP14
+   | Json_base.String "SWAP15" -> SWAP15
+   | Json_base.String "SWAP16" -> SWAP16
+   | Json_base.String "LOG0" -> LOG0
+   | Json_base.String "LOG1" -> LOG1
+   | Json_base.String "LOG2" -> LOG2
+   | Json_base.String "LOG3" -> LOG3
+   | Json_base.String "LOG4" -> LOG4
+   | Json_base.String "CREATE" -> CREATE
+   | Json_base.String "CALL" -> CALL
+   | Json_base.String "CALLCODE" -> CALLCODE
+   | Json_base.String "RETURN" -> RETURN
+   | Json_base.String "DELEGATECALL" -> DELEGATECALL
+   | Json_base.String "STATICCALL" -> STATICCALL
+   | Json_base.String "CREATE2" -> CREATE2
+   | Json_base.String "REVERT" -> REVERT
+   | Json_base.String "INVALID" -> INVALID
+   | Json_base.String "SELFDESTRUCT" -> SELFDESTRUCT
+   | _ -> invalid_arg "incorrect json"
+
+
+  let linearize l =
+    let stable = ref true in
+    let compute_label pc = function
+      | JUMPDEST label ->
+          let num = pc_to_num pc in
+          let num' = pc_to_num label.label_addr in
+          label.label_addr <- pc;
+          if not (num = num') then begin
+            stable := false;
+          end;
+          BigInt.succ pc
+      | instr -> BigInt.add pc (BigInt.of_int (EVM.sizel (to_evm instr)))
+    in
+    let rec fixpoint () =
+      stable := true;
+      let _pc = List.fold_left compute_label BigInt.zero l in
+      if not !stable then fixpoint ()
+    in
+    fixpoint ()
+
+  let finalize l =
+    linearize l;
+    let l = List.fold_left (fun acc e -> List.rev_append (to_evm e) acc) [] l in
+    let l = List.rev l in
+    l
+
   type asm = {
-    codes: instruction Queue.t;
+    mutable codes: instruction list;
   }
 
   type stack = {
     asm: asm;
-    stack: int Ity.Mpv.t;
+    stack: int Ident.Mid.t;
     mutable bottom: int;
+    call_labels: label Expr.Mrs.t;
   }
 
-  let add stack asm popped pushed =
-    Queue.add asm stack.asm.codes;
+  let new_label name = { label_name = name; label_addr = BigInt.zero }
+
+  let add ?(popped=0) ?(pushed=0) stack asm =
+    stack.asm.codes <- asm::stack.asm.codes;
     stack.bottom <- stack.bottom - popped + pushed
 
+  let add_auto stack asm =
+    match asm with
+    | JUMPDEST _ | JUMP _ ->
+        add stack asm
+    | JUMPI _ ->
+    add ~popped:1 stack asm
+    | _ ->
+    let info = get_info asm in
+    add stack asm ~popped:info.EVM.args ~pushed:info.EVM.ret
+
+  let jumpdest stack label =
+    add_auto stack (JUMPDEST label)
+
+  let jump stack label =
+    add_auto stack (JUMP label)
+
+  let jumpi stack label =
+    add_auto stack (JUMPI label)
+
+  let auto stack l =
+    List.iter (add_auto stack) l
+
   let add_var stack var =
-    let stack = { stack with stack = Ity.Mpv.add var stack.bottom stack.stack } in
+    let stack = { stack with stack = Ident.Mid.add var stack.bottom stack.stack } in
+    stack.bottom <- stack.bottom + 1;
     stack
 
   let get_var stack var =
-    Ity.Mpv.find var stack.stack
+    stack.bottom - Ident.Mid.find var stack.stack
 
 end
-
-open EVMSimple
 
 module Print = struct
 
   open Mltree
 
   (* extraction attributes *)
-  let optional_arg = create_attribute "yul:optional"
-  let named_arg = create_attribute "yul:named"
-  let yul_remove = create_attribute "yul:remove"
+  let external_arg = create_attribute "evm:external"
 
-  let is_optional ~attrs =
-    Sattr.mem optional_arg attrs
-
-  let is_named ~attrs =
-    Sattr.mem named_arg attrs
-
-  let is_yul_remove ~attrs =
-    Ident.Sattr.mem yul_remove attrs
-
-  let yul_keywords =
-    ["function"; "default"; "if"; "switch"; "case"; "default"; "for"; "break"; "continue"; "bool";
-     "u8"; "u32"; "u64"; "u128"; "u256"; "s8"; "s32"; "s64"; "s128"; "s256";
-     "true"; "false";
-     "result";
-    ]
-
-  let _is_yul_keyword =
-    let h = Hstr.create 16 in
-    List.iter (fun s -> Hstr.add h s ()) yul_keywords;
-    Hstr.mem h
-
-  (* iprinter: local names
-     aprinter: type variables
-     tprinter: toplevel definitions *)
-  let iprinter, aprinter, tprinter =
-    let isanitize = sanitizer char_to_alnumus char_to_alnumus in
-    let lsanitize = sanitizer char_to_lalnumus char_to_alnumus in
-    create_ident_printer yul_keywords ~sanitizer:isanitize,
-    create_ident_printer yul_keywords ~sanitizer:lsanitize,
-    create_ident_printer yul_keywords ~sanitizer:lsanitize
-
-  let forget_id id = forget_id iprinter id
-  let _forget_ids = List.iter forget_id
-  let forget_var (id, _, _) = forget_id id
-  let forget_vars = List.iter forget_var
-
-  let forget_let_defn = function
-    | Lvar (v,_) -> forget_id v.pv_vs.vs_name
-    | Lsym (s,_,_,_,_) | Lany (s,_,_,_) -> forget_rs s
-    | Lrec rdl -> List.iter (fun fd -> forget_rs fd.rec_sym) rdl
-
-  let rec forget_pat = function
-    | Pwild -> ()
-    | Pvar {vs_name=id} -> forget_id id
-    | Papp (_, pl) | Ptuple pl -> List.iter forget_pat pl
-    | Por (p1, p2) -> forget_pat p1; forget_pat p2
-    | Pas (p, _) -> forget_pat p
-
-  let print_global_ident ~sanitizer fmt id =
-    let s = id_unique ~sanitizer tprinter id in
-    Ident.forget_id tprinter id;
-    fprintf fmt "%s" s
-
-  let print_path ~sanitizer fmt (q, id) =
-    assert (List.length q >= 1);
-    match Lists.chop_last q with
-    | [], _ -> print_global_ident ~sanitizer fmt id
-    | q, _  ->
-        fprintf fmt "%a.%a"
-          (print_list dot string) q (print_global_ident ~sanitizer) id
-
-  let rec remove_prefix acc current_path = match acc, current_path with
-    | [], _ | _, [] -> acc
-    | p1 :: _, p2 :: _ when p1 <> p2 -> acc
-    | _ :: r1, _ :: r2 -> remove_prefix r1 r2
-
-  let is_local_id info id =
-    Sid.mem id info.info_current_th.th_local ||
-    Opt.fold (fun _ m -> Sid.mem id m.Pmodule.mod_local)
-      false info.info_current_mo
-
-  exception Local
-
-  let print_qident ~sanitizer info fmt id =
-    try
-      if info.info_flat then raise Not_found;
-      if is_local_id info id then raise Local;
-      let p, t, q =
-        try Pmodule.restore_path id with Not_found -> Theory.restore_path id in
-      let fname = if p = [] then info.info_fname else None in
-      let m = Strings.capitalize (module_name ?fname p t) in
-      fprintf fmt "%s.%a" m (print_path ~sanitizer) (q, id)
-    with
-    | Not_found ->
-        let s = id_unique ~sanitizer iprinter id in
-        fprintf fmt "%s" s
-    | Local ->
-        let _, _, q =
-          try Pmodule.restore_path id with Not_found ->
-            Theory.restore_path id in
-        let q = remove_prefix q (List.rev info.info_current_ph) in
-        print_path ~sanitizer fmt (q, id)
-
-  let print_lident = print_qident ~sanitizer:Strings.uncapitalize
-  let print_uident = print_qident ~sanitizer:Strings.capitalize
-
-  let print_tv fmt tv =
-    fprintf fmt "'%s" (id_unique aprinter tv.tv_name)
-
-  let protect_on b s =
-    if b then "(" ^^ s ^^ ")" else s
-
-  let star fmt () = fprintf fmt " *@ "
-
-  let rec print_list2 sep sep_m print1 print2 fmt (l1, l2) =
-    match l1, l2 with
-    | [x1], [x2] ->
-        print1 fmt x1; sep_m fmt (); print2 fmt x2
-    | x1 :: r1, x2 :: r2 ->
-        print1 fmt x1; sep_m fmt (); print2 fmt x2; sep fmt ();
-        print_list2 sep sep_m print1 print2 fmt (r1, r2)
-    | _ -> ()
-
-  let print_rs info fmt rs =
-    fprintf fmt "%a" (print_lident info) rs.rs_name
-
-  (** Types *)
-
-  let rec print_ty ?(paren=false) info fmt = function
-    | Tvar tv ->
-        print_tv fmt tv
-    | Ttuple [] ->
-        fprintf fmt "unit"
-    | Ttuple [t] ->
-        print_ty ~paren info fmt t
-    | Ttuple tl ->
-        fprintf fmt (protect_on paren "@[%a@]")
-          (print_list star (print_ty ~paren:true info)) tl
-    | Tapp (ts, tl) ->
-        match query_syntax info.info_syn ts with
-        | Some s ->
-            fprintf fmt (protect_on paren "%a")
-              (syntax_arguments s (print_ty ~paren:true info)) tl
-        | None   ->
-            match tl with
-            | [] ->
-                (print_lident info) fmt ts
-            | [ty] ->
-                fprintf fmt (protect_on paren "%a@ %a")
-                  (print_ty ~paren:true info) ty (print_lident info) ts
-            | tl ->
-                fprintf fmt (protect_on paren "(%a)@ %a")
-                  (print_list comma (print_ty ~paren:false info)) tl
-                  (print_lident info) ts
-
-  let print_vsty_opt info fmt id ty =
-    fprintf fmt "?%s:(%a:@ %a)" id.id_string (print_lident info) id
-      (print_ty ~paren:false info) ty
-
-  let print_vsty_named info fmt id ty =
-    fprintf fmt "~%s:(%a:@ %a)" id.id_string (print_lident info) id
-      (print_ty ~paren:false info) ty
-
-  let print_vsty info fmt (id, ty, _) =
-    let attrs = id.id_attrs in
-    if is_optional ~attrs then print_vsty_opt info fmt id ty
-    else if is_named ~attrs then print_vsty_named info fmt id ty
-    else fprintf fmt "%a" (print_lident info) id
-        (* (print_ty ~paren:false info) ty *)
-
-  let print_tv_arg = print_tv
-  let print_tv_args fmt = function
-    | []   -> ()
-    | [tv] -> fprintf fmt "%a@ " print_tv_arg tv
-    | tvl  -> fprintf fmt "(%a)@ " (print_list comma print_tv_arg) tvl
-
-  let print_vs_arg info fmt vs =
-    fprintf fmt "@[%a@]" (print_vsty info) vs
+  let is_external ~attrs =
+    Sattr.mem external_arg attrs
 
   let get_record info rs =
     match Mid.find_opt rs.rs_name info.info_mo_known_map with
@@ -761,43 +1909,10 @@ module Print = struct
         List.filter (fun e -> not (rs_ghost e)) itd.itd_fields
     | _ -> []
 
-  let rec print_pat ?(paren=false) info fmt = function
-    | Pwild ->
-        fprintf fmt "$wild"
-    | Pvar {vs_name=id} ->
-        (print_lident info) fmt id
-    | Pas (p, {vs_name=id}) ->
-        fprintf fmt (protect_on paren "%a as %a") (print_pat info) p
-          (print_lident info) id
-    | Por (p1, p2) ->
-        fprintf fmt (protect_on paren "%a | %a") (print_pat info) p1
-          (print_pat info) p2
-    | Ptuple pl ->
-        fprintf fmt "(%a)" (print_list comma (print_pat ~paren:true info)) pl
-    | Papp (ls, pl) ->
-        match query_syntax info.info_syn ls.ls_name, pl with
-        | Some s, _ ->
-            syntax_arguments s (print_pat info) fmt pl
-        | None, pl ->
-            let pjl = let rs = restore_rs ls in get_record info rs in
-            match pjl with
-            | []  -> print_papp info ls fmt pl
-            | pjl ->
-                fprintf fmt (protect_on paren "@[<hov 2>{ %a }@]")
-                  (print_list2 semi equal (print_rs info)
-                  (print_pat ~paren: true info)) (pjl, pl)
-
-  and print_papp info ls fmt = function
-    | []  -> fprintf fmt "%a"      (print_uident info) ls.ls_name
-    | [p] -> fprintf fmt "%a %a"   (print_uident info) ls.ls_name
-               (print_pat info) p
-    | pl  -> fprintf fmt "%a (%a)" (print_uident info) ls.ls_name
-               (print_list comma (print_pat info)) pl
-
   (** Expressions *)
 
   let pv_name pv = pv.pv_vs.vs_name
-  let print_pv info fmt pv = print_lident info fmt (pv_name pv)
+  (* let print_pv info fmt pv = print_lident info fmt (pv_name pv) *)
 
   (* FIXME put these in Compile*)
   let is_true e = match e.e_node with
@@ -808,397 +1923,326 @@ module Print = struct
     | Eapp (s, []) -> rs_equal s rs_false
     | _ -> false
 
-  let check_val_in_drv info loc id =
-    (* here [rs] refers to a [val] declaration *)
-    match query_syntax info.info_syn id with
-    | None (* when info.info_flat *) ->
-        Loc.errorm ?loc "Symbol %a cannot be extracted" (print_lident info) id
-    | _ -> ()
-
-  let is_mapped_to_int info ity =
-    match ity.ity_node with
-    | Ityapp ({ its_ts = ts }, _, _) ->
-        query_syntax info.info_syn ts.ts_name = Some "int"
+  let is_unit = function
+    | Ttuple [] -> true
     | _ -> false
 
-  let print_constant fmt e = begin match e.e_node with
-    | Econst c ->
-        let s = BigInt.to_string (Number.compute_int_constant c) in
-        if c.Number.ic_negative then fprintf fmt "(%s)" s
-        else fprintf fmt "%s" s
-    | _ -> assert false end
+  let removed_arg (_,ty,is_ghost) = is_ghost || is_unit ty
 
-  let print_for_direction fmt = function
-    | To     -> fprintf fmt "to"
-    | DownTo -> fprintf fmt "downto"
-
-  let rec print_apply_args info fmt = function
-    | expr :: exprl, pv :: pvl ->
-        if is_optional ~attrs:(pv_name pv).id_attrs then
-          begin match expr.e_node with
-            | Eapp (rs, _)
-              when query_syntax info.info_syn rs.rs_name = Some "None" -> ()
-            | _ -> fprintf fmt "?%s:%a" (pv_name pv).id_string
-                     (print_expr ~paren:true info) expr end
-        else if is_named ~attrs:(pv_name pv).id_attrs then
-          fprintf fmt "~%s:%a" (pv_name pv).id_string
-            (print_expr ~paren:true info) expr
-        else fprintf fmt "%a" (print_expr ~paren:true info) expr;
-        if exprl <> [] then fprintf fmt "@ ";
-        print_apply_args info fmt (exprl, pvl)
-    | expr :: exprl, [] ->
-        fprintf fmt "%a" (print_expr ~paren:true info) expr;
-        print_apply_args info fmt (exprl, [])
-    | [], _ -> ()
+  let rec print_apply_args info (fmt:EVMSimple.stack) exprl =
+      (** on the stack in reverse order *)
+      Lists.iter_right (fun e -> print_expr info fmt e) exprl
 
   and print_apply info rs fmt pvl =
-    let isfield =
-      match rs.rs_field with
-      | None   -> false
-      | Some _ -> true in
-    let isconstructor () =
-      match Mid.find_opt rs.rs_name info.info_mo_known_map with
-      | Some {pd_node = PDtype its} ->
-          let is_constructor its =
-            List.exists (rs_equal rs) its.itd_constructors in
-          List.exists is_constructor its
-      | _ -> false in
+    (* let isfield = *)
+    (*   match rs.rs_field with *)
+    (*   | None   -> false *)
+    (*   | Some _ -> true in *)
+    (* let isconstructor () = *)
+    (*   match Mid.find_opt rs.rs_name info.info_mo_known_map with *)
+    (*   | Some {pd_node = PDtype its} -> *)
+    (*       let is_constructor its = *)
+    (*         List.exists (rs_equal rs) its.itd_constructors in *)
+    (*       List.exists is_constructor its *)
+    (*   | _ -> false in *)
     match query_syntax info.info_syn rs.rs_name, pvl with
-    | Some s, _ (* when is_local_id info rs.rs_name  *)->
-        syntax_arguments s (print_expr ~paren:true info) fmt pvl;
-    | None, [t] when is_rs_tuple rs ->
-        fprintf fmt "@[%a@]" (print_expr info) t
-    | None, tl when is_rs_tuple rs ->
-        fprintf fmt "@[(%a)@]" (print_list comma (print_expr info)) tl
-    | None, [t1] when isfield ->
-        fprintf fmt "%a.%a" (print_expr info) t1 (print_lident info) rs.rs_name
-    | None, tl when isconstructor () ->
-        let pjl = get_record info rs in
-        begin match pjl, tl with
-          | [], [] ->
-              (print_uident info) fmt rs.rs_name
-          | [], [t] ->
-              fprintf fmt "@[<hov 2>%a %a@]" (print_uident info) rs.rs_name
-                (print_expr ~paren:true info) t
-          | [], tl ->
-              fprintf fmt "@[<hov 2>%a (%a)@]" (print_uident info) rs.rs_name
-                (print_list comma (print_expr ~paren:true info)) tl
-          | pjl, tl -> let equal fmt () = fprintf fmt " =@ " in
-              fprintf fmt "@[<hov 2>{ %a }@]"
-                (print_list2 semi equal (print_rs info)
-                   (print_expr ~paren:true info)) (pjl, tl) end
-    | None, [] ->
-        (print_lident info) fmt rs.rs_name
-    | _, tl ->
-        fprintf fmt "@[<hov 2>%a %a@]"
-          (print_lident info) rs.rs_name
-          (print_apply_args info) (tl, rs.rs_cty.cty_args)
-  (* (print_list space (print_expr ~paren:true info)) tl *)
+    | Some s, _ (* when is_local_id info rs.rs_name  *) ->
+        let json = Json_base.get_list (Json_lexer.parse_json_object s) in
+        let l = List.map EVMSimple.of_json json in
+        print_apply_args info fmt pvl;
+        List.iter (EVMSimple.add_auto fmt) l
+    (* | None, [t] when is_rs_tuple rs -> *)
+    (*     fprintf fmt "@[%a@]" (print_expr info) t *)
+    (* | None, tl when is_rs_tuple rs -> *)
+    (*     fprintf fmt "@[(%a)@]" (print_list comma (print_expr info)) tl *)
+    (* | None, [t1] when isfield -> *)
+    (*     fprintf fmt "%a.%a" (print_expr info) t1 (print_lident info) rs.rs_name *)
+    (* | None, tl when isconstructor () -> *)
+    (*     let pjl = get_record info rs in *)
+    (*     begin match pjl, tl with *)
+    (*       | [], [] -> *)
+    (*           (print_uident info) fmt rs.rs_name *)
+    (*       | [], [t] -> *)
+    (*           fprintf fmt "@[<hov 2>%a %a@]" (print_uident info) rs.rs_name *)
+    (*             (print_expr ~paren:true info) t *)
+    (*       | [], tl -> *)
+    (*           fprintf fmt "@[<hov 2>%a (%a)@]" (print_uident info) rs.rs_name *)
+    (*             (print_list comma (print_expr ~paren:true info)) tl *)
+    (*       | pjl, tl -> let equal fmt () = fprintf fmt " =@ " in *)
+    (*           fprintf fmt "@[<hov 2>{ %a }@]" *)
+    (*             (print_list2 semi equal (print_rs info) *)
+    (*                (print_expr ~paren:true info)) (pjl, tl) end *)
+    | _, _ ->
+        invalid_arg (Printf.sprintf "Unknown application %s" rs.rs_name.Ident.id_string)
 
-  and print_svar fmt s =
-    Stv.iter (fun tv -> fprintf fmt "%a " print_tv tv) s
+  and print_let_def info fmt = function
+    (* | Lvar (pv, e) -> *)
+    (*     print_expr info fmt e; *)
+    (*     fmt  *)
+    (*     (pv_name pv) *)
+    (*     fprintf fmt "@[<hov 2>let %a :=@ %a@]" *)
+    (*       (print_lident info)  *)
+    (*       (\* print_ity pv.pv_ity *\) *)
+    | Lsym (_, _, res, args, ef) ->
+        let pushed = ref 0 in
+        let fmt = List.fold_right (fun ((v,_,_) as pv) fmt ->
+            if removed_arg pv
+            then fmt
+            else begin
+              incr pushed;
+              EVMSimple.add_var fmt v
+            end) args fmt in
+        print_expr info fmt ef;
+        (** put the result before all the popped elements *)
+        if !pushed >= 1 && not (is_unit res) then
+          EVMSimple.add_auto fmt (EVMSimple.swap (!pushed+1));
+        List.fold_right (fun pv () ->
+            if removed_arg pv
+            then ()
+            else EVMSimple.add_auto fmt (EVMSimple.POP)) args ()
+    (* | Lrec rdef -> *)
+    (*     let print_one fst fmt = function *)
+    (*       | { rec_sym = rs1; rec_args = args; rec_exp = e; *)
+    (*           rec_res = res; rec_svar = s } -> *)
+    (*           fprintf fmt "@[<hov 2>%s %a %a@]" *)
+    (*             (if fst then "let rec" else "and") *)
+    (*             (print_lident info) rs1.rs_name *)
+    (*             (print_fun_type_args info) (args, s, res, e); *)
+    (*           forget_vars args in *)
+    (*     print_list_next newline print_one fmt rdef; *)
+    (* | Lany (rs, _, res, []) when functor_arg -> *)
+    (*     fprintf fmt "@[<hov 2>val %a : %a@]" *)
+    (*       (print_lident info) rs.rs_name *)
+    (*       (print_ty info) res; *)
+    (* | Lany (rs, _, res, args) when functor_arg -> *)
+    (*     let print_ty_arg info fmt (_, ty, _) = *)
+    (*       fprintf fmt "@[%a@]" (print_ty info) ty in *)
+    (*     fprintf fmt "@[<hov 2>val %a : @[%a@] ->@ %a@]" *)
+    (*       (print_lident info) rs.rs_name *)
+    (*       (print_list arrow (print_ty_arg info)) args *)
+    (*       (print_ty info) res; *)
+    (*     forget_vars args *)
+  (* | Lany ({rs_name}, _, _, _) -> check_val_in_drv info rs_name.id_loc rs_name *)
+    | _ -> invalid_arg "not_implemented_yet"
 
-  and print_fun_type_args info fmt (args, s, res, e) =
-    if Stv.is_empty s then
-      fprintf fmt "@[%a@] :@ %a@ =@ %a"
-        (print_list space (print_vs_arg info)) args
-        (print_ty info) res
-        (print_expr info) e
-    else
-      let ty_args = List.map (fun (_, ty, _) -> ty) args in
-      let id_args = List.map (fun (id, _, _) -> id) args in
-      let arrow fmt () = fprintf fmt " ->@ " in
-      fprintf fmt ":@ @[<h>@[%a@]. @[%a ->@ %a@]@] =@ \
-                   @[<hov 2>fun @[%a@]@ ->@ %a@]"
-        print_svar s
-        (print_list arrow (print_ty ~paren:true info)) ty_args
-        (print_ty ~paren:true info) res
-        (print_list space (print_lident info)) id_args
-        (print_expr info) e
-
-  and print_let_def ?(functor_arg=false) info fmt = function
-    | Lvar (pv, e) ->
-        fprintf fmt "@[<hov 2>let %a :=@ %a@]"
-          (print_lident info) (pv_name pv)
-          (* print_ity pv.pv_ity *)
-          (print_expr info) e
-    | Lsym (rs, _, _res, args, ef) ->
-        let is_result = true in (* todo when result is unit *)
-        fprintf fmt "@[<hov 2>function %a (@[%a@]) -> result@ {@[%a@]}@]"
-          (print_lident info) rs.rs_name
-          (print_list comma (print_vs_arg info)) args
-          (* (print_ty info) res *)
-          (print_expr info ~is_result) ef;
-        forget_vars args
-    | Lrec rdef ->
-        let print_one fst fmt = function
-          | { rec_sym = rs1; rec_args = args; rec_exp = e;
-              rec_res = res; rec_svar = s } ->
-              fprintf fmt "@[<hov 2>%s %a %a@]"
-                (if fst then "let rec" else "and")
-                (print_lident info) rs1.rs_name
-                (print_fun_type_args info) (args, s, res, e);
-              forget_vars args in
-        print_list_next newline print_one fmt rdef;
-    | Lany (rs, _, res, []) when functor_arg ->
-        fprintf fmt "@[<hov 2>val %a : %a@]"
-          (print_lident info) rs.rs_name
-          (print_ty info) res;
-    | Lany (rs, _, res, args) when functor_arg ->
-        let print_ty_arg info fmt (_, ty, _) =
-          fprintf fmt "@[%a@]" (print_ty info) ty in
-        fprintf fmt "@[<hov 2>val %a : @[%a@] ->@ %a@]"
-          (print_lident info) rs.rs_name
-          (print_list arrow (print_ty_arg info)) args
-          (print_ty info) res;
-        forget_vars args
-    | Lany ({rs_name}, _, _, _) -> check_val_in_drv info rs_name.id_loc rs_name
-
-  and print_expr ?(paren=false) ?(is_result=false) info  fmt e =
-    if is_result then begin
-      match e.e_node with
-      | Econst _
-      | Evar _
-      | Eapp _ -> fprintf fmt "result := "
-      | _ -> ()
-    end;
+  and print_expr info (fmt:EVMSimple.stack) e : unit =
     match e.e_node with
-    | Econst _ ->
+    | Econst c ->
         let id = match e.e_ity with
           | I { ity_node = Ityapp ({its_ts = ts},_,_) } -> ts.ts_name
-          | _ -> assert false in
-        (match query_syntax info.info_literal id  with
-         | Some s -> syntax_arguments s print_constant fmt [e]
-         | None -> failwith "Constants must be of type Int32, Int64, ...")
-         (* todo for any right range *)
-         (* | _, I { Ity.ity_node = Ity.Ityapp ({Ity.its_ts = { Ty.ts_def = Range range}},[],[])} -> *)
-         (* fprintf fmt (protect_on paren "Z.of_string \"%s\"") n) *)
+          | _ -> assert false
+        in begin
+        match query_syntax info.info_syn id with
+        | Some "s32" | Some "u32"
+        | Some "s64" | Some "u64"
+        | Some "s128" | Some "u128"
+        | Some "s256" | Some "u256" ->
+            let i = Number.compute_int_constant c in
+            EVMSimple.add_auto fmt (EVMSimple.num_to_push i)
+        | None | Some _  ->
+            invalid_arg "Unknown type"
+      end
+    | Evar pvs when Ity.ity_equal pvs.pv_ity Ity.ity_unit ->
+        ()
     | Evar pvs ->
-        (print_lident info) fmt (pv_name pvs)
-    | Elet (let_def, e) ->
-        fprintf fmt (protect_on paren "@[%a@]@ @[%a@]")
-          (print_let_def info) let_def
-          (print_expr info ~is_result) e;
-        forget_let_defn let_def
+        let asm = match EVMSimple.get_var fmt pvs.Ity.pv_vs.vs_name with
+          | 1 -> EVMSimple.DUP1
+          | 2 -> EVMSimple.DUP2
+          | 3 -> EVMSimple.DUP3
+          | 4 -> EVMSimple.DUP4
+          | 5 -> EVMSimple.DUP5
+          | 6 -> EVMSimple.DUP6
+          | 7 -> EVMSimple.DUP7
+          | 8 -> EVMSimple.DUP8
+          | 9 -> EVMSimple.DUP9
+          | 10 -> EVMSimple.DUP10
+          | 11 -> EVMSimple.DUP11
+          | 12 -> EVMSimple.DUP12
+          | 13 -> EVMSimple.DUP13
+          | 14 -> EVMSimple.DUP14
+          | 15 -> EVMSimple.DUP15
+          | 16 -> EVMSimple.DUP16
+          | _ -> invalid_arg "get_var too far"
+        in
+        EVMSimple.add_auto fmt asm
+    | Elet (Lvar(pv,e'), e) when Ity.ity_equal pv.pv_ity Ity.ity_unit ->
+        print_expr info fmt e';
+        print_expr info fmt e
+    | Elet (Lvar(pv,e'), e) ->
+        print_expr info fmt e';
+        let fmt = EVMSimple.add_var fmt (pv_name pv) in
+        print_expr info fmt e;
+        EVMSimple.add_auto fmt EVMSimple.SWAP1;
+        EVMSimple.add_auto fmt EVMSimple.POP
+    | Elet (_, _) ->
+        invalid_arg "unsupported local let def"
     | Eabsurd ->
-        fprintf fmt (protect_on paren "assert false (* absurd *)")
+        EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.zero)
     | Eapp (rs, []) when rs_equal rs rs_true ->
-        fprintf fmt "true:bool"
+        EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.one)
     | Eapp (rs, []) when rs_equal rs rs_false ->
-        fprintf fmt "false:bool"
+        EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.zero)
     | Eapp (rs, [])  -> (* avoids parenthesis around values *)
-        fprintf fmt "%a" (print_apply info rs) []
+        print_apply info rs fmt []
     | Eapp (rs, pvl) ->
-       fprintf fmt (protect_on paren "%a")
-               (print_apply info rs) pvl
-    | Ematch (e1, [p, e2], []) ->
-        fprintf fmt (protect_on paren "let %a =@ %a in@ %a")
-          (print_pat info) p (print_expr info) e1 (print_expr info) e2
-    | Ematch (e, pl, []) ->
-        fprintf fmt
-          (protect_on paren "begin match @[%a@] with@\n@[<hov>%a@]@\nend")
-          (print_expr info) e (print_list newline (print_branch info)) pl
-    | Eassign al ->
-        let assign fmt (rho, rs, e) =
-          fprintf fmt "@[<hov 2>%a.%a <-@ %a@]"
-            (print_lident info) (pv_name rho) (print_lident info) rs.rs_name
-            (print_expr info) e in
-        begin match al with
-          | [] -> assert false | [a] -> assign fmt a
-          | al -> fprintf fmt "@[begin %a end@]" (print_list semi assign) al end
+        print_apply info rs fmt pvl
+    (* | Ematch (e1, [p, e2], []) -> *)
+    (*     fprintf fmt (protect_on paren "let %a =@ %a in@ %a") *)
+    (*       (print_pat info) p (print_expr info) e1 (print_expr info) e2 *)
+    (* | Ematch (e, pl, []) -> *)
+    (*     fprintf fmt *)
+    (*       (protect_on paren "begin match @[%a@] with@\n@[<hov>%a@]@\nend") *)
+    (*       (print_expr info) e (print_list newline (print_branch info)) pl *)
+    (* | Eassign al -> *)
+    (*     let assign fmt (rho, rs, e) = *)
+    (*       fprintf fmt "@[<hov 2>%a.%a <-@ %a@]" *)
+    (*         (print_lident info) (pv_name rho) (print_lident info) rs.rs_name *)
+    (*         (print_expr info) e in *)
+    (*     begin match al with *)
+    (*       | [] -> assert false | [a] -> assign fmt a *)
+    (*       | al -> fprintf fmt "@[begin %a end@]" (print_list semi assign) al end *)
     | Eif (e1, e2, {e_node = Eblock []}) ->
-        fprintf fmt
-          (protect_on paren
-             "@[<hv>@[<hov 2>if@ %a@]@ then begin@;<1 2>@[%a@] end@]")
-          (print_expr info) e1 (print_expr info) e2
+        let lab = EVMSimple.new_label "ifnoelse" in
+        print_expr info fmt e1;
+        EVMSimple.add_auto fmt EVMSimple.NOT;
+        EVMSimple.jumpi fmt lab;
+        print_expr info fmt e2;
+        EVMSimple.jumpdest fmt lab
     | Eif (e1, e2, e3) when is_false e2 && is_true e3 ->
-        fprintf fmt (protect_on paren "not %a") (print_expr info ~paren:true) e1
-    | Eif (e1, e2, e3) when is_true e2 ->
-        fprintf fmt (protect_on paren "@[<hv>%a || %a@]")
-          (print_expr info ~paren:true) e1 (print_expr info ~paren:true) e3
-    | Eif (e1, e2, e3) when is_false e3 ->
-        fprintf fmt (protect_on paren "@[<hv>%a && %a@]")
-          (print_expr info ~paren:true) e1 (print_expr info ~paren:true) e2
+        print_expr info fmt e1;
+        EVMSimple.add_auto fmt EVMSimple.NOT
     | Eif (e1, e2, e3) ->
-        fprintf fmt (protect_on paren
-                       "@[<hv>@[<hov 2>if@ %a@ then@ begin@ @[%a@] end@]\
-                        @;<1 0>else@ begin@;<1 2>@[%a@] end@]")
-          (print_expr info) e1 (print_expr info) e2 (print_expr info) e3
-    | Eblock [] ->
-        fprintf fmt "0:uint8"
+        let labthen = EVMSimple.new_label "ifthen" in
+        let labend = EVMSimple.new_label "ifend" in
+        print_expr info fmt e1;
+        EVMSimple.jumpi fmt labthen;
+        print_expr info fmt e3;
+        EVMSimple.jump fmt labend;
+        EVMSimple.jumpdest fmt labthen;
+        print_expr info fmt e2;
+        EVMSimple.jumpdest fmt labend
+    | Eblock [] -> () (* unit *)
     | Eblock [e] ->
         print_expr info fmt e
     | Eblock el ->
-        let el,last = Lists.chop_last el in
-        fprintf fmt "@[<hv>{@;<1 2>@[%a@]@ %a}@]"
-          (print_list space (print_expr info)) el
-          (print_expr info ~is_result) last
-    | Efun (varl, e) ->
-        fprintf fmt (protect_on paren "@[<hov 2>fun %a ->@ %a@]")
-          (print_list space (print_vs_arg info)) varl (print_expr info) e
+        List.iter (print_expr info fmt) el
+    | Efun (_varl, _e) ->
+        invalid_arg "unsupported"
     | Ewhile (e1, e2) ->
-        fprintf fmt "@[<hov 2>while %a do@\n%a@ done@]"
-          (print_expr info) e1 (print_expr info) e2
-    | Eraise (xs, e_opt) ->
-        print_raise ~paren info xs fmt e_opt
-    | Efor (pv1, pv2, dir, pv3, e) ->
-        if is_mapped_to_int info pv1.pv_ity then begin
-          fprintf fmt "@[<hov 2>for %a = %a %a %a do@ @[%a@]@ done@]"
-            (print_lident info) (pv_name pv1) (print_lident info) (pv_name pv2)
-            print_for_direction dir (print_lident info) (pv_name pv3)
-            (print_expr info) e;
-          forget_pv pv1 end
-        else
-          let for_id  = id_register (id_fresh "for_loop_to") in
-          let cmp, op = match dir with
-            | To     -> "Z.leq", "Z.succ"
-            | DownTo -> "Z.geq", "Z.pred" in
-          fprintf fmt (protect_on paren
-                         "@[<hov 2>let rec %a %a =@ if %s %a %a then \
-                          begin@ %a; %a (%s %a) end@ in@ %a %a@]")
-          (* let rec *) (print_lident info) for_id (print_pv info) pv1
-          (* if      *)  cmp (print_pv info) pv1 (print_pv info) pv3
-          (* then    *) (print_expr info) e (print_lident info) for_id
-                        op (print_pv info) pv1
-          (* in      *) (print_lident info) for_id (print_pv info) pv2
-    | Ematch (e, [], xl) ->
-        fprintf fmt "@[<hv>@[<hov 2>begin@ try@ %a@] with@]@\n@[<hov>%a@]@\nend"
-          (print_expr info) e (print_list newline (print_xbranch info false)) xl
-    | Ematch (e, bl, xl) ->
-        fprintf fmt
-          (protect_on paren "begin match @[%a@] with@\n@[<hov>%a@\n%a@]@\nend")
-          (print_expr info) e (print_list newline (print_branch info)) bl
-          (print_list newline (print_xbranch info true)) xl
-    | Eexn (xs, None, e) ->
-        fprintf fmt "@[<hv>let exception %a in@\n%a@]"
-          (print_uident info) xs.xs_name (print_expr info) e
-    | Eexn (xs, Some t, e) ->
-        fprintf fmt "@[<hv>let exception %a of %a in@\n%a@]"
-          (print_uident info) xs.xs_name (print_ty ~paren:true info) t
-          (print_expr info) e
-    | Eignore e -> fprintf fmt "ignore (%a)" (print_expr info) e
+        let labstart = EVMSimple.new_label "whilestart" in
+        let labtest = EVMSimple.new_label "whiletest" in
+        EVMSimple.jumpdest fmt labstart;
+        print_expr info fmt e2;
+        EVMSimple.jumpdest fmt labtest;
+        print_expr info fmt e1;
+        EVMSimple.jumpi fmt labstart;
+    | Eraise (_, _) ->
+        EVMSimple.add_auto fmt EVMSimple.REVERT
+    (* | Efor (pv1, pv2, dir, pv3, e) -> *)
+    (*     if is_mapped_to_int info pv1.pv_ity then begin *)
+    (*       fprintf fmt "@[<hov 2>for %a = %a %a %a do@ @[%a@]@ done@]" *)
+    (*         (print_lident info) (pv_name pv1) (print_lident info) (pv_name pv2) *)
+    (*         print_for_direction dir (print_lident info) (pv_name pv3) *)
+    (*         (print_expr info) e; *)
+    (*       forget_pv pv1 end *)
+    (*     else *)
+    (*       let for_id  = id_register (id_fresh "for_loop_to") in *)
+    (*       let cmp, op = match dir with *)
+    (*         | To     -> "Z.leq", "Z.succ" *)
+    (*         | DownTo -> "Z.geq", "Z.pred" in *)
+    (*       fprintf fmt (protect_on paren *)
+    (*                      "@[<hov 2>let rec %a %a =@ if %s %a %a then \ *)
+    (*                       begin@ %a; %a (%s %a) end@ in@ %a %a@]") *)
+    (*       (\* let rec *\) (print_lident info) for_id (print_pv info) pv1 *)
+    (*       (\* if      *\)  cmp (print_pv info) pv1 (print_pv info) pv3 *)
+    (*       (\* then    *\) (print_expr info) e (print_lident info) for_id *)
+    (*                     op (print_pv info) pv1 *)
+    (*       (\* in      *\) (print_lident info) for_id (print_pv info) pv2 *)
+    (* | Ematch (e, [], xl) -> *)
+    (*     fprintf fmt "@[<hv>@[<hov 2>begin@ try@ %a@] with@]@\n@[<hov>%a@]@\nend" *)
+    (*       (print_expr info) e (print_list newline (print_xbranch info false)) xl *)
+    (* | Ematch (e, bl, xl) -> *)
+    (*     fprintf fmt *)
+    (*       (protect_on paren "begin match @[%a@] with@\n@[<hov>%a@\n%a@]@\nend") *)
+    (*       (print_expr info) e (print_list newline (print_branch info)) bl *)
+    (*       (print_list newline (print_xbranch info true)) xl *)
+    (* | Eexn (xs, None, e) -> *)
+    (*     fprintf fmt "@[<hv>let exception %a in@\n%a@]" *)
+    (*       (print_uident info) xs.xs_name (print_expr info) e *)
+    (* | Eexn (xs, Some t, e) -> *)
+    (*     fprintf fmt "@[<hv>let exception %a of %a in@\n%a@]" *)
+    (*       (print_uident info) xs.xs_name (print_ty ~paren:true info) t *)
+    (*       (print_expr info) e *)
+    | Eignore e ->
+        print_expr info fmt e;
+        EVMSimple.add_auto fmt EVMSimple.POP
+    | _ ->
+        invalid_arg "Unsupported"
 
-  and print_branch info fmt (p, e) =
-    fprintf fmt "@[<hov 2>| %a ->@ @[%a@]@]"
-      (print_pat info) p (print_expr info) e;
-    forget_pat p
+  (* and print_branch info fmt (p, e) = *)
+  (*   fprintf fmt "@[<hov 2>| %a ->@ @[%a@]@]" *)
+  (*     (print_pat info) p (print_expr info) e; *)
+  (*   forget_pat p *)
 
-  and print_raise ~paren info xs fmt e_opt =
-    match query_syntax info.info_syn xs.xs_name, e_opt with
-    | Some s, None ->
-        fprintf fmt "raise (%s)" s
-    | Some s, Some e ->
-        fprintf fmt (protect_on paren "raise (%a)")
-          (syntax_arguments s (print_expr info)) [e]
-    | None, None ->
-        fprintf fmt (protect_on paren "raise %a")
-          (print_uident info) xs.xs_name
-    | None, Some e ->
-        fprintf fmt (protect_on paren "raise (%a %a)")
-          (print_uident info) xs.xs_name (print_expr ~paren:true info) e
+  (* and print_raise ~paren info xs fmt e_opt = *)
+  (*   match query_syntax info.info_syn xs.xs_name, e_opt with *)
+  (*   | Some s, None -> *)
+  (*       fprintf fmt "raise (%s)" s *)
+  (*   | Some s, Some e -> *)
+  (*       fprintf fmt (protect_on paren "raise (%a)") *)
+  (*         (syntax_arguments s (print_expr info)) [e] *)
+  (*   | None, None -> *)
+  (*       fprintf fmt (protect_on paren "raise %a") *)
+  (*         (print_uident info) xs.xs_name *)
+  (*   | None, Some e -> *)
+  (*       fprintf fmt (protect_on paren "raise (%a %a)") *)
+  (*         (print_uident info) xs.xs_name (print_expr ~paren:true info) e *)
 
-  and print_xbranch info case fmt (xs, pvl, e) =
-    let print_exn fmt () =
-      if case then fprintf fmt "exception " else fprintf fmt "" in
-    let print_var fmt pv = print_lident info fmt (pv_name pv) in
-    match query_syntax info.info_syn xs.xs_name, pvl with
-    | Some s, _ -> fprintf fmt "@[<hov 4>| %a%a ->@ %a@]"
-        print_exn () (syntax_arguments s print_var) pvl
-        (print_expr info ~paren:true) e
-    | None, [] -> fprintf fmt "@[<hov 4>| %a%a ->@ %a@]"
-        print_exn () (print_uident info) xs.xs_name (print_expr info) e
-    | None, [pv] -> fprintf fmt "@[<hov 4>| %a%a %a ->@ %a@]"
-        print_exn () (print_uident info) xs.xs_name print_var pv
-        (print_expr info) e
-    | None, pvl -> fprintf fmt "@[<hov 4>| %a%a (%a) ->@ %a@]"
-        print_exn () (print_uident info) xs.xs_name
-        (print_list comma print_var) pvl (print_expr info) e
+  (* and print_xbranch info case fmt (xs, pvl, e) = *)
+  (*   let print_exn fmt () = *)
+  (*     if case then fprintf fmt "exception " else fprintf fmt "" in *)
+  (*   let print_var fmt pv = print_lident info fmt (pv_name pv) in *)
+  (*   match query_syntax info.info_syn xs.xs_name, pvl with *)
+  (*   | Some s, _ -> fprintf fmt "@[<hov 4>| %a%a ->@ %a@]" *)
+  (*       print_exn () (syntax_arguments s print_var) pvl *)
+  (*       (print_expr info ~paren:true) e *)
+  (*   | None, [] -> fprintf fmt "@[<hov 4>| %a%a ->@ %a@]" *)
+  (*       print_exn () (print_uident info) xs.xs_name (print_expr info) e *)
+  (*   | None, [pv] -> fprintf fmt "@[<hov 4>| %a%a %a ->@ %a@]" *)
+  (*       print_exn () (print_uident info) xs.xs_name print_var pv *)
+  (*       (print_expr info) e *)
+  (*   | None, pvl -> fprintf fmt "@[<hov 4>| %a%a (%a) ->@ %a@]" *)
+  (*       print_exn () (print_uident info) xs.xs_name *)
+  (*       (print_list comma print_var) pvl (print_expr info) e *)
 
-  let print_type_decl info fst fmt its =
-    let print_constr fmt (id, cs_args) =
-      match cs_args with
-      | [] -> fprintf fmt "@[<hov 4>| %a@]" (print_uident info) id
-      | l -> fprintf fmt "@[<hov 4>| %a of %a@]" (print_uident info) id
-               (print_list star (print_ty ~paren:false info)) l in
-    let print_field fmt (is_mutable, id, ty) =
-      fprintf fmt "%s%a: @[%a@];" (if is_mutable then "mutable " else "")
-        (print_lident info) id (print_ty ~paren:false info) ty in
-    let print_def fmt = function
-      | None ->
-          ()
-      | Some (Ddata csl) ->
-          fprintf fmt " =@\n%a" (print_list newline print_constr) csl
-      | Some (Drecord fl) ->
-          fprintf fmt " = %s{@\n%a@\n}"
-            (if its.its_private then "private " else "")
-            (print_list newline print_field) fl
-      | Some (Dalias ty) ->
-          fprintf fmt " =@ %a" (print_ty ~paren:false info) ty
-      | Some (Drange _) ->
-          fprintf fmt " =@ Z.t"
-      | Some (Dfloat _) ->
-          assert false (*TODO*)
-    in
-    let attrs = its.its_name.id_attrs in
-    if not (is_yul_remove ~attrs) then
-      fprintf fmt "@[<hov 2>@[%s %a%a@]%a@]"
-        (if fst then "type" else "and") print_tv_args its.its_args
-        (print_lident info) its.its_name print_def its.its_def
-
-  let rec is_signature_decl info = function
-    | Dtype _ -> true
-    | Dlet (Lany _) -> true
-    | Dval _ -> true
-    | Dlet _ -> false
-    | Dexn _ -> true
-    | Dmodule (_, dl) -> is_signature info dl
-
-  and is_signature info dl =
-    List.for_all (is_signature_decl info) dl
-
-  let extract_functor_args info dl =
-    let rec extract args = function
-      (* FIXME remove empty args? *)
-      (* | Dmodule (_, []) :: dl -> extract args dl *)
-      | Dmodule (x, dlx) :: dl when is_signature info dlx ->
-          extract ((x, dlx) :: args) dl
-      | dl -> List.rev args, dl in
-    extract [] dl
-
-  let print_top_val ?(functor_arg=false) info fmt ({pv_vs}, ty) =
-    if functor_arg then
-      fprintf fmt "@[<hov 2>val %a : %a@]"
-        (print_lident info) pv_vs.vs_name (print_ty info) ty
-    else
-      check_val_in_drv info pv_vs.vs_name.id_loc pv_vs.vs_name
-
-  let rec print_decl ?(functor_arg=false) info fmt = function
+  let print_decl info fmt = function
     | Dlet ldef ->
-        print_let_def info ~functor_arg fmt ldef
-    | Dval (pv, ty) ->
-        print_top_val info ~functor_arg fmt (pv, ty)
-    | Dtype dl ->
-        print_list_next newline (print_type_decl info) fmt dl
-    | Dexn (xs, None) ->
-        fprintf fmt "exception %a" (print_uident info) xs.xs_name
-    | Dexn (xs, Some t)->
-        fprintf fmt "@[<hov 2>exception %a of %a@]"
-          (print_uident info) xs.xs_name (print_ty ~paren:true info) t
-    | Dmodule (s, dl) ->
-        let args, dl = extract_functor_args info dl in
-        let info = { info with info_current_ph = s :: info.info_current_ph } in
-        fprintf fmt "@[@[<hov 2>module %s%a@ =@]@\n@[<hov 2>struct@ %a@]@ end" s
-          (print_functor_args info) args
-          (print_list newline2 (print_decl info)) dl
+        print_let_def info fmt ldef
+    (* | Dval (pv, ty) -> *)
+    (*     print_top_val info ~functor_arg fmt (pv, ty) *)
+    (* | Dtype dl -> *)
+    (*     print_list_next newline (print_type_decl info) fmt dl *)
+    (* | Dexn (xs, None) -> *)
+    (*     fprintf fmt "exception %a" (print_uident info) xs.xs_name *)
+    (* | Dexn (xs, Some t)-> *)
+    (*     fprintf fmt "@[<hov 2>exception %a of %a@]" *)
+    (*       (print_uident info) xs.xs_name (print_ty ~paren:true info) t *)
+    (* | Dmodule (s, dl) -> *)
+    (*     let args, dl = extract_functor_args info dl in *)
+    (*     let info = { info with info_current_ph = s :: info.info_current_ph } in *)
+    (*     fprintf fmt "@[@[<hov 2>module %s%a@ =@]@\n@[<hov 2>struct@ %a@]@ end" s *)
+    (*       (print_functor_args info) args *)
+    (*       (print_list newline2 (print_decl info)) dl *)
+    | _ -> invalid_arg "unsupported"
 
-  and print_functor_args info fmt args =
-    let print_sig info fmt dl =
-      fprintf fmt "sig@ %a@ end"
-        (print_list newline (print_decl info ~functor_arg:true)) dl in
-    let print_pair fmt (s, dl) =
-      let info = { info with info_current_ph = s :: info.info_current_ph } in
-      fprintf fmt "(%s:@ %a)" s (print_sig info) dl in
-    fprintf fmt "%a" (print_list space print_pair) args
+  (* and print_functor_args info fmt args = *)
+  (*   let print_sig info fmt dl = *)
+  (*     fprintf fmt "sig@ %a@ end" *)
+  (*       (print_list newline (print_decl info ~functor_arg:true)) dl in *)
+  (*   let print_pair fmt (s, dl) = *)
+  (*     let info = { info with info_current_ph = s :: info.info_current_ph } in *)
+  (*     fprintf fmt "(%s:@ %a)" s (print_sig info) dl in *)
+  (*   fprintf fmt "%a" (print_list space print_pair) args *)
 
   let print_decl info fmt decl =
     (* avoids printing the same decl for mutually recursive decls *)
@@ -1207,8 +2251,9 @@ module Print = struct
     let decide_print id =
       if query_syntax info.info_syn id = None &&
          not (Hashtbl.mem memo decl) then begin
-        Hashtbl.add memo decl (); print_decl info fmt decl;
-        fprintf fmt "@\n@." end in
+        Hashtbl.add memo decl ();
+        print_decl info fmt decl;
+      end in
     List.iter decide_print decl_name
 
 end
@@ -1231,8 +2276,149 @@ let print_decl =
       Print.print_decl info fmt d end
 
 let print_decls pargs fmt l =
-  Format.fprintf fmt "{%a}"
-  (Pp.print_list Pp.nothing (print_decl pargs)) l
+  let label_function (labels, externals) (_,d) =
+    match d with
+    | Mltree.Dlet (Mltree.Lsym (rs, _, res, args, _)) ->
+        let externals =
+          if Print.is_external ~attrs:rs.rs_name.id_attrs
+          then
+            let ty_args = Lists.map_filter (fun ((_, ty, _) as arg) ->
+                if Print.removed_arg arg then None else Some ty) args in
+            let label_arg_extraction = EVMSimple.new_label "arg_extract" in
+            (rs,ty_args,res,label_arg_extraction)::externals
+          else externals
+        in
+        let label = EVMSimple.new_label "Lsym" in
+        let labels = Expr.Mrs.add rs label labels in
+        labels,externals
+    | _ -> invalid_arg "unsupported"
+
+  in
+  let (labels, externals) =
+    List.fold_left label_function (Expr.Mrs.empty, []) l
+  in
+  let stack = {
+    EVMSimple.asm = { EVMSimple.codes = [] };
+    stack = Ident.Mid.empty;
+    bottom = 0;
+    call_labels = labels;
+  } in
+
+  (** init *)
+  let label_revert = EVMSimple.new_label "revert" in
+  EVMSimple.auto stack
+    [EVMSimple.PUSH1 (BigInt.of_int 0x80);
+     EVMSimple.PUSH1 (BigInt.of_int 0x40);
+     EVMSimple.MSTORE];
+  EVMSimple.auto stack
+    [EVMSimple.PUSH1 (BigInt.of_int 0x04);
+     EVMSimple.CALLDATASIZE;
+     EVMSimple.LT;
+     EVMSimple.JUMPI label_revert;
+    ];
+  EVMSimple.auto stack
+    EVMSimple.[PUSH32 (BigInt.pow_int_pos 2 0xe0);
+               PUSH1 BigInt.zero;
+               CALLDATALOAD;
+               DIV;
+              ];
+
+  (** dispatch *)
+  let dispatch (rs,_,_,label_arg_extraction) =
+    (* 0x0a9a2963 for "f(int8)" *)
+    let i =
+      Cryptokit.hash_string (Cryptokit.Hash.keccak 256)
+        rs.rs_name.Ident.id_string in
+    let f j = BigInt.mul
+        (BigInt.of_int (Char.code i.[j]))
+        (BigInt.pow_int_pos 256 (3-j))
+    in
+    let hashname =
+      List.fold_left BigInt.add BigInt.zero
+        [f 0;f 1;f 2 ;f 3]
+    in
+    EVMSimple.auto stack
+      EVMSimple.[DUP1;
+                 PUSH4 hashname;
+                 EQ;
+                 JUMPI label_arg_extraction
+                ];
+  in
+  List.iter dispatch externals;
+
+  EVMSimple.auto stack
+    EVMSimple.[JUMPDEST label_revert;
+               PUSH1 BigInt.zero;
+               DUP1;
+               REVERT];
+
+  (** label extraction *)
+  let arg_extraction (rs,args,_,label_arg_extraction) =
+    let size ty =
+      let id = match ty with
+        | Mltree.Tapp (id,[]) -> id
+        | _ -> invalid_arg "Unknown type"
+      in
+      match query_syntax pargs.Pdriver.syntax id with
+        | Some "s32" | Some "u32"
+        | Some "s64" | Some "u64"
+        | Some "s128" | Some "u128"
+        | Some "s256" | Some "u256" -> ()
+        | None | Some _  ->
+            invalid_arg "Unknown type"
+    in
+    List.iter size args;
+    let args_size = 32 * List.length args in
+    let datasize = args_size + 0x04 in
+
+    EVMSimple.jumpdest stack label_arg_extraction;
+    EVMSimple.auto stack
+      [ EVMSimple.POP; (** previous function identifier *)
+        EVMSimple.PUSH1 (BigInt.of_int datasize);
+        EVMSimple.CALLDATASIZE;
+        EVMSimple.LT;
+        EVMSimple.JUMPI label_revert;
+      ];
+    let get_args offset _ =
+      EVMSimple.auto stack [
+        EVMSimple.PUSH1 (BigInt.of_int offset);
+        EVMSimple.CALLDATALOAD;
+      ];
+      offset+32
+    in
+    let _ = List.fold_left get_args 0x04 args in
+    EVMSimple.auto stack [
+      EVMSimple.JUMP (Expr.Mrs.find rs labels);
+    ]
+  in
+  List.iter arg_extraction externals;
+
+  let print ((_,d) as e) =
+    match d with
+    | Mltree.Dlet (Mltree.Lsym (rs, _, _, _, _)) ->
+        let label = Expr.Mrs.find rs labels in
+        EVMSimple.jumpdest stack label;
+        print_decl pargs stack e
+    | _ -> invalid_arg "unsupported"
+  in
+  List.iter print l;
+  let asms = EVMSimple.finalize (List.rev stack.EVMSimple.asm.EVMSimple.codes) in
+  Format.eprintf "%a@." EVM.print_humanl asms;
+  EVM.print_code fmt asms
+
+  (* let label = { EVMSimple.label_name = "jump"; EVMSimple.label_addr = BigInt.zero } in *)
+  (* let l = let open EVMSimple in *)
+  (*   [ *)
+  (*     JUMP label; *)
+  (*     PUSH1 (BigInt.of_int 0x42); *)
+  (*     PUSH1 (BigInt.of_int 0x80); *)
+  (*     MSTORE; *)
+  (*     JUMPDEST label; *)
+  (*     PUSH1 (BigInt.of_int 0x20); *)
+  (*     PUSH1 (BigInt.of_int 0x80); *)
+  (*     RETURN; *)
+  (*   ] *)
+  (* in *)
 
 
 let ng suffix ?fname m =
