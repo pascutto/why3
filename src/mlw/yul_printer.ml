@@ -1088,6 +1088,7 @@ module EVMSimple = struct
    | JUMP of label
    | JUMPDYN
    | JUMPI of label
+   | PUSHLABEL of label
    | PC
    | MSIZE
    | GAS
@@ -1375,6 +1376,7 @@ module EVMSimple = struct
    | JUMP _ -> EVM.get_info EVM.JUMP
    | JUMPDYN -> EVM.get_info EVM.JUMP
    | JUMPI _ -> EVM.get_info EVM.JUMPI
+   | PUSHLABEL lab -> EVM.get_info (EVM.PUSH32 lab.label_addr)
    | PC -> EVM.get_info EVM.PC
    | MSIZE -> EVM.get_info EVM.MSIZE
    | GAS -> EVM.get_info EVM.GAS
@@ -1460,7 +1462,7 @@ module EVMSimple = struct
    | SELFDESTRUCT -> EVM.get_info EVM.SELFDESTRUCT
 
   let pc_to_num pc =
-    let n = BigInt.num_digits pc in
+    let n = BigInt.num_bits pc in
     n / 8
 
   let pc_to_push pc =
@@ -1540,6 +1542,7 @@ module EVMSimple = struct
       | 31 -> PUSH32 i
       | _ -> assert false
 
+  let int_to_push i = num_to_push (BigInt.of_int i)
 
   let swap i =
     match i - 2 with
@@ -1621,6 +1624,7 @@ module EVMSimple = struct
    | JUMP label -> [pc_to_push label.label_addr;EVM.JUMP]
    | JUMPDYN -> [EVM.JUMP]
    | JUMPI label -> [pc_to_push label.label_addr;EVM.JUMPI]
+   | PUSHLABEL label -> [pc_to_push label.label_addr]
    | PC -> [EVM.PC]
    | MSIZE -> [EVM.MSIZE]
    | GAS -> [EVM.GAS]
@@ -1862,8 +1866,10 @@ module EVMSimple = struct
     match asm with
     | JUMPDEST _ | JUMP _ ->
         add stack asm
-    | JUMPI _ ->
-    add ~popped:1 stack asm
+    | JUMPI _ | JUMPDYN ->
+        add ~popped:1 stack asm
+    | PUSHLABEL _ ->
+        add ~pushed:1 stack asm
     | _ ->
     let info = get_info asm in
     add stack asm ~popped:info.EVM.args ~pushed:info.EVM.ret
@@ -1880,13 +1886,51 @@ module EVMSimple = struct
   let auto stack l =
     List.iter (add_auto stack) l
 
-  let add_var stack var =
+  let bind_var stack var =
     let stack = { stack with stack = Ident.Mid.add var stack.bottom stack.stack } in
+    stack
+
+  let add_var stack var =
+    let stack = bind_var stack var in
     stack.bottom <- stack.bottom + 1;
     stack
 
   let get_var stack var =
-    stack.bottom - Ident.Mid.find var stack.stack
+    stack.bottom + 1 - Ident.Mid.find var stack.stack
+
+  module Allocate = struct
+    let init stack =
+      auto stack
+        [int_to_push 0x80;
+         int_to_push 0x40;
+         MSTORE]
+
+    let label = new_label "allocate_function"
+
+    let define_allocate stack =
+      auto stack [
+        JUMPDEST label;
+        int_to_push 0x40;
+        MLOAD;
+        DUP1;
+        SWAP2;
+        ADD;
+        int_to_push 0x40;
+        MSTORE;
+        SWAP1;
+        JUMPDYN;
+      ]
+
+    let allocate stack size =
+      let call = new_label "allocate_call" in
+      auto stack [
+        PUSHLABEL call;
+        int_to_push size;
+        JUMP label;
+        JUMPDEST call;
+      ]
+
+  end
 
 end
 
@@ -1993,13 +2037,16 @@ module Print = struct
               EVMSimple.add_var fmt v
             end) args fmt in
         print_expr info fmt ef;
-        (** put the result before all the popped elements *)
+        (** put the result before all the popped elements and the return address *)
         if !pushed >= 1 && not (is_unit res) then
           EVMSimple.add_auto fmt (EVMSimple.swap (!pushed+1));
         List.fold_right (fun pv () ->
             if removed_arg pv
             then ()
-            else EVMSimple.add_auto fmt (EVMSimple.POP)) args ()
+            else EVMSimple.add_auto fmt (EVMSimple.POP)) args ();
+        if not (is_unit res) then
+          EVMSimple.add_auto fmt EVMSimple.SWAP1;
+        EVMSimple.add_auto fmt EVMSimple.JUMPDYN
     (* | Lrec rdef -> *)
     (*     let print_one fst fmt = function *)
     (*       | { rec_sym = rs1; rec_args = args; rec_exp = e; *)
@@ -2046,6 +2093,7 @@ module Print = struct
         ()
     | Evar pvs ->
         let asm = match EVMSimple.get_var fmt pvs.Ity.pv_vs.vs_name with
+          | x when x <= 0 -> invalid_arg "get_var <= 0"
           | 1 -> EVMSimple.DUP1
           | 2 -> EVMSimple.DUP2
           | 3 -> EVMSimple.DUP3
@@ -2070,7 +2118,7 @@ module Print = struct
         print_expr info fmt e
     | Elet (Lvar(pv,e'), e) ->
         print_expr info fmt e';
-        let fmt = EVMSimple.add_var fmt (pv_name pv) in
+        let fmt = EVMSimple.bind_var fmt (pv_name pv) in
         print_expr info fmt e;
         EVMSimple.add_auto fmt EVMSimple.SWAP1;
         EVMSimple.add_auto fmt EVMSimple.POP
@@ -2306,10 +2354,7 @@ let print_decls pargs fmt l =
 
   (** init *)
   let label_revert = EVMSimple.new_label "revert" in
-  EVMSimple.auto stack
-    [EVMSimple.PUSH1 (BigInt.of_int 0x80);
-     EVMSimple.PUSH1 (BigInt.of_int 0x40);
-     EVMSimple.MSTORE];
+  EVMSimple.Allocate.init stack;
   EVMSimple.auto stack
     [EVMSimple.PUSH1 (BigInt.of_int 0x04);
      EVMSimple.CALLDATASIZE;
@@ -2317,7 +2362,7 @@ let print_decls pargs fmt l =
      EVMSimple.JUMPI label_revert;
     ];
   EVMSimple.auto stack
-    EVMSimple.[PUSH32 (BigInt.pow_int_pos 2 0xe0);
+    EVMSimple.[num_to_push (BigInt.pow_int_pos 2 0xe0);
                PUSH1 BigInt.zero;
                CALLDATALOAD;
                DIV;
@@ -2351,6 +2396,7 @@ let print_decls pargs fmt l =
                PUSH1 BigInt.zero;
                DUP1;
                REVERT];
+  EVMSimple.Allocate.define_allocate stack;
 
   (** label extraction *)
   let arg_extraction (rs,args,_,label_arg_extraction) =
@@ -2374,22 +2420,34 @@ let print_decls pargs fmt l =
     EVMSimple.jumpdest stack label_arg_extraction;
     EVMSimple.auto stack
       [ EVMSimple.POP; (** previous function identifier *)
-        EVMSimple.PUSH1 (BigInt.of_int datasize);
+        EVMSimple.int_to_push datasize;
         EVMSimple.CALLDATASIZE;
         EVMSimple.LT;
         EVMSimple.JUMPI label_revert;
       ];
     let get_args offset _ =
       EVMSimple.auto stack [
-        EVMSimple.PUSH1 (BigInt.of_int offset);
+        EVMSimple.int_to_push offset;
         EVMSimple.CALLDATALOAD;
       ];
       offset+32
     in
     let _ = List.fold_left get_args 0x04 args in
-    EVMSimple.auto stack [
-      EVMSimple.JUMP (Expr.Mrs.find rs labels);
-    ]
+    let label_ret_encoding = EVMSimple.new_label "ret_encoding" in
+    EVMSimple.auto stack EVMSimple.[
+      PUSHLABEL label_ret_encoding;
+      JUMP (Expr.Mrs.find rs labels);
+      JUMPDEST label_ret_encoding;
+    ];
+    EVMSimple.Allocate.allocate stack 0x20;
+    EVMSimple.auto stack EVMSimple.[
+        SWAP1;
+        DUP2;
+        MSTORE;
+        EVMSimple.int_to_push 0x20;
+        SWAP1;
+        RETURN;
+      ]
   in
   List.iter arg_extraction externals;
 

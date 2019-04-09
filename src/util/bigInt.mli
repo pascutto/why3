@@ -62,6 +62,7 @@ val abs : t -> t
 
 (** number of digits  *)
 val num_digits : t -> int
+val num_bits : t -> int
 
 (** power of small integers. Second arg must be non-negative *)
 val pow_int_pos : int -> int -> t
