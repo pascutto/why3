@@ -399,8 +399,8 @@ type info =
 let get_info = function
   | STOP -> { name = "STOP"; pushed = 0; args = 0; ret = 0; sideeffects = true; price = PriceZero; code = 0x00; }
   | ADD -> { name = "ADD"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow; code = 0x01; }
-  | SUB -> { name = "SUB"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow; code = 0x02; }
-  | MUL -> { name = "MUL"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow; code = 0x03; }
+  | SUB -> { name = "SUB"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceVeryLow; code = 0x03; }
+  | MUL -> { name = "MUL"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow; code = 0x02; }
   | DIV -> { name = "DIV"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow; code = 0x04; }
   | SDIV -> { name = "SDIV"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow; code = 0x05; }
   | MOD -> { name = "MOD"; pushed = 0; args = 2; ret = 1; sideeffects = false; price = PriceLow; code = 0x06; }
