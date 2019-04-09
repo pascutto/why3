@@ -1890,9 +1890,9 @@ module EVMSimple = struct
     let stack = { stack with stack = Ident.Mid.add var stack.bottom stack.stack } in
     stack
 
-  let add_var stack var =
-    let stack = bind_var stack var in
+  let add_arg stack var =
     stack.bottom <- stack.bottom + 1;
+    let stack = bind_var stack var in
     stack
 
   let get_var stack var =
@@ -2034,7 +2034,7 @@ module Print = struct
             then fmt
             else begin
               incr pushed;
-              EVMSimple.add_var fmt v
+              EVMSimple.add_arg fmt v
             end) args fmt in
         print_expr info fmt ef;
         (** put the result before all the popped elements and the return address *)
@@ -2417,13 +2417,16 @@ let print_decls pargs fmt l =
     let args_size = 32 * List.length args in
     let datasize = args_size + 0x04 in
 
+    let label_ret_encoding = EVMSimple.new_label "ret_encoding" in
+
     EVMSimple.jumpdest stack label_arg_extraction;
-    EVMSimple.auto stack
-      [ EVMSimple.POP; (** previous function identifier *)
-        EVMSimple.int_to_push datasize;
-        EVMSimple.CALLDATASIZE;
-        EVMSimple.LT;
-        EVMSimple.JUMPI label_revert;
+    EVMSimple.auto stack EVMSimple.[
+        POP; (** previous function identifier *)
+        int_to_push datasize;
+        CALLDATASIZE;
+        LT;
+        JUMPI label_revert;
+        PUSHLABEL label_ret_encoding;
       ];
     let get_args offset _ =
       EVMSimple.auto stack [
@@ -2433,9 +2436,7 @@ let print_decls pargs fmt l =
       offset+32
     in
     let _ = List.fold_left get_args 0x04 args in
-    let label_ret_encoding = EVMSimple.new_label "ret_encoding" in
     EVMSimple.auto stack EVMSimple.[
-      PUSHLABEL label_ret_encoding;
       JUMP (Expr.Mrs.find rs labels);
       JUMPDEST label_ret_encoding;
     ];
