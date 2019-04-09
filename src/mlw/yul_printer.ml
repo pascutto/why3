@@ -2016,8 +2016,39 @@ module Print = struct
     (*           fprintf fmt "@[<hov 2>{ %a }@]" *)
     (*             (print_list2 semi equal (print_rs info) *)
     (*                (print_expr ~paren:true info)) (pjl, tl) end *)
-    | _, _ ->
-        invalid_arg (Printf.sprintf "Unknown application %s" rs.rs_name.Ident.id_string)
+    | _, tl ->
+        let return = EVMSimple.new_label "return" in
+        EVMSimple.auto fmt EVMSimple.[
+            PUSHLABEL return;
+          ];
+        print_apply_args info fmt tl;
+        EVMSimple.auto fmt EVMSimple.[
+            JUMP (Expr.Mrs.find rs fmt.EVMSimple.call_labels);
+            JUMPDEST return;
+          ]
+  and print_def info fmt ~rs ~res ~args ~ef =
+    let label = Expr.Mrs.find rs fmt.EVMSimple.call_labels in
+    EVMSimple.jumpdest fmt label;
+    let pushed = ref 0 in
+    let fmt = List.fold_right (fun ((v,_,_) as pv) fmt ->
+        if removed_arg pv
+        then fmt
+        else begin
+          incr pushed;
+          EVMSimple.add_arg fmt v
+        end) args fmt in
+    print_expr info fmt ef;
+    (** put the result before all the popped elements and the return address *)
+    if !pushed >= 1 && not (is_unit res) then
+      EVMSimple.add_auto fmt (EVMSimple.swap (!pushed+1));
+    List.fold_right (fun pv () ->
+        if removed_arg pv
+        then ()
+        else EVMSimple.add_auto fmt (EVMSimple.POP)) args ();
+    if not (is_unit res) then
+      EVMSimple.add_auto fmt EVMSimple.SWAP1;
+    EVMSimple.add_auto fmt EVMSimple.JUMPDYN
+
 
   and print_let_def info fmt = function
     (* | Lvar (pv, e) -> *)
@@ -2027,36 +2058,15 @@ module Print = struct
     (*     fprintf fmt "@[<hov 2>let %a :=@ %a@]" *)
     (*       (print_lident info)  *)
     (*       (\* print_ity pv.pv_ity *\) *)
-    | Lsym (_, _, res, args, ef) ->
-        let pushed = ref 0 in
-        let fmt = List.fold_right (fun ((v,_,_) as pv) fmt ->
-            if removed_arg pv
-            then fmt
-            else begin
-              incr pushed;
-              EVMSimple.add_arg fmt v
-            end) args fmt in
-        print_expr info fmt ef;
-        (** put the result before all the popped elements and the return address *)
-        if !pushed >= 1 && not (is_unit res) then
-          EVMSimple.add_auto fmt (EVMSimple.swap (!pushed+1));
-        List.fold_right (fun pv () ->
-            if removed_arg pv
-            then ()
-            else EVMSimple.add_auto fmt (EVMSimple.POP)) args ();
-        if not (is_unit res) then
-          EVMSimple.add_auto fmt EVMSimple.SWAP1;
-        EVMSimple.add_auto fmt EVMSimple.JUMPDYN
-    (* | Lrec rdef -> *)
-    (*     let print_one fst fmt = function *)
-    (*       | { rec_sym = rs1; rec_args = args; rec_exp = e; *)
-    (*           rec_res = res; rec_svar = s } -> *)
-    (*           fprintf fmt "@[<hov 2>%s %a %a@]" *)
-    (*             (if fst then "let rec" else "and") *)
-    (*             (print_lident info) rs1.rs_name *)
-    (*             (print_fun_type_args info) (args, s, res, e); *)
-    (*           forget_vars args in *)
-    (*     print_list_next newline print_one fmt rdef; *)
+    | Lsym (rs, _, res, args, ef) ->
+        print_def info fmt ~rs ~res ~args ~ef
+    | Lrec rdef ->
+        let print_one = function
+          | { rec_sym = rs; rec_args = args; rec_exp = ef;
+              rec_res = res; rec_svar = _ } ->
+              print_def info fmt ~rs ~res ~args ~ef
+        in
+        List.iter print_one rdef
     (* | Lany (rs, _, res, []) when functor_arg -> *)
     (*     fprintf fmt "@[<hov 2>val %a : %a@]" *)
     (*       (print_lident info) rs.rs_name *)
@@ -2175,7 +2185,7 @@ module Print = struct
     | Eblock el ->
         List.iter (print_expr info fmt) el
     | Efun (_varl, _e) ->
-        invalid_arg "unsupported"
+        invalid_arg "unsupported Efun"
     | Ewhile (e1, e2) ->
         let labstart = EVMSimple.new_label "whilestart" in
         let labtest = EVMSimple.new_label "whiletest" in
@@ -2281,7 +2291,7 @@ module Print = struct
     (*     fprintf fmt "@[@[<hov 2>module %s%a@ =@]@\n@[<hov 2>struct@ %a@]@ end" s *)
     (*       (print_functor_args info) args *)
     (*       (print_list newline2 (print_decl info)) dl *)
-    | _ -> invalid_arg "unsupported"
+    | _ -> invalid_arg "unsupported expr"
 
   (* and print_functor_args info fmt args = *)
   (*   let print_sig info fmt dl = *)
@@ -2324,23 +2334,32 @@ let print_decl =
       Print.print_decl info fmt d end
 
 let print_decls pargs fmt l =
-  let label_function (labels, externals) (_,d) =
+  let label_function (labels, externals) ~rs ~res ~args =
+    let externals =
+      if Print.is_external ~attrs:rs.rs_name.id_attrs
+      then
+        let ty_args = Lists.map_filter (fun ((_, ty, _) as arg) ->
+            if Print.removed_arg arg then None else Some ty) args in
+        let label_arg_extraction = EVMSimple.new_label "arg_extract" in
+        (rs,ty_args,res,label_arg_extraction)::externals
+      else externals
+    in
+    let label = EVMSimple.new_label "Lsym" in
+    let labels = Expr.Mrs.add rs label labels in
+    labels,externals
+  in
+  let label_function acc (_,d) =
     match d with
     | Mltree.Dlet (Mltree.Lsym (rs, _, res, args, _)) ->
-        let externals =
-          if Print.is_external ~attrs:rs.rs_name.id_attrs
-          then
-            let ty_args = Lists.map_filter (fun ((_, ty, _) as arg) ->
-                if Print.removed_arg arg then None else Some ty) args in
-            let label_arg_extraction = EVMSimple.new_label "arg_extract" in
-            (rs,ty_args,res,label_arg_extraction)::externals
-          else externals
+        label_function acc ~rs ~res ~args
+    | Mltree.Dlet (Mltree.Lrec rdef) ->
+        let print_one acc = function
+          | { Mltree.rec_sym = rs; rec_args = args; rec_exp = _;
+              rec_res = res; rec_svar = _ } ->
+              label_function acc ~rs ~res ~args
         in
-        let label = EVMSimple.new_label "Lsym" in
-        let labels = Expr.Mrs.add rs label labels in
-        labels,externals
-    | _ -> invalid_arg "unsupported"
-
+        List.fold_left print_one acc rdef
+    | _ -> invalid_arg "unsupported label_function"
   in
   let (labels, externals) =
     List.fold_left label_function (Expr.Mrs.empty, []) l
@@ -2452,15 +2471,7 @@ let print_decls pargs fmt l =
   in
   List.iter arg_extraction externals;
 
-  let print ((_,d) as e) =
-    match d with
-    | Mltree.Dlet (Mltree.Lsym (rs, _, _, _, _)) ->
-        let label = Expr.Mrs.find rs labels in
-        EVMSimple.jumpdest stack label;
-        print_decl pargs stack e
-    | _ -> invalid_arg "unsupported"
-  in
-  List.iter print l;
+  List.iter (print_decl pargs stack) l;
   let asms = EVMSimple.finalize (List.rev stack.EVMSimple.asm.EVMSimple.codes) in
   Format.eprintf "%a@." EVM.print_humanl asms;
   EVM.print_code fmt asms
