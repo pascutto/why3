@@ -51,12 +51,12 @@ module A
          r.v <- i;
          r.v
 
-       (* let m6 = { v = 0 } *)
+       let m6 = { v = 0 }
 
-       (* let g6 i = *)
-       (*   let j = m6.v in *)
-       (*   m6.v <- i; *)
-       (*   j *)
+       let g6 i : int32 =
+         let j = m6.v in
+         m6.v <- i;
+         j
 
        exception Error
 
@@ -81,14 +81,15 @@ module A
          let o1 : int32 = (0x4444:int32) in
          if not (r1 = o1) then raise Error
         in
-        (* (\* test 6 *\) *)
-        (* m6.v <- 0; *)
-        (* let () = *)
-        (*  let r1 = g6 4 in *)
-        (*  let r2 = g6 5 in *)
-        (*  let o1 : int32 = (4:int32) in *)
-        (*  if not (r2 = o1) then raise Error *)
-        (* in *)
+        (* test 6 *)
+        m6.v <- 0;
+        let () =
+         let r1 = g6 4 in
+         let r2 = g6 5 in
+         let o1 : int32 = (4:int32) in
+         if not (r1 = 0) then raise Error;
+         if not (r2 = o1) then raise Error
+        in
         false
 
 end

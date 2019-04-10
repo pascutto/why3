@@ -87,8 +87,8 @@ and rdef = {
 let rec print_expr fmt e =
   match e.e_node with
   | Econst  _ -> Format.fprintf fmt "Econst"
-  | Evar    _ -> Format.fprintf fmt "Evar"
-  | Eapp    _ -> Format.fprintf fmt "Eapp"
+  | Evar    v -> Format.fprintf fmt "Evar(%s)" v.Ity.pv_vs.vs_name.Ident.id_string
+  | Eapp    (rs,_) -> Format.fprintf fmt "Eapp(%s)" rs.rs_name.Ident.id_string
   | Efun    _ -> Format.fprintf fmt "Efun"
   | Elet (Lvar (v,e2),e3) -> Format.fprintf fmt "Elet(%s,%a,%a)" v.Ity.pv_vs.vs_name.Ident.id_string print_expr e2 print_expr e3
   | Elet _ -> Format.fprintf fmt "Elet"

@@ -2210,6 +2210,7 @@ module Print = struct
 
   and print_expr info (fmt:EVMSimple.stack) e : unit =
     let bot = fmt.EVMSimple.bottom in
+    Debug.dprintf debug "expr:%a@." Mltree.print_expr e;
     begin match e.e_node with
       | Econst c ->
           let id = match e.e_ity with
@@ -2449,7 +2450,7 @@ module Print = struct
     | _ ->
         invalid_arg (Pp.sprintf "Unsupported expression: %a" Mltree.print_expr e)
     end;
-    (* Format.eprintf "%i %i(%b):%a@." bot fmt.EVMSimple.bottom (Mltree.is_unit e.e_ity) Mltree.print_expr e; *)
+    Debug.dprintf debug "%i %i(%b):%a@." bot fmt.EVMSimple.bottom (Mltree.is_unit e.e_ity) Mltree.print_expr e;
     assert (bot + (if Mltree.is_unit e.e_ity then 0 else 1) = fmt.EVMSimple.bottom)
 
   (* and print_branch info fmt (p, e) = *)
@@ -2549,40 +2550,53 @@ let print_decl =
       Print.print_decl info fmt d end
 
 let print_decls pargs fmt l =
-  let label_function (labels, externals) ~rs ~res ~args =
-    let externals =
-      if Print.is_external ~attrs:rs.rs_name.id_attrs
-      then
-        let ty_args = Lists.map_filter (fun ((_, ty, _) as arg) ->
-            if Print.removed_arg arg then None else Some ty) args in
-        let label_arg_extraction = EVMSimple.new_label "arg_extract" in
-        (rs,ty_args,res,label_arg_extraction)::externals
-      else externals
-    in
-    let label = EVMSimple.new_label (Pp.sprintf "Lsym:%s" rs.rs_name.Ident.id_string) in
-    let labels = Expr.Mrs.add rs label labels in
-    labels,externals
+  let next_globals = ref 1 in
+  let label_function_aux (labels, externals, globals) ~rs ~res ~args =
+    match args with
+    | [] ->
+        let globals = Mid.add rs.rs_name !next_globals globals in
+        incr next_globals;
+        (labels, externals, globals)
+    | _ ->
+        let externals =
+          if Print.is_external ~attrs:rs.rs_name.id_attrs
+          then
+            let ty_args = Lists.map_filter (fun ((_, ty, _) as arg) ->
+                if Print.removed_arg arg then None else Some ty) args in
+            let label_arg_extraction = EVMSimple.new_label "arg_extract" in
+            (rs,ty_args,res,label_arg_extraction)::externals
+          else externals
+        in
+        let label = EVMSimple.new_label (Pp.sprintf "Lsym:%s" rs.rs_name.Ident.id_string) in
+        let labels = Expr.Mrs.add rs label labels in
+        labels,externals,globals
   in
-  let label_function acc (_,d) =
+  let label_function ((labels, externals, globals) as acc) (_,d) =
     match d with
+    | Mltree.Dlet (Mltree.Lvar (pv,e)) ->
+        let globals = Mid.add (Print.pv_name pv) !next_globals globals in
+        incr next_globals;
+        (labels, externals, globals)
     | Mltree.Dlet (Mltree.Lsym (rs, _, res, args, _)) ->
-        label_function acc ~rs ~res ~args
+        label_function_aux acc ~rs ~res ~args
     | Mltree.Dlet (Mltree.Lrec rdef) ->
         let print_one acc = function
           | { Mltree.rec_sym = rs; rec_args = args; rec_exp = _;
               rec_res = res; rec_svar = _ } ->
-              label_function acc ~rs ~res ~args
+              label_function_aux acc ~rs ~res ~args
         in
         List.fold_left print_one acc rdef
-    | _ -> acc
+    | Mltree.Dtype _ | Mltree.Dexn _ -> acc
+    | Mltree.Dmodule (_,l) -> invalid_arg "unsupported module"
+    | _ ->  invalid_arg "unsupported decl"
   in
-  let (labels, externals) =
-    List.fold_left label_function (Expr.Mrs.empty, []) l
+  let (labels, externals,globals) =
+    List.fold_left label_function (Expr.Mrs.empty, [], Ident.Mid.empty) l
   in
   let stack = {
     EVMSimple.asm = { EVMSimple.codes = [] };
     local = Ident.Mid.empty;
-    global = Ident.Mid.empty;
+    global = globals;
     bottom = 0;
     call_labels = labels;
   } in
