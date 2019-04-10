@@ -85,6 +85,9 @@ type info = {
   info_current_ph   : string list; (* current path *)
 }
 
+let debug =
+  Debug.register_info_flag ~desc:"EVM extraction" "evm_extraction"
+
 module EVM = struct
 
   type instruction =
@@ -1463,7 +1466,7 @@ module EVMSimple = struct
 
   let pc_to_num pc =
     let n = BigInt.num_bits pc in
-    n / 8
+    (n-1) / 8
 
   let pc_to_push pc =
     let n = pc_to_num pc in
@@ -1628,7 +1631,9 @@ module EVMSimple = struct
    | PC -> [EVM.PC]
    | MSIZE -> [EVM.MSIZE]
    | GAS -> [EVM.GAS]
-   | JUMPDEST _ -> [EVM.JUMPDEST]
+   | JUMPDEST label ->
+       Debug.dprintf debug "JUMPDEST: %s %s %s@." (EVM.print_int_hex 4 label.label_addr) (BigInt.to_string label.label_addr) label.label_name;
+       [EVM.JUMPDEST]
    | PUSH1 x -> [(EVM.PUSH1 x)]
    | PUSH2 x -> [(EVM.PUSH2 x)]
    | PUSH3 x -> [(EVM.PUSH3 x)]
@@ -1851,7 +1856,7 @@ module EVMSimple = struct
 
   type stack = {
     asm: asm;
-    stack: int Ident.Mid.t;
+    mutable stack: int Ident.Mid.t;
     mutable bottom: int;
     call_labels: label Expr.Mrs.t;
   }
@@ -1886,9 +1891,19 @@ module EVMSimple = struct
   let auto stack l =
     List.iter (add_auto stack) l
 
+  let call stack ~call ~return ~args ~ret =
+    auto stack [JUMP call;JUMPDEST return];
+    stack.bottom <- stack.bottom - 1 (** return pc *) - args +  ret
+
   let bind_var stack var =
-    let stack = { stack with stack = Ident.Mid.add var stack.bottom stack.stack } in
-    stack
+    stack.stack <- Ident.Mid.add var stack.bottom stack.stack
+
+  let forget_var stack var =
+    stack.stack <- Ident.Mid.remove var stack.stack
+
+  let pop_var stack var =
+    forget_var stack var;
+    add_auto stack POP
 
   let add_arg stack var =
     stack.bottom <- stack.bottom + 1;
@@ -1896,7 +1911,7 @@ module EVMSimple = struct
     stack
 
   let get_var stack var =
-    stack.bottom + 1 - Ident.Mid.find var stack.stack
+    stack.bottom + 1 - Ident.Mid.find_def 0 var stack.stack
 
   module Allocate = struct
     let init stack =
@@ -1922,15 +1937,16 @@ module EVMSimple = struct
       ]
 
     let allocate stack size =
-      let call = new_label "allocate_call" in
+      let return = new_label "allocate_call" in
       auto stack [
-        PUSHLABEL call;
+        PUSHLABEL return;
         int_to_push size;
-        JUMP label;
-        JUMPDEST call;
-      ]
+      ];
+      call stack ~call:label ~return ~args:1 ~ret:1
 
   end
+
+  let copy_stack stack = { stack with bottom = stack.bottom }
 
 end
 
@@ -1944,7 +1960,20 @@ module Print = struct
   let is_external ~attrs =
     Sattr.mem external_arg attrs
 
-  let get_record info rs =
+  let get_constructors_from_constructor info rs =
+    match Mid.find_opt rs.rs_name info.info_mo_known_map with
+    | Some {pd_node = PDtype itdl} ->
+        let eq_rs {itd_constructors} =
+          List.exists (rs_equal rs) itd_constructors in
+        (List.find eq_rs itdl).itd_constructors
+    | _ -> assert false
+
+  let get_tag_from_constructor info rs =
+    let ctrs = get_constructors_from_constructor info rs in
+    let tag = Lists.find_nth (fun rs' -> Expr.rs_equal rs rs') ctrs in
+    tag
+
+  let get_record_from_constructor info rs =
     match Mid.find_opt rs.rs_name info.info_mo_known_map with
     | Some {pd_node = PDtype itdl} ->
         let eq_rs {itd_constructors} =
@@ -1952,6 +1981,16 @@ module Print = struct
         let itd = List.find eq_rs itdl in
         List.filter (fun e -> not (rs_ghost e)) itd.itd_fields
     | _ -> []
+
+  let get_record_from_field info rs =
+    match Mid.find_opt rs.rs_name info.info_mo_known_map with
+    | Some {pd_node = PDtype itdl} ->
+        let eq_rs {itd_fields} =
+          List.exists (rs_equal rs) itd_fields in
+        let itd = List.find eq_rs itdl in
+        List.filter (fun e -> not (rs_ghost e)) itd.itd_fields
+    | _ -> []
+
 
   (** Expressions *)
 
@@ -1973,22 +2012,24 @@ module Print = struct
 
   let removed_arg (_,ty,is_ghost) = is_ghost || is_unit ty
 
+  let (!!) fmt = EVMSimple.copy_stack fmt
+
   let rec print_apply_args info (fmt:EVMSimple.stack) exprl =
       (** on the stack in reverse order *)
       Lists.iter_right (fun e -> print_expr info fmt e) exprl
 
   and print_apply info rs fmt pvl =
-    (* let isfield = *)
-    (*   match rs.rs_field with *)
-    (*   | None   -> false *)
-    (*   | Some _ -> true in *)
-    (* let isconstructor () = *)
-    (*   match Mid.find_opt rs.rs_name info.info_mo_known_map with *)
-    (*   | Some {pd_node = PDtype its} -> *)
-    (*       let is_constructor its = *)
-    (*         List.exists (rs_equal rs) its.itd_constructors in *)
-    (*       List.exists is_constructor its *)
-    (*   | _ -> false in *)
+    let isfield =
+      match rs.rs_field with
+      | None   -> false
+      | Some _ -> true in
+    let isconstructor () =
+      match Mid.find_opt rs.rs_name info.info_mo_known_map with
+      | Some {pd_node = PDtype its} ->
+          let is_constructor its =
+            List.exists (rs_equal rs) its.itd_constructors in
+          List.exists is_constructor its
+      | _ -> false in
     match query_syntax info.info_syn rs.rs_name, pvl with
     | Some s, _ (* when is_local_id info rs.rs_name  *) ->
         let json = Json_base.get_list (Json_lexer.parse_json_object s) in
@@ -1999,52 +2040,95 @@ module Print = struct
     (*     fprintf fmt "@[%a@]" (print_expr info) t *)
     (* | None, tl when is_rs_tuple rs -> *)
     (*     fprintf fmt "@[(%a)@]" (print_list comma (print_expr info)) tl *)
-    (* | None, [t1] when isfield -> *)
-    (*     fprintf fmt "%a.%a" (print_expr info) t1 (print_lident info) rs.rs_name *)
-    (* | None, tl when isconstructor () -> *)
-    (*     let pjl = get_record info rs in *)
-    (*     begin match pjl, tl with *)
-    (*       | [], [] -> *)
-    (*           (print_uident info) fmt rs.rs_name *)
-    (*       | [], [t] -> *)
-    (*           fprintf fmt "@[<hov 2>%a %a@]" (print_uident info) rs.rs_name *)
-    (*             (print_expr ~paren:true info) t *)
-    (*       | [], tl -> *)
-    (*           fprintf fmt "@[<hov 2>%a (%a)@]" (print_uident info) rs.rs_name *)
-    (*             (print_list comma (print_expr ~paren:true info)) tl *)
-    (*       | pjl, tl -> let equal fmt () = fprintf fmt " =@ " in *)
-    (*           fprintf fmt "@[<hov 2>{ %a }@]" *)
-    (*             (print_list2 semi equal (print_rs info) *)
-    (*                (print_expr ~paren:true info)) (pjl, tl) end *)
+    | None, [t1] when isfield ->
+        let pjl = get_record_from_field info rs in
+        let i = Lists.find_nth (fun rs' -> Expr.rs_equal rs rs') pjl in
+        print_expr info fmt t1;
+        EVMSimple.auto fmt EVMSimple.[
+            int_to_push (32*i);
+            ADD;
+            MLOAD;
+          ]
+    | None, tl when isconstructor () ->
+        let pjl = get_record_from_constructor info rs in
+        let store tag =
+          let l = List.length tl in
+          let size = (32 * l) in
+          let size = match tag with None -> size | Some _ -> size + 32 in
+          EVMSimple.Allocate.allocate fmt size;
+          (** keep the base pointer *)
+          begin match tag with
+            | None ->
+                EVMSimple.add_auto fmt EVMSimple.DUP1;
+            | Some tag ->
+                (** The tag could use MSTORE8 *)
+                EVMSimple.auto fmt EVMSimple.[
+                    int_to_push tag;
+                    DUP2;
+                    MSTORE;
+                  ];
+                if 0 < l then
+                  EVMSimple.auto fmt EVMSimple.[
+                      DUP1;
+                      int_to_push 32;
+                      ADD;
+                    ];
+          end;
+          Lists.iteri (fun i e ->
+              if 0 < i then
+                EVMSimple.auto fmt EVMSimple.[
+                    int_to_push 32;
+                    ADD;
+                  ];
+              print_expr info fmt e;
+              if i < l - 1
+              then EVMSimple.add_auto fmt EVMSimple.DUP2
+              else EVMSimple.add_auto fmt EVMSimple.SWAP1;
+              EVMSimple.auto fmt EVMSimple.[
+                  MSTORE;
+                ]
+            ) tl
+        in
+        begin match pjl with
+          | [] -> (** Algebraic datatype *)
+              let tag = get_tag_from_constructor info rs in
+              store (Some tag)
+          | _ ->
+              store None
+        end
     | _, tl ->
-        let return = EVMSimple.new_label "return" in
+        let return = EVMSimple.new_label "call return" in
         EVMSimple.auto fmt EVMSimple.[
             PUSHLABEL return;
           ];
         print_apply_args info fmt tl;
-        EVMSimple.auto fmt EVMSimple.[
-            JUMP (Expr.Mrs.find rs fmt.EVMSimple.call_labels);
-            JUMPDEST return;
-          ]
+        Debug.dprintf debug "CALL %s@." rs.rs_name.Ident.id_string;
+        EVMSimple.call fmt
+          ~call:(Expr.Mrs.find rs fmt.EVMSimple.call_labels)
+          ~return
+          ~args:(List.length tl)
+          ~ret:1 (*todo unit *)
+
   and print_def info fmt ~rs ~res ~args ~ef =
+    let fmt = { fmt with EVMSimple.bottom = fmt.EVMSimple.bottom } in
     let label = Expr.Mrs.find rs fmt.EVMSimple.call_labels in
     EVMSimple.jumpdest fmt label;
     let pushed = ref 0 in
-    let fmt = List.fold_right (fun ((v,_,_) as pv) fmt ->
+    List.fold_right (fun ((v,_,_) as pv) () ->
         if removed_arg pv
-        then fmt
+        then ()
         else begin
           incr pushed;
           EVMSimple.add_arg fmt v
-        end) args fmt in
+        end) args ();
     print_expr info fmt ef;
     (** put the result before all the popped elements and the return address *)
     if !pushed >= 1 && not (is_unit res) then
       EVMSimple.add_auto fmt (EVMSimple.swap (!pushed+1));
-    List.fold_right (fun pv () ->
+    List.fold_right (fun ((v,_,_) as pv) () ->
         if removed_arg pv
         then ()
-        else EVMSimple.add_auto fmt (EVMSimple.POP)) args ();
+        else EVMSimple.pop_var fmt v) args ();
     if not (is_unit res) then
       EVMSimple.add_auto fmt EVMSimple.SWAP1;
     EVMSimple.add_auto fmt EVMSimple.JUMPDYN
@@ -2080,10 +2164,11 @@ module Print = struct
     (*       (print_ty info) res; *)
     (*     forget_vars args *)
   (* | Lany ({rs_name}, _, _, _) -> check_val_in_drv info rs_name.id_loc rs_name *)
-    | _ -> invalid_arg "not_implemented_yet"
+    | _ -> ()(* invalid_arg "not_implemented_yet" *)
 
   and print_expr info (fmt:EVMSimple.stack) e : unit =
-    match e.e_node with
+    let bot = fmt.EVMSimple.bottom in
+    begin match e.e_node with
     | Econst c ->
         let id = match e.e_ity with
           | I { ity_node = Ityapp ({its_ts = ts},_,_) } -> ts.ts_name
@@ -2127,11 +2212,12 @@ module Print = struct
         print_expr info fmt e';
         print_expr info fmt e
     | Elet (Lvar(pv,e'), e) ->
+        assert ( not (Mltree.is_unit e'.e_ity) );
         print_expr info fmt e';
-        let fmt = EVMSimple.bind_var fmt (pv_name pv) in
+        EVMSimple.bind_var fmt (pv_name pv);
         print_expr info fmt e;
-        EVMSimple.add_auto fmt EVMSimple.SWAP1;
-        EVMSimple.add_auto fmt EVMSimple.POP
+        if not (Mltree.is_unit e.e_ity) then EVMSimple.add_auto fmt EVMSimple.SWAP1;
+        EVMSimple.pop_var fmt (pv_name pv);
     | Elet (_, _) ->
         invalid_arg "unsupported local let def"
     | Eabsurd ->
@@ -2140,8 +2226,6 @@ module Print = struct
         EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.one)
     | Eapp (rs, []) when rs_equal rs rs_false ->
         EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.zero)
-    | Eapp (rs, [])  -> (* avoids parenthesis around values *)
-        print_apply info rs fmt []
     | Eapp (rs, pvl) ->
         print_apply info rs fmt pvl
     (* | Ematch (e1, [p, e2], []) -> *)
@@ -2174,7 +2258,7 @@ module Print = struct
         let labend = EVMSimple.new_label "ifend" in
         print_expr info fmt e1;
         EVMSimple.jumpi fmt labthen;
-        print_expr info fmt e3;
+        print_expr info (!! fmt) e3;
         EVMSimple.jump fmt labend;
         EVMSimple.jumpdest fmt labthen;
         print_expr info fmt e2;
@@ -2189,13 +2273,20 @@ module Print = struct
     | Ewhile (e1, e2) ->
         let labstart = EVMSimple.new_label "whilestart" in
         let labtest = EVMSimple.new_label "whiletest" in
+        EVMSimple.jump fmt labtest;
         EVMSimple.jumpdest fmt labstart;
         print_expr info fmt e2;
         EVMSimple.jumpdest fmt labtest;
         print_expr info fmt e1;
         EVMSimple.jumpi fmt labstart;
     | Eraise (_, _) ->
-        EVMSimple.add_auto fmt EVMSimple.REVERT
+        EVMSimple.auto fmt EVMSimple.[
+            PUSH1 BigInt.zero;
+            DUP1;
+            REVERT;
+          ];
+        (** not executed but for the invariants *)
+        if not (Mltree.is_unit e.e_ity) then EVMSimple.add_auto fmt EVMSimple.DUP1
     (* | Efor (pv1, pv2, dir, pv3, e) -> *)
     (*     if is_mapped_to_int info pv1.pv_ity then begin *)
     (*       fprintf fmt "@[<hov 2>for %a = %a %a %a do@ @[%a@]@ done@]" *)
@@ -2216,14 +2307,84 @@ module Print = struct
     (*       (\* then    *\) (print_expr info) e (print_lident info) for_id *)
     (*                     op (print_pv info) pv1 *)
     (*       (\* in      *\) (print_lident info) for_id (print_pv info) pv2 *)
-    (* | Ematch (e, [], xl) -> *)
-    (*     fprintf fmt "@[<hv>@[<hov 2>begin@ try@ %a@] with@]@\n@[<hov>%a@]@\nend" *)
-    (*       (print_expr info) e (print_list newline (print_xbranch info false)) xl *)
-    (* | Ematch (e, bl, xl) -> *)
-    (*     fprintf fmt *)
-    (*       (protect_on paren "begin match @[%a@] with@\n@[<hov>%a@\n%a@]@\nend") *)
-    (*       (print_expr info) e (print_list newline (print_branch info)) bl *)
-    (*       (print_list newline (print_xbranch info true)) xl *)
+    | Ematch (e, bl, []) ->
+        let bot = fmt.EVMSimple.bottom in
+        let after = EVMSimple.new_label "after" in
+        let bl = List.map (fun (pat,e) -> (pat,e,EVMSimple.new_label "branch")) bl in
+        print_expr info fmt e;
+        EVMSimple.auto fmt EVMSimple.[
+            DUP1;
+            MLOAD;
+          ];
+        let iter_pat (pat,_,lab) =
+          match pat with
+          | Pwild ->
+              EVMSimple.auto fmt EVMSimple.[
+                  JUMP lab;
+                ]
+          | Papp(ls,_) ->
+              let rs = restore_rs ls in
+              let tag = get_tag_from_constructor info rs in
+              EVMSimple.auto fmt EVMSimple.[
+                  DUP1;
+                  int_to_push tag;
+                  EQ;
+                  JUMPI lab;
+                ]
+          | _ -> invalid_arg "unsupported pattern"
+        in
+        List.iter iter_pat bl;
+        let iter_branch (pat,e,lab) =
+          let fmt = { fmt with EVMSimple.bottom = fmt.EVMSimple.bottom } in
+          EVMSimple.auto fmt EVMSimple.[
+              JUMPDEST lab;
+              POP;
+            ];
+          begin
+          match pat with
+          | Pwild -> ()
+          | Papp(ls,bindings) ->
+              let bot = fmt.EVMSimple.bottom in
+              let rs = restore_rs ls in
+              let is_record = get_record_from_constructor info rs <> [] in
+              let bind i = function
+                | Pwild -> ()
+                | Pvar v ->
+                    EVMSimple.auto fmt EVMSimple.[
+                        DUP1;
+                        int_to_push (32*i + (if is_record then 0 else 32));
+                        ADD;
+                        MLOAD;
+                      ];
+                    EVMSimple.bind_var fmt v.vs_name
+                | _ -> invalid_arg "unsupported deep pattern"
+              in
+              Lists.iteri bind bindings;
+              print_expr info fmt e;
+              let pop = function
+                | Pwild -> ()
+                | Pvar v ->
+                    if not (Mltree.is_unit e.e_ity) then EVMSimple.add_auto fmt EVMSimple.SWAP1;
+                    EVMSimple.pop_var fmt v.vs_name
+                | _ -> invalid_arg "unsupported deep pattern"
+              in
+              List.iter pop bindings;
+              let bot' = fmt.EVMSimple.bottom in
+              assert ( bot+(if (Mltree.is_unit e.e_ity) then 0 else 1) = bot' )
+          | _ -> assert false;
+        end;
+          EVMSimple.jump fmt after
+        in
+        List.iter iter_branch bl;
+        EVMSimple.auto fmt EVMSimple.[
+            JUMPDEST after;
+            SWAP1;
+            POP;
+          ];
+        let bot' = fmt.EVMSimple.bottom in
+        assert ( bot+1 = bot' )
+    | Ematch (_, _, _) ->
+        invalid_arg "match with exception not supported"
     (* | Eexn (xs, None, e) -> *)
     (*     fprintf fmt "@[<hv>let exception %a in@\n%a@]" *)
     (*       (print_uident info) xs.xs_name (print_expr info) e *)
@@ -2236,6 +2397,9 @@ module Print = struct
         EVMSimple.add_auto fmt EVMSimple.POP
     | _ ->
         invalid_arg "Unsupported"
+    end;
+    (* Format.eprintf "%i %i(%b):%a@." bot fmt.EVMSimple.bottom (Mltree.is_unit e.e_ity) Mltree.print_expr e; *)
+    assert (bot + (if Mltree.is_unit e.e_ity then 0 else 1) = fmt.EVMSimple.bottom)
 
   (* and print_branch info fmt (p, e) = *)
   (*   fprintf fmt "@[<hov 2>| %a ->@ @[%a@]@]" *)
@@ -2291,7 +2455,7 @@ module Print = struct
     (*     fprintf fmt "@[@[<hov 2>module %s%a@ =@]@\n@[<hov 2>struct@ %a@]@ end" s *)
     (*       (print_functor_args info) args *)
     (*       (print_list newline2 (print_decl info)) dl *)
-    | _ -> invalid_arg "unsupported expr"
+    | _ -> ()
 
   (* and print_functor_args info fmt args = *)
   (*   let print_sig info fmt dl = *)
@@ -2344,7 +2508,7 @@ let print_decls pargs fmt l =
         (rs,ty_args,res,label_arg_extraction)::externals
       else externals
     in
-    let label = EVMSimple.new_label "Lsym" in
+    let label = EVMSimple.new_label (Pp.sprintf "Lsym:%s" rs.rs_name.Ident.id_string) in
     let labels = Expr.Mrs.add rs label labels in
     labels,externals
   in
@@ -2359,7 +2523,7 @@ let print_decls pargs fmt l =
               label_function acc ~rs ~res ~args
         in
         List.fold_left print_one acc rdef
-    | _ -> invalid_arg "unsupported label_function"
+    | _ -> acc
   in
   let (labels, externals) =
     List.fold_left label_function (Expr.Mrs.empty, []) l
@@ -2419,6 +2583,7 @@ let print_decls pargs fmt l =
 
   (** label extraction *)
   let arg_extraction (rs,args,_,label_arg_extraction) =
+    let stack = EVMSimple.copy_stack stack in
     let size ty =
       let id = match ty with
         | Mltree.Tapp (id,[]) -> id
@@ -2473,7 +2638,7 @@ let print_decls pargs fmt l =
 
   List.iter (print_decl pargs stack) l;
   let asms = EVMSimple.finalize (List.rev stack.EVMSimple.asm.EVMSimple.codes) in
-  Format.eprintf "%a@." EVM.print_humanl asms;
+  Debug.dprintf debug "%a@." EVM.print_humanl asms;
   EVM.print_code fmt asms
 
   (* let label = { EVMSimple.label_name = "jump"; EVMSimple.label_addr = BigInt.zero } in *)

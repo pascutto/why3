@@ -1,6 +1,7 @@
 (ocamllex lexer)
 (menhir (modules parser)
         (infer false)
+        (flags --table)
         )
 
 (library

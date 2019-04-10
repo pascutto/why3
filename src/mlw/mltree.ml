@@ -84,6 +84,27 @@ and rdef = {
   rec_svar : Stv.t; (* set of type variables *)
 }
 
+let rec print_expr fmt e =
+  match e.e_node with
+  | Econst  _ -> Format.fprintf fmt "Econst"
+  | Evar    _ -> Format.fprintf fmt "Evar"
+  | Eapp    _ -> Format.fprintf fmt "Eapp"
+  | Efun    _ -> Format.fprintf fmt "Efun"
+  | Elet (Lvar (v,e2),e3) -> Format.fprintf fmt "Elet(%s,%a,%a)" v.Ity.pv_vs.vs_name.Ident.id_string print_expr e2 print_expr e3
+  | Elet _ -> Format.fprintf fmt "Elet"
+  | Eif     _ -> Format.fprintf fmt "Eif"
+  | Eassign _ -> Format.fprintf fmt "Eassign"
+  | Ematch  _ -> Format.fprintf fmt "Ematch"
+  | Eblock  _ -> Format.fprintf fmt "Eblock"
+  | Ewhile  _ -> Format.fprintf fmt "Ewhile"
+  (* For loop for Why3's type int *)
+  | Efor   _  -> Format.fprintf fmt "Efor"
+  | Eraise  _ -> Format.fprintf fmt "Eraise"
+  | Eexn   _  -> Format.fprintf fmt "Eexn"
+  | Eignore _ -> Format.fprintf fmt "Eignore"
+  | Eabsurd   -> Format.fprintf fmt "Eabsurd"
+
+
 type is_mutable = bool
 
 type typedef =

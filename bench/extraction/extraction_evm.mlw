@@ -1,0 +1,65 @@
+module A
+
+       use list.List
+       use mach.int.Int32
+
+
+       let f1 (x:int32) =
+           x-1
+
+       let rec g1 (x:int32)
+       variant { x }
+       =
+           if x < 1 then 1 else (g1 (f1 x) * (2:int32))
+
+(*
+       type t = { a: int32; b : int32 }
+
+
+       let f () =
+           { a = 0; b = 1}
+
+       let g [@ evm:external] ()
+              =
+        (f ()).b
+*)
+
+
+        let rec length4 (l:list 'a) : int32
+        variant { l } =
+          match l with
+          | Nil -> 0
+          | Cons _ l -> 1 + length4 l
+          end
+
+        let rec mk4 (i:int32) : list int32
+          variant { i } =
+          if i <= 0 then Nil else
+          let l = mk4 (i-1) in
+          Cons (0x42:int32) l
+
+
+       let g4 (i:int32) : int32 =
+        let l = mk4 i in
+        length4 l
+
+       exception Error
+
+       let g [@ evm:external] () : bool
+           raises { Error -> true }
+       =
+        (* test 1 *)
+        let () =
+         let r1 = g1 4 in
+         let o1 : int32 = (0x10:int32) in
+         if not (r1 = o1) then raise Error
+        in
+        (* test 4 *)
+        let () =
+         let r1 = g4 4 in
+         let o1 : int32 = (4:int32) in
+         if not (r1 = o1) then raise Error
+        in
+        false
+
+end

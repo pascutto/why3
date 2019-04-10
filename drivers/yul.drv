@@ -27,14 +27,14 @@ theory bool.Bool
 end
 
 module Ref
-  syntax type     ref      "%1 ref"
-  syntax function contents "!%1"
-  syntax val      ref      "ref %1"
+  syntax type     ref      "[]"
+  syntax function contents "[]"
+  syntax val      ref      "[]"
 end
 
 module ref.Ref
-  syntax val      (!_)     "!%1"
-  syntax val      (:=)     "%1 := %2"
+  syntax val      (!_)     "[]"
+  syntax val      (:=)     "[]"
 end
 
 module ref.Refint
