@@ -1568,6 +1568,26 @@ module EVMSimple = struct
     | 15 -> SWAP16
     | _ -> invalid_arg "Can't swap that much"
 
+    let dup = function
+    | x when x <= 0 -> invalid_arg "dup <= 0"
+    | 1 -> DUP1
+    | 2 -> DUP2
+    | 3 -> DUP3
+    | 4 -> DUP4
+    | 5 -> DUP5
+    | 6 -> DUP6
+    | 7 -> DUP7
+    | 8 -> DUP8
+    | 9 -> DUP9
+    | 10 -> DUP10
+    | 11 -> DUP11
+    | 12 -> DUP12
+    | 13 -> DUP13
+    | 14 -> DUP14
+    | 15 -> DUP15
+    | 16 -> DUP16
+    | _ -> invalid_arg "get_var too far"
+
   let to_evm = function
    | STOP -> [EVM.STOP]
    | ADD -> [EVM.ADD]
@@ -1856,7 +1876,8 @@ module EVMSimple = struct
 
   type stack = {
     asm: asm;
-    mutable stack: int Ident.Mid.t;
+    mutable local: int Ident.Mid.t;
+    global: int Ident.Mid.t;
     mutable bottom: int;
     call_labels: label Expr.Mrs.t;
   }
@@ -1896,10 +1917,10 @@ module EVMSimple = struct
     stack.bottom <- stack.bottom - 1 (** return pc *) - args +  ret
 
   let bind_var stack var =
-    stack.stack <- Ident.Mid.add var stack.bottom stack.stack
+    stack.local <- Ident.Mid.add var stack.bottom stack.local
 
   let forget_var stack var =
-    stack.stack <- Ident.Mid.remove var stack.stack
+    stack.local <- Ident.Mid.remove var stack.local
 
   let pop_var stack var =
     forget_var stack var;
@@ -1911,7 +1932,16 @@ module EVMSimple = struct
     stack
 
   let get_var stack var =
-    stack.bottom + 1 - Ident.Mid.find_def 0 var stack.stack
+    try
+      `Local (stack.bottom + 1 - Ident.Mid.find var stack.local)
+    with Not_found ->
+      `Global (Ident.Mid.find var stack.global)
+
+  let is_global stack var =
+    Ident.Mid.mem var stack.global
+
+  let get_global_var stack var =
+    Ident.Mid.find var stack.global
 
   module Allocate = struct
     let init stack =
@@ -1991,6 +2021,10 @@ module Print = struct
         List.filter (fun e -> not (rs_ghost e)) itd.itd_fields
     | _ -> []
 
+  let get_field_number_from_field info rs =
+    let pjl = get_record_from_field info rs in
+    let i = Lists.find_nth (fun rs' -> Expr.rs_equal rs rs') pjl in
+    i
 
   (** Expressions *)
 
@@ -2041,14 +2075,22 @@ module Print = struct
     (* | None, tl when is_rs_tuple rs -> *)
     (*     fprintf fmt "@[(%a)@]" (print_list comma (print_expr info)) tl *)
     | None, [t1] when isfield ->
-        let pjl = get_record_from_field info rs in
-        let i = Lists.find_nth (fun rs' -> Expr.rs_equal rs rs') pjl in
-        print_expr info fmt t1;
-        EVMSimple.auto fmt EVMSimple.[
-            int_to_push (32*i);
-            ADD;
-            MLOAD;
-          ]
+        let i = get_field_number_from_field info rs in
+        begin match t1.e_node with
+          | Evar pvs when EVMSimple.is_global fmt pvs.Ity.pv_vs.vs_name ->
+              let addr = EVMSimple.get_global_var fmt pvs.Ity.pv_vs.vs_name in
+              EVMSimple.auto fmt EVMSimple.[
+                  int_to_push (addr+32*i);
+                  SLOAD;
+                ]
+          | _ ->
+              print_expr info fmt t1;
+              EVMSimple.auto fmt EVMSimple.[
+                  int_to_push (32*i);
+                  ADD;
+                  MLOAD;
+                ]
+        end
     | None, tl when isconstructor () ->
         let pjl = get_record_from_constructor info rs in
         let store tag =
@@ -2169,234 +2211,243 @@ module Print = struct
   and print_expr info (fmt:EVMSimple.stack) e : unit =
     let bot = fmt.EVMSimple.bottom in
     begin match e.e_node with
-    | Econst c ->
-        let id = match e.e_ity with
-          | I { ity_node = Ityapp ({its_ts = ts},_,_) } -> ts.ts_name
-          | _ -> assert false
-        in begin
-        match query_syntax info.info_syn id with
-        | Some "s32" | Some "u32"
-        | Some "s64" | Some "u64"
-        | Some "s128" | Some "u128"
-        | Some "s256" | Some "u256" ->
-            let i = Number.compute_int_constant c in
-            EVMSimple.add_auto fmt (EVMSimple.num_to_push i)
-        | None | Some _  ->
-            invalid_arg "Unknown type"
-      end
-    | Evar pvs when Ity.ity_equal pvs.pv_ity Ity.ity_unit ->
-        ()
-    | Evar pvs ->
-        let asm = match EVMSimple.get_var fmt pvs.Ity.pv_vs.vs_name with
-          | x when x <= 0 -> invalid_arg "get_var <= 0"
-          | 1 -> EVMSimple.DUP1
-          | 2 -> EVMSimple.DUP2
-          | 3 -> EVMSimple.DUP3
-          | 4 -> EVMSimple.DUP4
-          | 5 -> EVMSimple.DUP5
-          | 6 -> EVMSimple.DUP6
-          | 7 -> EVMSimple.DUP7
-          | 8 -> EVMSimple.DUP8
-          | 9 -> EVMSimple.DUP9
-          | 10 -> EVMSimple.DUP10
-          | 11 -> EVMSimple.DUP11
-          | 12 -> EVMSimple.DUP12
-          | 13 -> EVMSimple.DUP13
-          | 14 -> EVMSimple.DUP14
-          | 15 -> EVMSimple.DUP15
-          | 16 -> EVMSimple.DUP16
-          | _ -> invalid_arg "get_var too far"
-        in
-        EVMSimple.add_auto fmt asm
-    | Elet (Lvar(pv,e'), e) when Ity.ity_equal pv.pv_ity Ity.ity_unit ->
-        print_expr info fmt e';
-        print_expr info fmt e
-    | Elet (Lvar(pv,e'), e) ->
-        assert ( not (Mltree.is_unit e'.e_ity) );
-        print_expr info fmt e';
-        EVMSimple.bind_var fmt (pv_name pv);
-        print_expr info fmt e;
-        if not (Mltree.is_unit e.e_ity) then EVMSimple.add_auto fmt EVMSimple.SWAP1;
-        EVMSimple.pop_var fmt (pv_name pv);
-    | Elet (_, _) ->
-        invalid_arg "unsupported local let def"
-    | Eabsurd ->
-        EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.zero)
-    | Eapp (rs, []) when rs_equal rs rs_true ->
-        EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.one)
-    | Eapp (rs, []) when rs_equal rs rs_false ->
-        EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.zero)
-    | Eapp (rs, pvl) ->
-        print_apply info rs fmt pvl
-    (* | Ematch (e1, [p, e2], []) -> *)
-    (*     fprintf fmt (protect_on paren "let %a =@ %a in@ %a") *)
-    (*       (print_pat info) p (print_expr info) e1 (print_expr info) e2 *)
-    (* | Ematch (e, pl, []) -> *)
-    (*     fprintf fmt *)
-    (*       (protect_on paren "begin match @[%a@] with@\n@[<hov>%a@]@\nend") *)
-    (*       (print_expr info) e (print_list newline (print_branch info)) pl *)
-    (* | Eassign al -> *)
-    (*     let assign fmt (rho, rs, e) = *)
-    (*       fprintf fmt "@[<hov 2>%a.%a <-@ %a@]" *)
-    (*         (print_lident info) (pv_name rho) (print_lident info) rs.rs_name *)
-    (*         (print_expr info) e in *)
-    (*     begin match al with *)
-    (*       | [] -> assert false | [a] -> assign fmt a *)
-    (*       | al -> fprintf fmt "@[begin %a end@]" (print_list semi assign) al end *)
-    | Eif (e1, e2, {e_node = Eblock []}) ->
-        let lab = EVMSimple.new_label "ifnoelse" in
-        print_expr info fmt e1;
-        EVMSimple.add_auto fmt EVMSimple.NOT;
-        EVMSimple.jumpi fmt lab;
-        print_expr info fmt e2;
-        EVMSimple.jumpdest fmt lab
-    | Eif (e1, e2, e3) when is_false e2 && is_true e3 ->
-        print_expr info fmt e1;
-        EVMSimple.add_auto fmt EVMSimple.NOT
-    | Eif (e1, e2, e3) ->
-        let labthen = EVMSimple.new_label "ifthen" in
-        let labend = EVMSimple.new_label "ifend" in
-        print_expr info fmt e1;
-        EVMSimple.jumpi fmt labthen;
-        print_expr info (!! fmt) e3;
-        EVMSimple.jump fmt labend;
-        EVMSimple.jumpdest fmt labthen;
-        print_expr info fmt e2;
-        EVMSimple.jumpdest fmt labend
-    | Eblock [] -> () (* unit *)
-    | Eblock [e] ->
-        print_expr info fmt e
-    | Eblock el ->
-        List.iter (print_expr info fmt) el
-    | Efun (_varl, _e) ->
-        invalid_arg "unsupported Efun"
-    | Ewhile (e1, e2) ->
-        let labstart = EVMSimple.new_label "whilestart" in
-        let labtest = EVMSimple.new_label "whiletest" in
-        EVMSimple.jump fmt labtest;
-        EVMSimple.jumpdest fmt labstart;
-        print_expr info fmt e2;
-        EVMSimple.jumpdest fmt labtest;
-        print_expr info fmt e1;
-        EVMSimple.jumpi fmt labstart;
-    | Eraise (_, _) ->
-        EVMSimple.auto fmt EVMSimple.[
-            PUSH1 BigInt.zero;
-            DUP1;
-            REVERT;
-          ];
-        (** not executed but for the invariants *)
-        if not (Mltree.is_unit e.e_ity) then EVMSimple.add_auto fmt EVMSimple.DUP1
-    (* | Efor (pv1, pv2, dir, pv3, e) -> *)
-    (*     if is_mapped_to_int info pv1.pv_ity then begin *)
-    (*       fprintf fmt "@[<hov 2>for %a = %a %a %a do@ @[%a@]@ done@]" *)
-    (*         (print_lident info) (pv_name pv1) (print_lident info) (pv_name pv2) *)
-    (*         print_for_direction dir (print_lident info) (pv_name pv3) *)
-    (*         (print_expr info) e; *)
-    (*       forget_pv pv1 end *)
-    (*     else *)
-    (*       let for_id  = id_register (id_fresh "for_loop_to") in *)
-    (*       let cmp, op = match dir with *)
-    (*         | To     -> "Z.leq", "Z.succ" *)
-    (*         | DownTo -> "Z.geq", "Z.pred" in *)
-    (*       fprintf fmt (protect_on paren *)
-    (*                      "@[<hov 2>let rec %a %a =@ if %s %a %a then \ *)
-    (*                       begin@ %a; %a (%s %a) end@ in@ %a %a@]") *)
-    (*       (\* let rec *\) (print_lident info) for_id (print_pv info) pv1 *)
-    (*       (\* if      *\)  cmp (print_pv info) pv1 (print_pv info) pv3 *)
-    (*       (\* then    *\) (print_expr info) e (print_lident info) for_id *)
-    (*                     op (print_pv info) pv1 *)
-    (*       (\* in      *\) (print_lident info) for_id (print_pv info) pv2 *)
-    | Ematch (e, bl, []) ->
-        let bot = fmt.EVMSimple.bottom in
-        let after = EVMSimple.new_label "after" in
-        let bl = List.map (fun (pat,e) -> (pat,e,EVMSimple.new_label "branch")) bl in
-        print_expr info fmt e;
-        EVMSimple.auto fmt EVMSimple.[
-            DUP1;
-            MLOAD;
-          ];
-        let iter_pat (pat,_,lab) =
-          match pat with
-          | Pwild ->
-              EVMSimple.auto fmt EVMSimple.[
-                  JUMP lab;
-                ]
-          | Papp(ls,_) ->
-              let rs = restore_rs ls in
-              let tag = get_tag_from_constructor info rs in
-              EVMSimple.auto fmt EVMSimple.[
-                  DUP1;
-                  int_to_push tag;
-                  EQ;
-                  JUMPI lab;
-                ]
-          | _ -> invalid_arg "unsupported pattern"
-        in
-        List.iter iter_pat bl;
-        let iter_branch (pat,e,lab) =
-          let fmt = { fmt with EVMSimple.bottom = fmt.EVMSimple.bottom } in
+      | Econst c ->
+          let id = match e.e_ity with
+            | I { ity_node = Ityapp ({its_ts = ts},_,_) } -> ts.ts_name
+            | _ -> assert false
+          in begin
+            match query_syntax info.info_syn id with
+            | Some "s32" | Some "u32"
+            | Some "s64" | Some "u64"
+            | Some "s128" | Some "u128"
+            | Some "s256" | Some "u256" ->
+                let i = Number.compute_int_constant c in
+                EVMSimple.add_auto fmt (EVMSimple.num_to_push i)
+            | None | Some _  ->
+                invalid_arg "Unknown type"
+          end
+      | Evar pvs when Ity.ity_equal pvs.pv_ity Ity.ity_unit ->
+          ()
+      | Evar pvs ->
+          begin match (EVMSimple.get_var fmt pvs.Ity.pv_vs.vs_name) with
+            | `Local i ->
+                let asm = EVMSimple.dup i in
+                EVMSimple.add_auto fmt asm
+            | `Global i ->
+                EVMSimple.auto fmt EVMSimple.[
+                    int_to_push i;
+                    SLOAD;
+                  ]
+          end
+      | Elet (Lvar(pv,e'), e) when Ity.ity_equal pv.pv_ity Ity.ity_unit ->
+          print_expr info fmt e';
+          print_expr info fmt e
+      | Elet (Lvar(pv,e'), e) ->
+          assert ( not (Mltree.is_unit e'.e_ity) );
+          print_expr info fmt e';
+          EVMSimple.bind_var fmt (pv_name pv);
+          print_expr info fmt e;
+          if not (Mltree.is_unit e.e_ity) then EVMSimple.add_auto fmt EVMSimple.SWAP1;
+          EVMSimple.pop_var fmt (pv_name pv);
+      | Elet (_, _) ->
+          invalid_arg "unsupported local let def"
+      | Eabsurd ->
+          EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.zero)
+      | Eapp (rs, []) when rs_equal rs rs_true ->
+          EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.one)
+      | Eapp (rs, []) when rs_equal rs rs_false ->
+          EVMSimple.add_auto fmt (EVMSimple.PUSH1 BigInt.zero)
+      | Eapp (rs, pvl) ->
+          print_apply info rs fmt pvl
+      (* | Ematch (e1, [p, e2], []) -> *)
+      (*     fprintf fmt (protect_on paren "let %a =@ %a in@ %a") *)
+      (*       (print_pat info) p (print_expr info) e1 (print_expr info) e2 *)
+      (* | Ematch (e, pl, []) -> *)
+      (*     fprintf fmt *)
+      (*       (protect_on paren "begin match @[%a@] with@\n@[<hov>%a@]@\nend") *)
+      (*       (print_expr info) e (print_list newline (print_branch info)) pl *)
+      (* | Eassign al -> *)
+      (*     let assign fmt (rho, rs, e) = *)
+      (*       fprintf fmt "@[<hov 2>%a.%a <-@ %a@]" *)
+      (*         (print_lident info) (pv_name rho) (print_lident info) rs.rs_name *)
+      (*         (print_expr info) e in *)
+      (*     begin match al with *)
+      (*       | [] -> assert false | [a] -> assign fmt a *)
+      (*       | al -> fprintf fmt "@[begin %a end@]" (print_list semi assign) al end *)
+      | Eif (e1, e2, {e_node = Eblock []}) ->
+          let lab = EVMSimple.new_label "ifnoelse" in
+          print_expr info fmt e1;
+          EVMSimple.add_auto fmt EVMSimple.NOT;
+          EVMSimple.jumpi fmt lab;
+          print_expr info fmt e2;
+          EVMSimple.jumpdest fmt lab
+      | Eif (e1, e2, e3) when is_false e2 && is_true e3 ->
+          print_expr info fmt e1;
+          EVMSimple.add_auto fmt EVMSimple.NOT
+      | Eif (e1, e2, e3) ->
+          let labthen = EVMSimple.new_label "ifthen" in
+          let labend = EVMSimple.new_label "ifend" in
+          print_expr info fmt e1;
+          EVMSimple.jumpi fmt labthen;
+          print_expr info (!! fmt) e3;
+          EVMSimple.jump fmt labend;
+          EVMSimple.jumpdest fmt labthen;
+          print_expr info fmt e2;
+          EVMSimple.jumpdest fmt labend
+      | Eblock [] -> () (* unit *)
+      | Eblock [e] ->
+          print_expr info fmt e
+      | Eblock el ->
+          List.iter (print_expr info fmt) el
+      | Efun (_varl, _e) ->
+          invalid_arg "unsupported Efun"
+      | Ewhile (e1, e2) ->
+          let labstart = EVMSimple.new_label "whilestart" in
+          let labtest = EVMSimple.new_label "whiletest" in
+          EVMSimple.jump fmt labtest;
+          EVMSimple.jumpdest fmt labstart;
+          print_expr info fmt e2;
+          EVMSimple.jumpdest fmt labtest;
+          print_expr info fmt e1;
+          EVMSimple.jumpi fmt labstart;
+      | Eraise (_, _) ->
           EVMSimple.auto fmt EVMSimple.[
-              JUMPDEST lab;
+              PUSH1 BigInt.zero;
+              DUP1;
+              REVERT;
+            ];
+          (** not executed but for the invariants *)
+          if not (Mltree.is_unit e.e_ity) then EVMSimple.add_auto fmt EVMSimple.DUP1
+      (* | Efor (pv1, pv2, dir, pv3, e) -> *)
+      (*     if is_mapped_to_int info pv1.pv_ity then begin *)
+      (*       fprintf fmt "@[<hov 2>for %a = %a %a %a do@ @[%a@]@ done@]" *)
+      (*         (print_lident info) (pv_name pv1) (print_lident info) (pv_name pv2) *)
+      (*         print_for_direction dir (print_lident info) (pv_name pv3) *)
+      (*         (print_expr info) e; *)
+      (*       forget_pv pv1 end *)
+      (*     else *)
+      (*       let for_id  = id_register (id_fresh "for_loop_to") in *)
+      (*       let cmp, op = match dir with *)
+      (*         | To     -> "Z.leq", "Z.succ" *)
+      (*         | DownTo -> "Z.geq", "Z.pred" in *)
+      (*       fprintf fmt (protect_on paren *)
+      (*                      "@[<hov 2>let rec %a %a =@ if %s %a %a then \ *)
+                              (*                       begin@ %a; %a (%s %a) end@ in@ %a %a@]") *)
+      (*       (\* let rec *\) (print_lident info) for_id (print_pv info) pv1 *)
+      (*       (\* if      *\)  cmp (print_pv info) pv1 (print_pv info) pv3 *)
+      (*       (\* then    *\) (print_expr info) e (print_lident info) for_id *)
+      (*                     op (print_pv info) pv1 *)
+      (*       (\* in      *\) (print_lident info) for_id (print_pv info) pv2 *)
+      | Ematch (e, bl, []) ->
+          let bot = fmt.EVMSimple.bottom in
+          let after = EVMSimple.new_label "after" in
+          let bl = List.map (fun (pat,e) -> (pat,e,EVMSimple.new_label "branch")) bl in
+          print_expr info fmt e;
+          EVMSimple.auto fmt EVMSimple.[
+              DUP1;
+              MLOAD;
+            ];
+          let iter_pat (pat,_,lab) =
+            match pat with
+            | Pwild ->
+                EVMSimple.auto fmt EVMSimple.[
+                    JUMP lab;
+                  ]
+            | Papp(ls,_) ->
+                let rs = restore_rs ls in
+                let tag = get_tag_from_constructor info rs in
+                EVMSimple.auto fmt EVMSimple.[
+                    DUP1;
+                    int_to_push tag;
+                    EQ;
+                    JUMPI lab;
+                  ]
+            | _ -> invalid_arg "unsupported pattern"
+          in
+          List.iter iter_pat bl;
+          let iter_branch (pat,e,lab) =
+            let fmt = { fmt with EVMSimple.bottom = fmt.EVMSimple.bottom } in
+            EVMSimple.auto fmt EVMSimple.[
+                JUMPDEST lab;
+                POP;
+              ];
+            begin
+              match pat with
+              | Pwild -> ()
+              | Papp(ls,bindings) ->
+                  let bot = fmt.EVMSimple.bottom in
+                  let rs = restore_rs ls in
+                  let is_record = get_record_from_constructor info rs <> [] in
+                  let bind i = function
+                    | Pwild -> ()
+                    | Pvar v ->
+                        EVMSimple.auto fmt EVMSimple.[
+                            DUP1;
+                            int_to_push (32*i + (if is_record then 0 else 32));
+                            ADD;
+                            MLOAD;
+                          ];
+                        EVMSimple.bind_var fmt v.vs_name
+                    | _ -> invalid_arg "unsupported deep pattern"
+                  in
+                  Lists.iteri bind bindings;
+                  print_expr info fmt e;
+                  let pop = function
+                    | Pwild -> ()
+                    | Pvar v ->
+                        if not (Mltree.is_unit e.e_ity) then EVMSimple.add_auto fmt EVMSimple.SWAP1;
+                        EVMSimple.pop_var fmt v.vs_name
+                    | _ -> invalid_arg "unsupported deep pattern"
+                  in
+                  List.iter pop bindings;
+                  let bot' = fmt.EVMSimple.bottom in
+                  assert ( bot+(if (Mltree.is_unit e.e_ity) then 0 else 1) = bot' )
+              | _ -> assert false;
+            end;
+            EVMSimple.jump fmt after
+          in
+          List.iter iter_branch bl;
+          EVMSimple.auto fmt EVMSimple.[
+              JUMPDEST after;
+              SWAP1;
               POP;
             ];
-          begin
-          match pat with
-          | Pwild -> ()
-          | Papp(ls,bindings) ->
-              let bot = fmt.EVMSimple.bottom in
-              let rs = restore_rs ls in
-              let is_record = get_record_from_constructor info rs <> [] in
-              let bind i = function
-                | Pwild -> ()
-                | Pvar v ->
-                    EVMSimple.auto fmt EVMSimple.[
-                        DUP1;
-                        int_to_push (32*i + (if is_record then 0 else 32));
-                        ADD;
-                        MLOAD;
-                      ];
-                    EVMSimple.bind_var fmt v.vs_name
-                | _ -> invalid_arg "unsupported deep pattern"
-              in
-              Lists.iteri bind bindings;
-              print_expr info fmt e;
-              let pop = function
-                | Pwild -> ()
-                | Pvar v ->
-                    if not (Mltree.is_unit e.e_ity) then EVMSimple.add_auto fmt EVMSimple.SWAP1;
-                    EVMSimple.pop_var fmt v.vs_name
-                | _ -> invalid_arg "unsupported deep pattern"
-              in
-              List.iter pop bindings;
-              let bot' = fmt.EVMSimple.bottom in
-              assert ( bot+(if (Mltree.is_unit e.e_ity) then 0 else 1) = bot' )
-          | _ -> assert false;
-        end;
-          EVMSimple.jump fmt after
-        in
-        List.iter iter_branch bl;
-        EVMSimple.auto fmt EVMSimple.[
-            JUMPDEST after;
-            SWAP1;
-            POP;
-          ];
-        let bot' = fmt.EVMSimple.bottom in
-        assert ( bot+1 = bot' )
-    | Ematch (_, _, _) ->
-        invalid_arg "match with exception not supported"
-    (* | Eexn (xs, None, e) -> *)
-    (*     fprintf fmt "@[<hv>let exception %a in@\n%a@]" *)
-    (*       (print_uident info) xs.xs_name (print_expr info) e *)
-    (* | Eexn (xs, Some t, e) -> *)
-    (*     fprintf fmt "@[<hv>let exception %a of %a in@\n%a@]" *)
-    (*       (print_uident info) xs.xs_name (print_ty ~paren:true info) t *)
-    (*       (print_expr info) e *)
-    | Eignore e ->
-        print_expr info fmt e;
-        EVMSimple.add_auto fmt EVMSimple.POP
+          let bot' = fmt.EVMSimple.bottom in
+          assert ( bot+1 = bot' )
+      | Ematch (_, _, _) ->
+          invalid_arg "match with exception not supported"
+      (* | Eexn (xs, None, e) -> *)
+      (*     fprintf fmt "@[<hv>let exception %a in@\n%a@]" *)
+      (*       (print_uident info) xs.xs_name (print_expr info) e *)
+      (* | Eexn (xs, Some t, e) -> *)
+      (*     fprintf fmt "@[<hv>let exception %a of %a in@\n%a@]" *)
+      (*       (print_uident info) xs.xs_name (print_ty ~paren:true info) t *)
+      (*       (print_expr info) e *)
+      | Eignore e ->
+          print_expr info fmt e;
+          EVMSimple.add_auto fmt EVMSimple.POP
+      | Eassign al ->
+          let assign (rho, rs, e) =
+            let v = pv_name rho in
+            print_expr info fmt e;
+            let i = get_field_number_from_field info rs in
+            match EVMSimple.get_var fmt v with
+            | `Local addr ->
+                EVMSimple.auto fmt EVMSimple.[
+                    dup addr;
+                    int_to_push (32*i);
+                    ADD;
+                    MSTORE;
+                  ]
+            | `Global addr ->
+                EVMSimple.auto fmt EVMSimple.[
+                    int_to_push (addr+32*i);
+                    SSTORE;
+                  ]
+          in
+          List.iter assign al
     | _ ->
-        invalid_arg "Unsupported"
+        invalid_arg (Pp.sprintf "Unsupported expression: %a" Mltree.print_expr e)
     end;
     (* Format.eprintf "%i %i(%b):%a@." bot fmt.EVMSimple.bottom (Mltree.is_unit e.e_ity) Mltree.print_expr e; *)
     assert (bot + (if Mltree.is_unit e.e_ity then 0 else 1) = fmt.EVMSimple.bottom)
@@ -2530,7 +2581,8 @@ let print_decls pargs fmt l =
   in
   let stack = {
     EVMSimple.asm = { EVMSimple.codes = [] };
-    stack = Ident.Mid.empty;
+    local = Ident.Mid.empty;
+    global = Ident.Mid.empty;
     bottom = 0;
     call_labels = labels;
   } in
