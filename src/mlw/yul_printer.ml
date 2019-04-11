@@ -87,6 +87,8 @@ type info = {
 
 let debug =
   Debug.register_info_flag ~desc:"EVM extraction" "evm_extraction"
+let gas_checking =
+  Debug.register_flag ~desc:"EVM gas checking" "evm_gas_checking"
 
 module EVM = struct
 
@@ -383,10 +385,30 @@ type price =
   | PriceMid
   | PriceHigh
   | PriceSpecial
+  | PriceSpecialOver of int (** overapproximation of the cost *)
   | PriceBase
   | PriceExtCode
   | PriceExt
   | PriceBalance
+
+
+let price_cost price =
+  let p = match price with
+  | PriceZero -> 0
+  | PriceVeryLow -> 3
+  | PriceLow -> 5
+  | PriceMid -> 8
+  | PriceHigh -> 10
+  | PriceSpecial -> invalid_arg "PriceSpecial"
+  | PriceSpecialOver i -> i
+  | PriceBase -> 2
+  | PriceExtCode -> 700
+  | PriceExt -> 20
+  | PriceBalance -> 400
+  in
+  BigInt.of_int p
+
+
 
 type info =
   {
@@ -453,14 +475,14 @@ let get_info = function
   | MLOAD -> { name = "MLOAD"; pushed = 0; args = 1; ret = 1; sideeffects = true; price = PriceVeryLow; code = 0x51; }
   | MSTORE -> { name = "MSTORE"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceVeryLow; code = 0x52; }
   | MSTORE8 -> { name = "MSTORE8"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceVeryLow; code = 0x53; }
-  | SLOAD -> { name = "SLOAD"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceSpecial; code = 0x54; }
-  | SSTORE -> { name = "SSTORE"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceSpecial; code = 0x55; }
+  | SLOAD -> { name = "SLOAD"; pushed = 0; args = 1; ret = 1; sideeffects = false; price = PriceSpecialOver(200); code = 0x54; }
+  | SSTORE -> { name = "SSTORE"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceSpecialOver(20000); code = 0x55; }
   | JUMP -> { name = "JUMP"; pushed = 0; args = 1; ret = 0; sideeffects = true; price = PriceMid; code = 0x56; }
   | JUMPI -> { name = "JUMPI"; pushed = 0; args = 2; ret = 0; sideeffects = true; price = PriceHigh; code = 0x57; }
   | PC -> { name =  "PC"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase; code = 0x58; }
   | MSIZE -> { name = "MSIZE"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase; code = 0x59; }
   | GAS -> { name = "GAS"; pushed = 0; args = 0; ret = 1; sideeffects = false; price = PriceBase; code = 0x5a; }
-  | JUMPDEST -> { name = "JUMPDEST"; pushed = 0; args = 0; ret = 0; sideeffects = true; price = PriceSpecial; code = 0x5b; }
+  | JUMPDEST -> { name = "JUMPDEST"; pushed = 0; args = 0; ret = 0; sideeffects = true; price = PriceSpecialOver(1); code = 0x5b; }
   | PUSH1 _ -> { name = "PUSH1"; pushed = 1; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow; code = 0x60; }
   | PUSH2 _ -> { name = "PUSH2"; pushed = 2; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow; code = 0x61; }
   | PUSH3 _ -> { name = "PUSH3"; pushed = 3; args = 0; ret = 1; sideeffects = false; price = PriceVeryLow; code = 0x62; }
@@ -546,6 +568,12 @@ let size instr =
 
 let sizel l =
   List.fold_left (fun acc e -> acc + (size e)) 0 l
+
+let cost instr =
+  price_cost  (get_info instr).price
+
+let costl l =
+  List.fold_left (fun acc e -> BigInt.add acc (cost e)) BigInt.zero l
 
 let pp_binary buf = function
    | STOP
@@ -1026,10 +1054,18 @@ end
 module EVMSimple = struct
 
   type label = {
+    id: int;
     label_name: string;
     mutable label_addr: BigInt.t;
     (** set once all the code is known *)
+    label_follow_addgas: bool; (** indicate if we follow it through addgas *)
+    mutable label_index: int;
   }
+
+  type addgas =
+    | Addgas of BigInt.t
+    | Startgas of int
+    | Stopgas of int
 
   type instruction =
    | STOP
@@ -1095,6 +1131,7 @@ module EVMSimple = struct
    | PC
    | MSIZE
    | GAS
+   | ADDGAS of addgas
    | PUSH1 of BigInt.t
    | PUSH2 of BigInt.t
    | PUSH3 of BigInt.t
@@ -1174,295 +1211,311 @@ module EVMSimple = struct
    | REVERT
    | INVALID
    | SELFDESTRUCT
+   | ALLOCATE of label * label * BigInt.t
 
-  let equal a b =
-    match a,b with
-    | STOP, STOP -> true
-    | ADD, ADD -> true
-    | SUB, SUB -> true
-    | MUL, MUL -> true
-    | DIV, DIV -> true
-    | SDIV, SDIV -> true
-    | MOD, MOD -> true
-    | SMOD, SMOD -> true
-    | EXP, EXP -> true
-    | NOT, NOT -> true
-    | LT, LT -> true
-    | GT, GT -> true
-    | SLT, SLT -> true
-    | SGT, SGT -> true
-    | EQ, EQ -> true
-    | ISZERO, ISZERO -> true
-    | AND, AND -> true
-    | OR, OR -> true
-    | XOR, XOR -> true
-    | BYTE, BYTE -> true
-    | SHL, SHL -> true
-    | SHR, SHR -> true
-    | SAR, SAR -> true
-    | ADDMOD, ADDMOD -> true
-    | MULMOD, MULMOD -> true
-    | SIGNEXTEND, SIGNEXTEND -> true
-    | KECCAK256, KECCAK256 -> true
-    | ADDRESS, ADDRESS -> true
-    | BALANCE, BALANCE -> true
-    | ORIGIN, ORIGIN -> true
-    | CALLER, CALLER -> true
-    | CALLVALUE, CALLVALUE -> true
-    | CALLDATALOAD, CALLDATALOAD -> true
-    | CALLDATASIZE, CALLDATASIZE -> true
-    | CALLDATACOPY, CALLDATACOPY -> true
-    | CODESIZE, CODESIZE -> true
-    | CODECOPY, CODECOPY -> true
-    | GASPRICE, GASPRICE -> true
-    | EXTCODESIZE, EXTCODESIZE -> true
-    | EXTCODECOPY, EXTCODECOPY -> true
-    | RETURNDATASIZE, RETURNDATASIZE -> true
-    | RETURNDATACOPY, RETURNDATACOPY -> true
-    | EXTCODEHASH, EXTCODEHASH -> true
-    | BLOCKHASH, BLOCKHASH -> true
-    | COINBASE, COINBASE -> true
-    | TIMESTAMP, TIMESTAMP -> true
-    | NUMBER, NUMBER -> true
-    | DIFFICULTY, DIFFICULTY -> true
-    | GASLIMIT, GASLIMIT -> true
-    | POP, POP -> true
-    | MLOAD, MLOAD -> true
-    | MSTORE, MSTORE -> true
-    | MSTORE8, MSTORE8 -> true
-    | SLOAD, SLOAD -> true
-    | SSTORE, SSTORE -> true
-    | JUMPDEST l1, JUMPDEST l2 -> l1 == l2
-    | JUMP l1, JUMP l2 -> l1 == l2
-    | JUMPDYN, JUMPDYN -> true
-    | JUMPI l1, JUMPI l2 -> l1 == l2
-    | PC, PC -> true
-    | MSIZE, MSIZE -> true
-    | GAS, GAS -> true
-    | PUSH1 x, PUSH1 y -> BigInt.compare x y = 0
-    | PUSH2 x, PUSH2 y -> BigInt.compare x y = 0
-    | PUSH3 x, PUSH3 y -> BigInt.compare x y = 0
-    | PUSH4 x, PUSH4 y -> BigInt.compare x y = 0
-    | PUSH5 x, PUSH5 y -> BigInt.compare x y = 0
-    | PUSH6 x, PUSH6 y -> BigInt.compare x y = 0
-    | PUSH7 x, PUSH7 y -> BigInt.compare x y = 0
-    | PUSH8 x, PUSH8 y -> BigInt.compare x y = 0
-    | PUSH9 x, PUSH9 y -> BigInt.compare x y = 0
-    | PUSH10 x, PUSH10 y -> BigInt.compare x y = 0
-    | PUSH11 x, PUSH11 y -> BigInt.compare x y = 0
-    | PUSH12 x, PUSH12 y -> BigInt.compare x y = 0
-    | PUSH13 x, PUSH13 y -> BigInt.compare x y = 0
-    | PUSH14 x, PUSH14 y -> BigInt.compare x y = 0
-    | PUSH15 x, PUSH15 y -> BigInt.compare x y = 0
-    | PUSH16 x, PUSH16 y -> BigInt.compare x y = 0
-    | PUSH17 x, PUSH17 y -> BigInt.compare x y = 0
-    | PUSH18 x, PUSH18 y -> BigInt.compare x y = 0
-    | PUSH19 x, PUSH19 y -> BigInt.compare x y = 0
-    | PUSH20 x, PUSH20 y -> BigInt.compare x y = 0
-    | PUSH21 x, PUSH21 y -> BigInt.compare x y = 0
-    | PUSH22 x, PUSH22 y -> BigInt.compare x y = 0
-    | PUSH23 x, PUSH23 y -> BigInt.compare x y = 0
-    | PUSH24 x, PUSH24 y -> BigInt.compare x y = 0
-    | PUSH25 x, PUSH25 y -> BigInt.compare x y = 0
-    | PUSH26 x, PUSH26 y -> BigInt.compare x y = 0
-    | PUSH27 x, PUSH27 y -> BigInt.compare x y = 0
-    | PUSH28 x, PUSH28 y -> BigInt.compare x y = 0
-    | PUSH29 x, PUSH29 y -> BigInt.compare x y = 0
-    | PUSH30 x, PUSH30 y -> BigInt.compare x y = 0
-    | PUSH31 x, PUSH31 y -> BigInt.compare x y = 0
-    | PUSH32 x, PUSH32 y -> BigInt.compare x y = 0
-    | DUP1, DUP1 -> true
-    | DUP2, DUP2 -> true
-    | DUP3, DUP3 -> true
-    | DUP4, DUP4 -> true
-    | DUP5, DUP5 -> true
-    | DUP6, DUP6 -> true
-    | DUP7, DUP7 -> true
-    | DUP8, DUP8 -> true
-    | DUP9, DUP9 -> true
-    | DUP10, DUP10 -> true
-    | DUP11, DUP11 -> true
-    | DUP12, DUP12 -> true
-    | DUP13, DUP13 -> true
-    | DUP14, DUP14 -> true
-    | DUP15, DUP15 -> true
-    | DUP16, DUP16 -> true
-    | SWAP1, SWAP1 -> true
-    | SWAP2, SWAP2 -> true
-    | SWAP3, SWAP3 -> true
-    | SWAP4, SWAP4 -> true
-    | SWAP5, SWAP5 -> true
-    | SWAP6, SWAP6 -> true
-    | SWAP7, SWAP7 -> true
-    | SWAP8, SWAP8 -> true
-    | SWAP9, SWAP9 -> true
-    | SWAP10, SWAP10 -> true
-    | SWAP11, SWAP11 -> true
-    | SWAP12, SWAP12 -> true
-    | SWAP13, SWAP13 -> true
-    | SWAP14, SWAP14 -> true
-    | SWAP15, SWAP15 -> true
-    | SWAP16, SWAP16 -> true
-    | LOG0, LOG0 -> true
-    | LOG1, LOG1 -> true
-    | LOG2, LOG2 -> true
-    | LOG3, LOG3 -> true
-    | LOG4, LOG4 -> true
-    | CREATE, CREATE -> true
-    | CALL, CALL -> true
-    | CALLCODE, CALLCODE -> true
-    | RETURN, RETURN -> true
-    | DELEGATECALL, DELEGATECALL -> true
-    | STATICCALL, STATICCALL -> true
-    | CREATE2, CREATE2 -> true
-    | REVERT, REVERT -> true
-    | INVALID, INVALID -> true
-    | SELFDESTRUCT, SELFDESTRUCT -> true
-    | _ -> false
+  let get_args_ret instr =
+    let get_args_ret asm =
+      let info = EVM.get_info asm in
+      info.EVM.args, info.EVM.ret
+    in
+    match instr with
+    | STOP -> get_args_ret EVM.STOP
+    | ADD -> get_args_ret EVM.ADD
+    | SUB -> get_args_ret EVM.SUB
+    | MUL -> get_args_ret EVM.MUL
+    | DIV -> get_args_ret EVM.DIV
+    | SDIV -> get_args_ret EVM.SDIV
+    | MOD -> get_args_ret EVM.MOD
+    | SMOD -> get_args_ret EVM.SMOD
+    | EXP -> get_args_ret EVM.EXP
+    | NOT -> get_args_ret EVM.NOT
+    | LT -> get_args_ret EVM.LT
+    | GT -> get_args_ret EVM.GT
+    | SLT -> get_args_ret EVM.SLT
+    | SGT -> get_args_ret EVM.SGT
+    | EQ -> get_args_ret EVM.EQ
+    | ISZERO -> get_args_ret EVM.ISZERO
+    | AND -> get_args_ret EVM.AND
+    | OR -> get_args_ret EVM.OR
+    | XOR -> get_args_ret EVM.XOR
+    | BYTE -> get_args_ret EVM.BYTE
+    | SHL -> get_args_ret EVM.SHL
+    | SHR -> get_args_ret EVM.SHR
+    | SAR -> get_args_ret EVM.SAR
+    | ADDMOD -> get_args_ret EVM.ADDMOD
+    | MULMOD -> get_args_ret EVM.MULMOD
+    | SIGNEXTEND -> get_args_ret EVM.SIGNEXTEND
+    | KECCAK256 -> get_args_ret EVM.KECCAK256
+    | ADDRESS -> get_args_ret EVM.ADDRESS
+    | BALANCE -> get_args_ret EVM.BALANCE
+    | ORIGIN -> get_args_ret EVM.ORIGIN
+    | CALLER -> get_args_ret EVM.CALLER
+    | CALLVALUE -> get_args_ret EVM.CALLVALUE
+    | CALLDATALOAD -> get_args_ret EVM.CALLDATALOAD
+    | CALLDATASIZE -> get_args_ret EVM.CALLDATASIZE
+    | CALLDATACOPY -> get_args_ret EVM.CALLDATACOPY
+    | CODESIZE -> get_args_ret EVM.CODESIZE
+    | CODECOPY -> get_args_ret EVM.CODECOPY
+    | GASPRICE -> get_args_ret EVM.GASPRICE
+    | EXTCODESIZE -> get_args_ret EVM.EXTCODESIZE
+    | EXTCODECOPY -> get_args_ret EVM.EXTCODECOPY
+    | RETURNDATASIZE -> get_args_ret EVM.RETURNDATASIZE
+    | RETURNDATACOPY -> get_args_ret EVM.RETURNDATACOPY
+    | EXTCODEHASH -> get_args_ret EVM.EXTCODEHASH
+    | BLOCKHASH -> get_args_ret EVM.BLOCKHASH
+    | COINBASE -> get_args_ret EVM.COINBASE
+    | TIMESTAMP -> get_args_ret EVM.TIMESTAMP
+    | NUMBER -> get_args_ret EVM.NUMBER
+    | DIFFICULTY -> get_args_ret EVM.DIFFICULTY
+    | GASLIMIT -> get_args_ret EVM.GASLIMIT
+    | POP -> get_args_ret EVM.POP
+    | MLOAD -> get_args_ret EVM.MLOAD
+    | MSTORE -> get_args_ret EVM.MSTORE
+    | MSTORE8 -> get_args_ret EVM.MSTORE8
+    | SLOAD -> get_args_ret EVM.SLOAD
+    | SSTORE -> get_args_ret EVM.SSTORE
+    | JUMP _ -> get_args_ret EVM.JUMP
+    | JUMPDYN -> get_args_ret EVM.JUMP
+    | JUMPI _ -> get_args_ret EVM.JUMPI
+    | PUSHLABEL lab -> get_args_ret (EVM.PUSH32 lab.label_addr)
+    | PC -> get_args_ret EVM.PC
+    | MSIZE -> get_args_ret EVM.MSIZE
+    | GAS -> get_args_ret EVM.GAS
+    | JUMPDEST _ -> get_args_ret EVM.JUMPDEST
+    | PUSH1 x -> get_args_ret (EVM.PUSH1 x)
+    | PUSH2 x -> get_args_ret (EVM.PUSH2 x)
+    | PUSH3 x -> get_args_ret (EVM.PUSH3 x)
+    | PUSH4 x -> get_args_ret (EVM.PUSH4 x)
+    | PUSH5 x -> get_args_ret (EVM.PUSH5 x)
+    | PUSH6 x -> get_args_ret (EVM.PUSH6 x)
+    | PUSH7 x -> get_args_ret (EVM.PUSH7 x)
+    | PUSH8 x -> get_args_ret (EVM.PUSH8 x)
+    | PUSH9 x -> get_args_ret (EVM.PUSH9 x)
+    | PUSH10 x -> get_args_ret (EVM.PUSH10 x)
+    | PUSH11 x -> get_args_ret (EVM.PUSH11 x)
+    | PUSH12 x -> get_args_ret (EVM.PUSH12 x)
+    | PUSH13 x -> get_args_ret (EVM.PUSH13 x)
+    | PUSH14 x -> get_args_ret (EVM.PUSH14 x)
+    | PUSH15 x -> get_args_ret (EVM.PUSH15 x)
+    | PUSH16 x -> get_args_ret (EVM.PUSH16 x)
+    | PUSH17 x -> get_args_ret (EVM.PUSH17 x)
+    | PUSH18 x -> get_args_ret (EVM.PUSH18 x)
+    | PUSH19 x -> get_args_ret (EVM.PUSH19 x)
+    | PUSH20 x -> get_args_ret (EVM.PUSH20 x)
+    | PUSH21 x -> get_args_ret (EVM.PUSH21 x)
+    | PUSH22 x -> get_args_ret (EVM.PUSH22 x)
+    | PUSH23 x -> get_args_ret (EVM.PUSH23 x)
+    | PUSH24 x -> get_args_ret (EVM.PUSH24 x)
+    | PUSH25 x -> get_args_ret (EVM.PUSH25 x)
+    | PUSH26 x -> get_args_ret (EVM.PUSH26 x)
+    | PUSH27 x -> get_args_ret (EVM.PUSH27 x)
+    | PUSH28 x -> get_args_ret (EVM.PUSH28 x)
+    | PUSH29 x -> get_args_ret (EVM.PUSH29 x)
+    | PUSH30 x -> get_args_ret (EVM.PUSH30 x)
+    | PUSH31 x -> get_args_ret (EVM.PUSH31 x)
+    | PUSH32 x -> get_args_ret (EVM.PUSH32 x)
+    | DUP1 -> get_args_ret EVM.DUP1
+    | DUP2 -> get_args_ret EVM.DUP2
+    | DUP3 -> get_args_ret EVM.DUP3
+    | DUP4 -> get_args_ret EVM.DUP4
+    | DUP5 -> get_args_ret EVM.DUP5
+    | DUP6 -> get_args_ret EVM.DUP6
+    | DUP7 -> get_args_ret EVM.DUP7
+    | DUP8 -> get_args_ret EVM.DUP8
+    | DUP9 -> get_args_ret EVM.DUP9
+    | DUP10 -> get_args_ret EVM.DUP10
+    | DUP11 -> get_args_ret EVM.DUP11
+    | DUP12 -> get_args_ret EVM.DUP12
+    | DUP13 -> get_args_ret EVM.DUP13
+    | DUP14 -> get_args_ret EVM.DUP14
+    | DUP15 -> get_args_ret EVM.DUP15
+    | DUP16 -> get_args_ret EVM.DUP16
+    | SWAP1 -> get_args_ret EVM.SWAP1
+    | SWAP2 -> get_args_ret EVM.SWAP2
+    | SWAP3 -> get_args_ret EVM.SWAP3
+    | SWAP4 -> get_args_ret EVM.SWAP4
+    | SWAP5 -> get_args_ret EVM.SWAP5
+    | SWAP6 -> get_args_ret EVM.SWAP6
+    | SWAP7 -> get_args_ret EVM.SWAP7
+    | SWAP8 -> get_args_ret EVM.SWAP8
+    | SWAP9 -> get_args_ret EVM.SWAP9
+    | SWAP10 -> get_args_ret EVM.SWAP10
+    | SWAP11 -> get_args_ret EVM.SWAP11
+    | SWAP12 -> get_args_ret EVM.SWAP12
+    | SWAP13 -> get_args_ret EVM.SWAP13
+    | SWAP14 -> get_args_ret EVM.SWAP14
+    | SWAP15 -> get_args_ret EVM.SWAP15
+    | SWAP16 -> get_args_ret EVM.SWAP16
+    | LOG0 -> get_args_ret EVM.LOG0
+    | LOG1 -> get_args_ret EVM.LOG1
+    | LOG2 -> get_args_ret EVM.LOG2
+    | LOG3 -> get_args_ret EVM.LOG3
+    | LOG4 -> get_args_ret EVM.LOG4
+    | CREATE -> get_args_ret EVM.CREATE
+    | CALL -> get_args_ret EVM.CALL
+    | CALLCODE -> get_args_ret EVM.CALLCODE
+    | RETURN -> get_args_ret EVM.RETURN
+    | DELEGATECALL -> get_args_ret EVM.DELEGATECALL
+    | STATICCALL -> get_args_ret EVM.STATICCALL
+    | CREATE2 -> get_args_ret EVM.CREATE2
+    | REVERT -> get_args_ret EVM.REVERT
+    | INVALID -> get_args_ret EVM.INVALID
+    | SELFDESTRUCT -> get_args_ret EVM.SELFDESTRUCT
+    | ADDGAS _ -> 0,0
+    | ALLOCATE (_,_,_) -> 0,1
 
-  let get_info = function
-   | STOP -> EVM.get_info EVM.STOP
-   | ADD -> EVM.get_info EVM.ADD
-   | SUB -> EVM.get_info EVM.SUB
-   | MUL -> EVM.get_info EVM.MUL
-   | DIV -> EVM.get_info EVM.DIV
-   | SDIV -> EVM.get_info EVM.SDIV
-   | MOD -> EVM.get_info EVM.MOD
-   | SMOD -> EVM.get_info EVM.SMOD
-   | EXP -> EVM.get_info EVM.EXP
-   | NOT -> EVM.get_info EVM.NOT
-   | LT -> EVM.get_info EVM.LT
-   | GT -> EVM.get_info EVM.GT
-   | SLT -> EVM.get_info EVM.SLT
-   | SGT -> EVM.get_info EVM.SGT
-   | EQ -> EVM.get_info EVM.EQ
-   | ISZERO -> EVM.get_info EVM.ISZERO
-   | AND -> EVM.get_info EVM.AND
-   | OR -> EVM.get_info EVM.OR
-   | XOR -> EVM.get_info EVM.XOR
-   | BYTE -> EVM.get_info EVM.BYTE
-   | SHL -> EVM.get_info EVM.SHL
-   | SHR -> EVM.get_info EVM.SHR
-   | SAR -> EVM.get_info EVM.SAR
-   | ADDMOD -> EVM.get_info EVM.ADDMOD
-   | MULMOD -> EVM.get_info EVM.MULMOD
-   | SIGNEXTEND -> EVM.get_info EVM.SIGNEXTEND
-   | KECCAK256 -> EVM.get_info EVM.KECCAK256
-   | ADDRESS -> EVM.get_info EVM.ADDRESS
-   | BALANCE -> EVM.get_info EVM.BALANCE
-   | ORIGIN -> EVM.get_info EVM.ORIGIN
-   | CALLER -> EVM.get_info EVM.CALLER
-   | CALLVALUE -> EVM.get_info EVM.CALLVALUE
-   | CALLDATALOAD -> EVM.get_info EVM.CALLDATALOAD
-   | CALLDATASIZE -> EVM.get_info EVM.CALLDATASIZE
-   | CALLDATACOPY -> EVM.get_info EVM.CALLDATACOPY
-   | CODESIZE -> EVM.get_info EVM.CODESIZE
-   | CODECOPY -> EVM.get_info EVM.CODECOPY
-   | GASPRICE -> EVM.get_info EVM.GASPRICE
-   | EXTCODESIZE -> EVM.get_info EVM.EXTCODESIZE
-   | EXTCODECOPY -> EVM.get_info EVM.EXTCODECOPY
-   | RETURNDATASIZE -> EVM.get_info EVM.RETURNDATASIZE
-   | RETURNDATACOPY -> EVM.get_info EVM.RETURNDATACOPY
-   | EXTCODEHASH -> EVM.get_info EVM.EXTCODEHASH
-   | BLOCKHASH -> EVM.get_info EVM.BLOCKHASH
-   | COINBASE -> EVM.get_info EVM.COINBASE
-   | TIMESTAMP -> EVM.get_info EVM.TIMESTAMP
-   | NUMBER -> EVM.get_info EVM.NUMBER
-   | DIFFICULTY -> EVM.get_info EVM.DIFFICULTY
-   | GASLIMIT -> EVM.get_info EVM.GASLIMIT
-   | POP -> EVM.get_info EVM.POP
-   | MLOAD -> EVM.get_info EVM.MLOAD
-   | MSTORE -> EVM.get_info EVM.MSTORE
-   | MSTORE8 -> EVM.get_info EVM.MSTORE8
-   | SLOAD -> EVM.get_info EVM.SLOAD
-   | SSTORE -> EVM.get_info EVM.SSTORE
-   | JUMP _ -> EVM.get_info EVM.JUMP
-   | JUMPDYN -> EVM.get_info EVM.JUMP
-   | JUMPI _ -> EVM.get_info EVM.JUMPI
-   | PUSHLABEL lab -> EVM.get_info (EVM.PUSH32 lab.label_addr)
-   | PC -> EVM.get_info EVM.PC
-   | MSIZE -> EVM.get_info EVM.MSIZE
-   | GAS -> EVM.get_info EVM.GAS
-   | JUMPDEST _ -> EVM.get_info EVM.JUMPDEST
-   | PUSH1 x -> EVM.get_info (EVM.PUSH1 x)
-   | PUSH2 x -> EVM.get_info (EVM.PUSH2 x)
-   | PUSH3 x -> EVM.get_info (EVM.PUSH3 x)
-   | PUSH4 x -> EVM.get_info (EVM.PUSH4 x)
-   | PUSH5 x -> EVM.get_info (EVM.PUSH5 x)
-   | PUSH6 x -> EVM.get_info (EVM.PUSH6 x)
-   | PUSH7 x -> EVM.get_info (EVM.PUSH7 x)
-   | PUSH8 x -> EVM.get_info (EVM.PUSH8 x)
-   | PUSH9 x -> EVM.get_info (EVM.PUSH9 x)
-   | PUSH10 x -> EVM.get_info (EVM.PUSH10 x)
-   | PUSH11 x -> EVM.get_info (EVM.PUSH11 x)
-   | PUSH12 x -> EVM.get_info (EVM.PUSH12 x)
-   | PUSH13 x -> EVM.get_info (EVM.PUSH13 x)
-   | PUSH14 x -> EVM.get_info (EVM.PUSH14 x)
-   | PUSH15 x -> EVM.get_info (EVM.PUSH15 x)
-   | PUSH16 x -> EVM.get_info (EVM.PUSH16 x)
-   | PUSH17 x -> EVM.get_info (EVM.PUSH17 x)
-   | PUSH18 x -> EVM.get_info (EVM.PUSH18 x)
-   | PUSH19 x -> EVM.get_info (EVM.PUSH19 x)
-   | PUSH20 x -> EVM.get_info (EVM.PUSH20 x)
-   | PUSH21 x -> EVM.get_info (EVM.PUSH21 x)
-   | PUSH22 x -> EVM.get_info (EVM.PUSH22 x)
-   | PUSH23 x -> EVM.get_info (EVM.PUSH23 x)
-   | PUSH24 x -> EVM.get_info (EVM.PUSH24 x)
-   | PUSH25 x -> EVM.get_info (EVM.PUSH25 x)
-   | PUSH26 x -> EVM.get_info (EVM.PUSH26 x)
-   | PUSH27 x -> EVM.get_info (EVM.PUSH27 x)
-   | PUSH28 x -> EVM.get_info (EVM.PUSH28 x)
-   | PUSH29 x -> EVM.get_info (EVM.PUSH29 x)
-   | PUSH30 x -> EVM.get_info (EVM.PUSH30 x)
-   | PUSH31 x -> EVM.get_info (EVM.PUSH31 x)
-   | PUSH32 x -> EVM.get_info (EVM.PUSH32 x)
-   | DUP1 -> EVM.get_info EVM.DUP1
-   | DUP2 -> EVM.get_info EVM.DUP2
-   | DUP3 -> EVM.get_info EVM.DUP3
-   | DUP4 -> EVM.get_info EVM.DUP4
-   | DUP5 -> EVM.get_info EVM.DUP5
-   | DUP6 -> EVM.get_info EVM.DUP6
-   | DUP7 -> EVM.get_info EVM.DUP7
-   | DUP8 -> EVM.get_info EVM.DUP8
-   | DUP9 -> EVM.get_info EVM.DUP9
-   | DUP10 -> EVM.get_info EVM.DUP10
-   | DUP11 -> EVM.get_info EVM.DUP11
-   | DUP12 -> EVM.get_info EVM.DUP12
-   | DUP13 -> EVM.get_info EVM.DUP13
-   | DUP14 -> EVM.get_info EVM.DUP14
-   | DUP15 -> EVM.get_info EVM.DUP15
-   | DUP16 -> EVM.get_info EVM.DUP16
-   | SWAP1 -> EVM.get_info EVM.SWAP1
-   | SWAP2 -> EVM.get_info EVM.SWAP2
-   | SWAP3 -> EVM.get_info EVM.SWAP3
-   | SWAP4 -> EVM.get_info EVM.SWAP4
-   | SWAP5 -> EVM.get_info EVM.SWAP5
-   | SWAP6 -> EVM.get_info EVM.SWAP6
-   | SWAP7 -> EVM.get_info EVM.SWAP7
-   | SWAP8 -> EVM.get_info EVM.SWAP8
-   | SWAP9 -> EVM.get_info EVM.SWAP9
-   | SWAP10 -> EVM.get_info EVM.SWAP10
-   | SWAP11 -> EVM.get_info EVM.SWAP11
-   | SWAP12 -> EVM.get_info EVM.SWAP12
-   | SWAP13 -> EVM.get_info EVM.SWAP13
-   | SWAP14 -> EVM.get_info EVM.SWAP14
-   | SWAP15 -> EVM.get_info EVM.SWAP15
-   | SWAP16 -> EVM.get_info EVM.SWAP16
-   | LOG0 -> EVM.get_info EVM.LOG0
-   | LOG1 -> EVM.get_info EVM.LOG1
-   | LOG2 -> EVM.get_info EVM.LOG2
-   | LOG3 -> EVM.get_info EVM.LOG3
-   | LOG4 -> EVM.get_info EVM.LOG4
-   | CREATE -> EVM.get_info EVM.CREATE
-   | CALL -> EVM.get_info EVM.CALL
-   | CALLCODE -> EVM.get_info EVM.CALLCODE
-   | RETURN -> EVM.get_info EVM.RETURN
-   | DELEGATECALL -> EVM.get_info EVM.DELEGATECALL
-   | STATICCALL -> EVM.get_info EVM.STATICCALL
-   | CREATE2 -> EVM.get_info EVM.CREATE2
-   | REVERT -> EVM.get_info EVM.REVERT
-   | INVALID -> EVM.get_info EVM.INVALID
-   | SELFDESTRUCT -> EVM.get_info EVM.SELFDESTRUCT
+  let get_name instr =
+    let aux asm =
+      let info = EVM.get_info asm in
+      info.EVM.name
+    in
+    match instr with
+    | STOP -> aux EVM.STOP
+    | ADD -> aux EVM.ADD
+    | SUB -> aux EVM.SUB
+    | MUL -> aux EVM.MUL
+    | DIV -> aux EVM.DIV
+    | SDIV -> aux EVM.SDIV
+    | MOD -> aux EVM.MOD
+    | SMOD -> aux EVM.SMOD
+    | EXP -> aux EVM.EXP
+    | NOT -> aux EVM.NOT
+    | LT -> aux EVM.LT
+    | GT -> aux EVM.GT
+    | SLT -> aux EVM.SLT
+    | SGT -> aux EVM.SGT
+    | EQ -> aux EVM.EQ
+    | ISZERO -> aux EVM.ISZERO
+    | AND -> aux EVM.AND
+    | OR -> aux EVM.OR
+    | XOR -> aux EVM.XOR
+    | BYTE -> aux EVM.BYTE
+    | SHL -> aux EVM.SHL
+    | SHR -> aux EVM.SHR
+    | SAR -> aux EVM.SAR
+    | ADDMOD -> aux EVM.ADDMOD
+    | MULMOD -> aux EVM.MULMOD
+    | SIGNEXTEND -> aux EVM.SIGNEXTEND
+    | KECCAK256 -> aux EVM.KECCAK256
+    | ADDRESS -> aux EVM.ADDRESS
+    | BALANCE -> aux EVM.BALANCE
+    | ORIGIN -> aux EVM.ORIGIN
+    | CALLER -> aux EVM.CALLER
+    | CALLVALUE -> aux EVM.CALLVALUE
+    | CALLDATALOAD -> aux EVM.CALLDATALOAD
+    | CALLDATASIZE -> aux EVM.CALLDATASIZE
+    | CALLDATACOPY -> aux EVM.CALLDATACOPY
+    | CODESIZE -> aux EVM.CODESIZE
+    | CODECOPY -> aux EVM.CODECOPY
+    | GASPRICE -> aux EVM.GASPRICE
+    | EXTCODESIZE -> aux EVM.EXTCODESIZE
+    | EXTCODECOPY -> aux EVM.EXTCODECOPY
+    | RETURNDATASIZE -> aux EVM.RETURNDATASIZE
+    | RETURNDATACOPY -> aux EVM.RETURNDATACOPY
+    | EXTCODEHASH -> aux EVM.EXTCODEHASH
+    | BLOCKHASH -> aux EVM.BLOCKHASH
+    | COINBASE -> aux EVM.COINBASE
+    | TIMESTAMP -> aux EVM.TIMESTAMP
+    | NUMBER -> aux EVM.NUMBER
+    | DIFFICULTY -> aux EVM.DIFFICULTY
+    | GASLIMIT -> aux EVM.GASLIMIT
+    | POP -> aux EVM.POP
+    | MLOAD -> aux EVM.MLOAD
+    | MSTORE -> aux EVM.MSTORE
+    | MSTORE8 -> aux EVM.MSTORE8
+    | SLOAD -> aux EVM.SLOAD
+    | SSTORE -> aux EVM.SSTORE
+    | JUMP _ -> aux EVM.JUMP
+    | JUMPDYN -> aux EVM.JUMP
+    | JUMPI _ -> aux EVM.JUMPI
+    | PUSHLABEL lab -> aux (EVM.PUSH32 lab.label_addr)
+    | PC -> aux EVM.PC
+    | MSIZE -> aux EVM.MSIZE
+    | GAS -> aux EVM.GAS
+    | JUMPDEST _ -> aux EVM.JUMPDEST
+    | PUSH1 x -> aux (EVM.PUSH1 x)
+    | PUSH2 x -> aux (EVM.PUSH2 x)
+    | PUSH3 x -> aux (EVM.PUSH3 x)
+    | PUSH4 x -> aux (EVM.PUSH4 x)
+    | PUSH5 x -> aux (EVM.PUSH5 x)
+    | PUSH6 x -> aux (EVM.PUSH6 x)
+    | PUSH7 x -> aux (EVM.PUSH7 x)
+    | PUSH8 x -> aux (EVM.PUSH8 x)
+    | PUSH9 x -> aux (EVM.PUSH9 x)
+    | PUSH10 x -> aux (EVM.PUSH10 x)
+    | PUSH11 x -> aux (EVM.PUSH11 x)
+    | PUSH12 x -> aux (EVM.PUSH12 x)
+    | PUSH13 x -> aux (EVM.PUSH13 x)
+    | PUSH14 x -> aux (EVM.PUSH14 x)
+    | PUSH15 x -> aux (EVM.PUSH15 x)
+    | PUSH16 x -> aux (EVM.PUSH16 x)
+    | PUSH17 x -> aux (EVM.PUSH17 x)
+    | PUSH18 x -> aux (EVM.PUSH18 x)
+    | PUSH19 x -> aux (EVM.PUSH19 x)
+    | PUSH20 x -> aux (EVM.PUSH20 x)
+    | PUSH21 x -> aux (EVM.PUSH21 x)
+    | PUSH22 x -> aux (EVM.PUSH22 x)
+    | PUSH23 x -> aux (EVM.PUSH23 x)
+    | PUSH24 x -> aux (EVM.PUSH24 x)
+    | PUSH25 x -> aux (EVM.PUSH25 x)
+    | PUSH26 x -> aux (EVM.PUSH26 x)
+    | PUSH27 x -> aux (EVM.PUSH27 x)
+    | PUSH28 x -> aux (EVM.PUSH28 x)
+    | PUSH29 x -> aux (EVM.PUSH29 x)
+    | PUSH30 x -> aux (EVM.PUSH30 x)
+    | PUSH31 x -> aux (EVM.PUSH31 x)
+    | PUSH32 x -> aux (EVM.PUSH32 x)
+    | DUP1 -> aux EVM.DUP1
+    | DUP2 -> aux EVM.DUP2
+    | DUP3 -> aux EVM.DUP3
+    | DUP4 -> aux EVM.DUP4
+    | DUP5 -> aux EVM.DUP5
+    | DUP6 -> aux EVM.DUP6
+    | DUP7 -> aux EVM.DUP7
+    | DUP8 -> aux EVM.DUP8
+    | DUP9 -> aux EVM.DUP9
+    | DUP10 -> aux EVM.DUP10
+    | DUP11 -> aux EVM.DUP11
+    | DUP12 -> aux EVM.DUP12
+    | DUP13 -> aux EVM.DUP13
+    | DUP14 -> aux EVM.DUP14
+    | DUP15 -> aux EVM.DUP15
+    | DUP16 -> aux EVM.DUP16
+    | SWAP1 -> aux EVM.SWAP1
+    | SWAP2 -> aux EVM.SWAP2
+    | SWAP3 -> aux EVM.SWAP3
+    | SWAP4 -> aux EVM.SWAP4
+    | SWAP5 -> aux EVM.SWAP5
+    | SWAP6 -> aux EVM.SWAP6
+    | SWAP7 -> aux EVM.SWAP7
+    | SWAP8 -> aux EVM.SWAP8
+    | SWAP9 -> aux EVM.SWAP9
+    | SWAP10 -> aux EVM.SWAP10
+    | SWAP11 -> aux EVM.SWAP11
+    | SWAP12 -> aux EVM.SWAP12
+    | SWAP13 -> aux EVM.SWAP13
+    | SWAP14 -> aux EVM.SWAP14
+    | SWAP15 -> aux EVM.SWAP15
+    | SWAP16 -> aux EVM.SWAP16
+    | LOG0 -> aux EVM.LOG0
+    | LOG1 -> aux EVM.LOG1
+    | LOG2 -> aux EVM.LOG2
+    | LOG3 -> aux EVM.LOG3
+    | LOG4 -> aux EVM.LOG4
+    | CREATE -> aux EVM.CREATE
+    | CALL -> aux EVM.CALL
+    | CALLCODE -> aux EVM.CALLCODE
+    | RETURN -> aux EVM.RETURN
+    | DELEGATECALL -> aux EVM.DELEGATECALL
+    | STATICCALL -> aux EVM.STATICCALL
+    | CREATE2 -> aux EVM.CREATE2
+    | REVERT -> aux EVM.REVERT
+    | INVALID -> aux EVM.INVALID
+    | SELFDESTRUCT -> aux EVM.SELFDESTRUCT
+    | ADDGAS (Addgas _) -> "ADDGAS"
+    | ADDGAS (Startgas _) -> "STARTGAS"
+    | ADDGAS (Stopgas _) -> "STOPGAS"
+    | ALLOCATE (_,_,_) -> "ALLOCATE"
 
   let pc_to_num pc =
     let n = BigInt.num_bits pc in
@@ -1588,7 +1641,14 @@ module EVMSimple = struct
     | 16 -> DUP16
     | _ -> invalid_arg "get_var too far"
 
-  let to_evm = function
+    let allocate_code label_ret label_call size  =
+      [
+        PUSHLABEL label_ret;
+        num_to_push size;
+        JUMP label_call;
+        JUMPDEST label_ret]
+
+  let rec to_evm = function
    | STOP -> [EVM.STOP]
    | ADD -> [EVM.ADD]
    | SUB -> [EVM.SUB]
@@ -1651,6 +1711,7 @@ module EVMSimple = struct
    | PC -> [EVM.PC]
    | MSIZE -> [EVM.MSIZE]
    | GAS -> [EVM.GAS]
+   | ADDGAS _ -> []
    | JUMPDEST label ->
        Debug.dprintf debug "JUMPDEST: %s %s %s@." (EVM.print_int_hex 4 label.label_addr) (BigInt.to_string label.label_addr) label.label_name;
        [EVM.JUMPDEST]
@@ -1733,6 +1794,8 @@ module EVMSimple = struct
    | REVERT -> [EVM.REVERT]
    | INVALID -> [EVM.INVALID]
    | SELFDESTRUCT -> [EVM.SELFDESTRUCT]
+   | ALLOCATE(label_ret,label_call,size) ->
+      List.concat (List.map to_evm (allocate_code label_ret label_call size))
 
   let of_json = function
    | Json_base.String "STOP" -> STOP
@@ -1843,33 +1906,6 @@ module EVMSimple = struct
    | Json_base.String "SELFDESTRUCT" -> SELFDESTRUCT
    | _ -> invalid_arg "incorrect json"
 
-
-  let linearize l =
-    let stable = ref true in
-    let compute_label pc = function
-      | JUMPDEST label ->
-          let num = pc_to_num pc in
-          let num' = pc_to_num label.label_addr in
-          label.label_addr <- pc;
-          if not (num = num') then begin
-            stable := false;
-          end;
-          BigInt.succ pc
-      | instr -> BigInt.add pc (BigInt.of_int (EVM.sizel (to_evm instr)))
-    in
-    let rec fixpoint () =
-      stable := true;
-      let _pc = List.fold_left compute_label BigInt.zero l in
-      if not !stable then fixpoint ()
-    in
-    fixpoint ()
-
-  let finalize l =
-    linearize l;
-    let l = List.fold_left (fun acc e -> List.rev_append (to_evm e) acc) [] l in
-    let l = List.rev l in
-    l
-
   type asm = {
     mutable codes: instruction list;
   }
@@ -1882,7 +1918,20 @@ module EVMSimple = struct
     call_labels: label Expr.Mrs.t;
   }
 
-  let new_label name = { label_name = name; label_addr = BigInt.zero }
+  let new_label =
+    let label_counter = ref (-1) in
+    fun ~follow name ->
+      incr label_counter;
+      { id = !label_counter; label_name = name; label_addr = BigInt.zero;
+        label_follow_addgas = follow;
+        label_index = -1;
+      }
+
+  let new_startstop_addgas =
+    let label_counter = ref (-1) in
+    fun () ->
+      incr label_counter;
+      ADDGAS (Startgas (!label_counter)),ADDGAS (Stopgas (!label_counter))
 
   let add ?(popped=0) ?(pushed=0) stack asm =
     stack.asm.codes <- asm::stack.asm.codes;
@@ -1897,8 +1946,8 @@ module EVMSimple = struct
     | PUSHLABEL _ ->
         add ~pushed:1 stack asm
     | _ ->
-    let info = get_info asm in
-    add stack asm ~popped:info.EVM.args ~pushed:info.EVM.ret
+    let popped, pushed = get_args_ret asm in
+    add stack asm ~popped ~pushed
 
   let jumpdest stack label =
     add_auto stack (JUMPDEST label)
@@ -1943,6 +1992,9 @@ module EVMSimple = struct
   let get_global_var stack var =
     Ident.Mid.find var stack.global
 
+  let add_gas fmt i =
+    add_auto fmt (ADDGAS (Addgas i))
+
   module Allocate = struct
     let init stack =
       auto stack
@@ -1950,10 +2002,11 @@ module EVMSimple = struct
          int_to_push 0x40;
          MSTORE]
 
-    let label = new_label "allocate_function"
+    let label = new_label ~follow:false "allocate_function"
 
-    let define_allocate stack =
-      auto stack [
+
+    let code =
+      [
         JUMPDEST label;
         int_to_push 0x40;
         MLOAD;
@@ -1966,17 +2019,93 @@ module EVMSimple = struct
         JUMPDYN;
       ]
 
-    let allocate stack size =
-      let return = new_label "allocate_call" in
-      auto stack [
-        PUSHLABEL return;
-        int_to_push size;
-      ];
-      call stack ~call:label ~return ~args:1 ~ret:1
+    let cost =
+      (EVM.costl (List.concat (List.map to_evm code)))
 
+    let define_allocate stack =
+      auto stack code
+
+    let allocate stack size =
+      let return = new_label ~follow:false "allocate_call" in
+      auto stack [
+        ALLOCATE(return,label,BigInt.of_int size)
+      ]
   end
 
   let copy_stack stack = { stack with bottom = stack.bottom }
+
+  (** finalize *)
+  let linearize l =
+    let stable = ref true in
+    let rec compute_label (i,pc) = function
+      | JUMPDEST label ->
+          let num = pc_to_num pc in
+          let num' = pc_to_num label.label_addr in
+          label.label_addr <- pc;
+          label.label_index <- i;
+          if not (num = num') then begin
+            stable := false;
+          end;
+          i+1,BigInt.succ pc
+      | ALLOCATE(label_ret,label_call,size) ->
+          let l = allocate_code label_ret label_call size in
+          let _,pc = List.fold_left compute_label (i,pc) l in
+          i+1,pc
+      | instr ->
+          i+1,BigInt.add pc (BigInt.of_int (EVM.sizel (to_evm instr)))
+    in
+    let rec fixpoint () =
+      stable := true;
+      let _pc = List.fold_left compute_label (0,BigInt.zero) l in
+      if not !stable then fixpoint ()
+    in
+    fixpoint ()
+
+  let gaz_checking l =
+    (* TODO loop handling, let rec naturally handled *)
+    let asmmap = Array.of_list l in
+    let rec count i gas pc (** in fact index *) =
+      Debug.dprintf debug "%i %i: %s %s@." i pc (BigInt.to_string gas) (get_name asmmap.(pc));
+      match asmmap.(pc) with
+      | ADDGAS(Stopgas i') when i = i' ->
+          let c = BigInt.sign gas in
+          if c > 0 then
+            Format.eprintf "Not enough addgas for %i: %s@." i (BigInt.to_string gas)
+          else if c = 0 then
+            Format.eprintf "Good addgas for %i@." i
+          else
+            Format.eprintf "Too much addgas for %i: %s too much@." i
+              (BigInt.to_string (BigInt.sub BigInt.zero gas))
+      | ADDGAS(Addgas b) ->
+          count i (BigInt.sub gas b) (pc+1)
+      | (ALLOCATE(_,_,_) as instr) ->
+          let cost = (EVM.costl (to_evm instr)) in
+          count i (BigInt.add (BigInt.add gas Allocate.cost) cost) (pc+1)
+      | ((JUMP label) as instr) when label.label_follow_addgas ->
+          let cost = (EVM.costl (to_evm instr)) in
+          count i (BigInt.add gas cost) label.label_index
+      | ((JUMPI label) as instr) when label.label_follow_addgas ->
+          let cost = (EVM.costl (to_evm instr)) in
+          count i (BigInt.add gas cost) label.label_index;
+          count i (BigInt.add gas cost) (pc+1)
+      | instr ->
+          let cost = (EVM.costl (to_evm instr)) in
+          count i (BigInt.add gas cost) (pc+1)
+    in
+    for pc=0 to Array.length asmmap - 1 do
+      match asmmap.(pc) with
+      | ADDGAS (Startgas i) ->
+          count i BigInt.zero (pc+1)
+      | _ -> ()
+    done
+
+  let finalize l =
+    linearize l;
+    if Debug.test_flag gas_checking then
+      gaz_checking l;
+    let l = List.fold_left (fun acc e -> List.rev_append (to_evm e) acc) [] l in
+    let l = List.rev l in
+    l
 
 end
 
@@ -1985,10 +2114,14 @@ module Print = struct
   open Mltree
 
   (* extraction attributes *)
-  let external_arg = create_attribute "evm:external"
+  let external_attr = create_attribute "evm:external"
+  let gas_checking_attr = create_attribute "evm:gas_checking"
 
   let is_external ~attrs =
-    Sattr.mem external_arg attrs
+    Sattr.mem external_attr attrs
+
+  let is_gas_checking ~attrs =
+    Sattr.mem gas_checking_attr attrs
 
   let get_constructors_from_constructor info rs =
     match Mid.find_opt rs.rs_name info.info_mo_known_map with
@@ -2065,6 +2198,10 @@ module Print = struct
           List.exists is_constructor its
       | _ -> false in
     match query_syntax info.info_syn rs.rs_name, pvl with
+    | Some "add_gas", [{e_node=Econst c}] ->
+        EVMSimple.add_gas fmt (Number.compute_int_constant c)
+    | Some "add_gas", _ ->
+        invalid_arg "add_gas must have a constant as parameter"
     | Some s, _ (* when is_local_id info rs.rs_name  *) ->
         let json = Json_base.get_list (Json_lexer.parse_json_object s) in
         let l = List.map EVMSimple.of_json json in
@@ -2139,7 +2276,7 @@ module Print = struct
               store None
         end
     | _, tl ->
-        let return = EVMSimple.new_label "call return" in
+        let return = EVMSimple.new_label ~follow:false "call return" in
         EVMSimple.auto fmt EVMSimple.[
             PUSHLABEL return;
           ];
@@ -2152,8 +2289,15 @@ module Print = struct
           ~ret:1 (*todo unit *)
 
   and print_def info fmt ~rs ~res ~args ~ef =
+    let start_addgas, stop_addgas =
+      if is_gas_checking ~attrs:rs.rs_name.id_attrs then
+        let start, stop = EVMSimple.new_startstop_addgas () in
+        [start],[stop]
+      else [],[]
+    in
     let fmt = { fmt with EVMSimple.bottom = fmt.EVMSimple.bottom } in
     let label = Expr.Mrs.find rs fmt.EVMSimple.call_labels in
+    EVMSimple.auto fmt start_addgas;
     EVMSimple.jumpdest fmt label;
     let pushed = ref 0 in
     List.fold_right (fun ((v,_,_) as pv) () ->
@@ -2173,7 +2317,8 @@ module Print = struct
         else EVMSimple.pop_var fmt v) args ();
     if not (is_unit res) then
       EVMSimple.add_auto fmt EVMSimple.SWAP1;
-    EVMSimple.add_auto fmt EVMSimple.JUMPDYN
+    EVMSimple.add_auto fmt EVMSimple.JUMPDYN;
+    EVMSimple.auto fmt stop_addgas
 
 
   and print_let_def info fmt = function
@@ -2276,7 +2421,7 @@ module Print = struct
       (*       | [] -> assert false | [a] -> assign fmt a *)
       (*       | al -> fprintf fmt "@[begin %a end@]" (print_list semi assign) al end *)
       | Eif (e1, e2, {e_node = Eblock []}) ->
-          let lab = EVMSimple.new_label "ifnoelse" in
+          let lab = EVMSimple.new_label ~follow:true "ifnoelse" in
           print_expr info fmt e1;
           EVMSimple.add_auto fmt EVMSimple.NOT;
           EVMSimple.jumpi fmt lab;
@@ -2286,8 +2431,8 @@ module Print = struct
           print_expr info fmt e1;
           EVMSimple.add_auto fmt EVMSimple.NOT
       | Eif (e1, e2, e3) ->
-          let labthen = EVMSimple.new_label "ifthen" in
-          let labend = EVMSimple.new_label "ifend" in
+          let labthen = EVMSimple.new_label ~follow:true "ifthen" in
+          let labend = EVMSimple.new_label  ~follow:true "ifend" in
           print_expr info fmt e1;
           EVMSimple.jumpi fmt labthen;
           print_expr info (!! fmt) e3;
@@ -2303,8 +2448,9 @@ module Print = struct
       | Efun (_varl, _e) ->
           invalid_arg "unsupported Efun"
       | Ewhile (e1, e2) ->
-          let labstart = EVMSimple.new_label "whilestart" in
-          let labtest = EVMSimple.new_label "whiletest" in
+          (** todo addgas handling *)
+          let labstart = EVMSimple.new_label ~follow:false "whilestart" in
+          let labtest = EVMSimple.new_label ~follow:true  "whiletest" in
           EVMSimple.jump fmt labtest;
           EVMSimple.jumpdest fmt labstart;
           print_expr info fmt e2;
@@ -2341,8 +2487,8 @@ module Print = struct
       (*       (\* in      *\) (print_lident info) for_id (print_pv info) pv2 *)
       | Ematch (e, bl, []) ->
           let bot = fmt.EVMSimple.bottom in
-          let after = EVMSimple.new_label "after" in
-          let bl = List.map (fun (pat,e) -> (pat,e,EVMSimple.new_label "branch")) bl in
+          let after = EVMSimple.new_label ~follow:true "after" in
+          let bl = List.map (fun (pat,e) -> (pat,e,EVMSimple.new_label ~follow:true "branch")) bl in
           print_expr info fmt e;
           EVMSimple.auto fmt EVMSimple.[
               DUP1;
@@ -2563,17 +2709,17 @@ let print_decls pargs fmt l =
           then
             let ty_args = Lists.map_filter (fun ((_, ty, _) as arg) ->
                 if Print.removed_arg arg then None else Some ty) args in
-            let label_arg_extraction = EVMSimple.new_label "arg_extract" in
+            let label_arg_extraction = EVMSimple.new_label ~follow:true "arg_extract" in
             (rs,ty_args,res,label_arg_extraction)::externals
           else externals
         in
-        let label = EVMSimple.new_label (Pp.sprintf "Lsym:%s" rs.rs_name.Ident.id_string) in
+        let label = EVMSimple.new_label ~follow:false (Pp.sprintf "Lsym:%s" rs.rs_name.Ident.id_string) in
         let labels = Expr.Mrs.add rs label labels in
         labels,externals,globals
   in
   let label_function ((labels, externals, globals) as acc) (_,d) =
     match d with
-    | Mltree.Dlet (Mltree.Lvar (pv,e)) ->
+    | Mltree.Dlet (Mltree.Lvar (pv,_)) ->
         let globals = Mid.add (Print.pv_name pv) !next_globals globals in
         incr next_globals;
         (labels, externals, globals)
@@ -2587,7 +2733,7 @@ let print_decls pargs fmt l =
         in
         List.fold_left print_one acc rdef
     | Mltree.Dtype _ | Mltree.Dexn _ -> acc
-    | Mltree.Dmodule (_,l) -> invalid_arg "unsupported module"
+    | Mltree.Dmodule (_,_) -> invalid_arg "unsupported module"
     | _ ->  invalid_arg "unsupported decl"
   in
   let (labels, externals,globals) =
@@ -2602,7 +2748,7 @@ let print_decls pargs fmt l =
   } in
 
   (** init *)
-  let label_revert = EVMSimple.new_label "revert" in
+  let label_revert = EVMSimple.new_label ~follow:true "revert" in
   EVMSimple.Allocate.init stack;
   EVMSimple.auto stack
     [EVMSimple.PUSH1 (BigInt.of_int 0x04);
@@ -2667,7 +2813,7 @@ let print_decls pargs fmt l =
     let args_size = 32 * List.length args in
     let datasize = args_size + 0x04 in
 
-    let label_ret_encoding = EVMSimple.new_label "ret_encoding" in
+    let label_ret_encoding = EVMSimple.new_label ~follow:false "ret_encoding" in
 
     EVMSimple.jumpdest stack label_arg_extraction;
     EVMSimple.auto stack EVMSimple.[

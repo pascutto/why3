@@ -176,3 +176,8 @@ module mach.int.UInt256
   syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"GT\",\"EQ\",\"OR\"]"
   syntax val      (>)       "[\"GT\"]"
 end
+
+module mach.evm.Gas
+
+  syntax val add_gas  "add_gas"
+end

@@ -58,6 +58,14 @@ module A
          m6.v <- i;
          j
 
+       use mach.evm.Gas
+       let g7 [@ evm:gas_checking] (x:int32) : int32 =
+           add_gas 66;
+           if x <= 0 then 0 else 2
+
+       let g8 [@ evm:gas_checking] (x:int32) : int32 =
+           if x <= 0 then (add_gas 56; 0) else (add_gas 66; 2)
+
        exception Error
 
        let g [@ evm:external] () : bool
@@ -89,6 +97,18 @@ module A
          let o1 : int32 = (4:int32) in
          if not (r1 = 0) then raise Error;
          if not (r2 = o1) then raise Error
+        in
+        (* test 7 *)
+        let () =
+         let r1 = g7 (0x4) in
+         let o1 : int32 = (0x2:int32) in
+         if not (r1 = o1) then raise Error
+        in
+        (* test 8 *)
+        let () =
+         let r1 = g8 (0x4) in
+         let o1 : int32 = (0x2:int32) in
+         if not (r1 = o1) then raise Error
         in
         false
 
