@@ -2494,24 +2494,30 @@ module Print = struct
               DUP1;
               MLOAD;
             ];
-          let iter_pat (pat,_,lab) =
+          let last = List.length bl - 1 in
+          let iter_pat i (pat,_,lab) =
             match pat with
             | Pwild ->
                 EVMSimple.auto fmt EVMSimple.[
                     JUMP lab;
                   ]
             | Papp(ls,_) ->
-                let rs = restore_rs ls in
-                let tag = get_tag_from_constructor info rs in
-                EVMSimple.auto fmt EVMSimple.[
-                    DUP1;
-                    int_to_push tag;
-                    EQ;
-                    JUMPI lab;
-                  ]
+                if i = last then
+                  EVMSimple.auto fmt EVMSimple.[
+                      JUMP lab;
+                    ]
+                else
+                  let rs = restore_rs ls in
+                  let tag = get_tag_from_constructor info rs in
+                  EVMSimple.auto fmt EVMSimple.[
+                      DUP1;
+                      int_to_push tag;
+                      EQ;
+                      JUMPI lab;
+                    ]
             | _ -> invalid_arg "unsupported pattern"
           in
-          List.iter iter_pat bl;
+          List.iteri iter_pat bl;
           let iter_branch (pat,e,lab) =
             let fmt = { fmt with EVMSimple.bottom = fmt.EVMSimple.bottom } in
             EVMSimple.auto fmt EVMSimple.[

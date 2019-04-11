@@ -1,6 +1,9 @@
 module A
 
        use list.List
+       use list.Length
+       use int.Int
+       use ref.Ref
        use mach.int.Int32
 
 
@@ -24,22 +27,34 @@ module A
         (f ()).b
 *)
 
+       use mach.evm.Gas
 
-        let rec length4 (l:list 'a) : int32
-        variant { l } =
+        let rec length4 [@ evm:gas_checking] (l:list 'a) : int32
+         requires { (length l) <= max_int32 }
+         ensures { !gas - old !gas <= (length l) * 128 + 71 }
+         ensures { result = length l }
+         variant { l } =
           match l with
-          | Nil -> 0
-          | Cons _ l -> 1 + length4 l
+          | Nil -> add_gas 71; 0
+          | Cons _ l -> add_gas 128; 1 + length4 l
           end
 
-        let rec mk4 (i:int32) : list int32
+        let rec mk4 [@ evm:gas_checking] (i:int32) : list int32
+          requires { 0 <= i }
+          ensures { !gas - old !gas <= i * 185 + 113 }
+          ensures { i = length result }
           variant { i } =
-          if i <= 0 then Nil else
+          if i <= 0 then (add_gas 113; Nil) else
           let l = mk4 (i-1) in
+          add_gas 185;
           Cons (0x42:int32) l
 
 
-       let g4 (i:int32) : int32 =
+       let g4 [@ evm:gas_checking] (i:int32) : int32
+          requires { 0 <= i }
+          ensures { !gas - old !gas <= i * 313 + 242 }
+       =
+        add_gas 58;
         let l = mk4 i in
         length4 l
 
@@ -58,7 +73,6 @@ module A
          m6.v <- i;
          j
 
-       use mach.evm.Gas
        let g7 [@ evm:gas_checking] (x:int32) : int32 =
            add_gas 66;
            if x <= 0 then 0 else 2
