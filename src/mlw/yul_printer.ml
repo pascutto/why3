@@ -1063,7 +1063,7 @@ module EVMSimple = struct
   }
 
   type addgas =
-    | Addgas of BigInt.t
+    | Addgas of BigInt.t * BigInt.t
     | Startgas of int
     | Stopgas of int
 
@@ -1992,8 +1992,8 @@ module EVMSimple = struct
   let get_global_var stack var =
     Ident.Mid.find var stack.global
 
-  let add_gas fmt i =
-    add_auto fmt (ADDGAS (Addgas i))
+  let add_gas fmt i j =
+    add_auto fmt (ADDGAS (Addgas(i,j)))
 
   module Allocate = struct
     let init stack =
@@ -2061,41 +2061,51 @@ module EVMSimple = struct
     in
     fixpoint ()
 
+  let report name i gas =
+    let c = BigInt.sign gas in
+    if c > 0 then
+      Format.eprintf "Not enough %s declared for %i: %s@." name i (BigInt.to_string gas)
+    else if c = 0 then
+      Format.eprintf "Good number of %s declared for %i@." name i
+    else
+      Format.eprintf "Too much %s declared for %i: %s too much@."
+        name
+        i (BigInt.to_string (BigInt.sub BigInt.zero gas))
+
   let gaz_checking l =
     (* TODO loop handling, let rec naturally handled *)
     let asmmap = Array.of_list l in
-    let rec count i gas pc (** in fact index *) =
+    let rec count i gas alloc pc (** in fact index *) =
       Debug.dprintf debug "%i %i: %s %s@." i pc (BigInt.to_string gas) (get_name asmmap.(pc));
       match asmmap.(pc) with
       | ADDGAS(Stopgas i') when i = i' ->
-          let c = BigInt.sign gas in
-          if c > 0 then
-            Format.eprintf "Not enough addgas for %i: %s@." i (BigInt.to_string gas)
-          else if c = 0 then
-            Format.eprintf "Good addgas for %i@." i
-          else
-            Format.eprintf "Too much addgas for %i: %s too much@." i
-              (BigInt.to_string (BigInt.sub BigInt.zero gas))
-      | ADDGAS(Addgas b) ->
-          count i (BigInt.sub gas b) (pc+1)
-      | (ALLOCATE(_,_,_) as instr) ->
+          report "gas" i gas;
+          report "alloc" i alloc
+      | ADDGAS(Addgas(g,a)) ->
+          count i (BigInt.sub gas g) (BigInt.sub alloc a) (pc+1)
+      | (ALLOCATE(_,_,s) as instr) ->
           let cost = (EVM.costl (to_evm instr)) in
-          count i (BigInt.add (BigInt.add gas Allocate.cost) cost) (pc+1)
+          count i (BigInt.add (BigInt.add gas Allocate.cost) cost) (BigInt.add alloc s) (pc+1)
+      | (REVERT | STOP as instr) ->
+          let cost = (EVM.costl (to_evm instr)) in
+          let gas = (BigInt.add gas cost) in
+          report "gas" i gas;
+          report "alloc" i alloc
       | ((JUMP label) as instr) when label.label_follow_addgas ->
           let cost = (EVM.costl (to_evm instr)) in
-          count i (BigInt.add gas cost) label.label_index
+          count i (BigInt.add gas cost) alloc label.label_index
       | ((JUMPI label) as instr) when label.label_follow_addgas ->
           let cost = (EVM.costl (to_evm instr)) in
-          count i (BigInt.add gas cost) label.label_index;
-          count i (BigInt.add gas cost) (pc+1)
+          count i (BigInt.add gas cost) alloc label.label_index;
+          count i (BigInt.add gas cost) alloc (pc+1)
       | instr ->
           let cost = (EVM.costl (to_evm instr)) in
-          count i (BigInt.add gas cost) (pc+1)
+          count i (BigInt.add gas cost) alloc (pc+1)
     in
     for pc=0 to Array.length asmmap - 1 do
       match asmmap.(pc) with
       | ADDGAS (Startgas i) ->
-          count i BigInt.zero (pc+1)
+          count i BigInt.zero BigInt.zero (pc+1)
       | _ -> ()
     done
 
@@ -2198,10 +2208,16 @@ module Print = struct
           List.exists is_constructor its
       | _ -> false in
     match query_syntax info.info_syn rs.rs_name, pvl with
-    | Some "add_gas", [{e_node=Econst c}] ->
-        EVMSimple.add_gas fmt (Number.compute_int_constant c)
+    | Some "add_gas", [{e_node=Econst g};{e_node=Econst a}] ->
+        EVMSimple.add_gas fmt
+          (Number.compute_int_constant g)
+          (Number.compute_int_constant a)
     | Some "add_gas", _ ->
-        invalid_arg "add_gas must have a constant as parameter"
+        invalid_arg "add_gas must have two constants as parameter"
+    | Some "get_gas", [_] ->
+        EVMSimple.add_auto fmt EVMSimple.GAS
+    | Some "get_gas", _ ->
+        invalid_arg "get_gas must have unit as parameter"
     | Some s, _ (* when is_local_id info rs.rs_name  *) ->
         let json = Json_base.get_list (Json_lexer.parse_json_object s) in
         let l = List.map EVMSimple.of_json json in
@@ -2280,6 +2296,7 @@ module Print = struct
         EVMSimple.auto fmt EVMSimple.[
             PUSHLABEL return;
           ];
+        let tl = List.filter (fun e -> not (Mltree.is_unit e.e_ity)) tl in
         print_apply_args info fmt tl;
         Debug.dprintf debug "CALL %s@." rs.rs_name.Ident.id_string;
         EVMSimple.call fmt
@@ -2805,7 +2822,7 @@ let print_decls pargs fmt l =
     let size ty =
       let id = match ty with
         | Mltree.Tapp (id,[]) -> id
-        | _ -> invalid_arg "Unknown type"
+        | _ -> invalid_arg "Unknown type arg_extraction"
       in
       match query_syntax pargs.Pdriver.syntax id with
         | Some "s32" | Some "u32"
@@ -2813,7 +2830,7 @@ let print_decls pargs fmt l =
         | Some "s128" | Some "u128"
         | Some "s256" | Some "u256" -> ()
         | None | Some _  ->
-            invalid_arg "Unknown type"
+            invalid_arg "Unknown type arg_extraction"
     in
     List.iter size args;
     let args_size = 32 * List.length args in

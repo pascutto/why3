@@ -55,9 +55,9 @@ module mach.int.Int32
   syntax val      ( / )     "[\"SDIV\"]"
   syntax val      ( % )     "[\"SMOD\"]"
   syntax val      (=)       "[\"EQ\"]"
-  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"SLT\",\"EQ\",\"OR\"]"
+  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"SLT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (<)       "[\"SLT\"]"
-  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"SGT\",\"EQ\",\"OR\"]"
+  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"SGT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (>)       "[\"SGT\"]"
 end
 
@@ -72,9 +72,9 @@ module mach.int.UInt32
   syntax val      ( / )     "[\"DIV\"]"
   syntax val      ( % )     "[\"MOD\"]"
   syntax val      (=)       "[\"EQ\"]"
-  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"LT\",\"EQ\",\"OR\"]"
+  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"LT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (<)       "[\"LT\"]"
-  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"GT\",\"EQ\",\"OR\"]"
+  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"GT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (>)       "[\"GT\"]"
 end
 
@@ -88,9 +88,9 @@ module mach.int.Int64
   syntax val      ( / )     "[\"SDIV\"]"
   syntax val      ( % )     "[\"SMOD\"]"
   syntax val      (=)       "[\"EQ\"]"
-  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"SLT\",\"EQ\",\"OR\"]"
+  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"SLT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (<)       "[\"SLT\"]"
-  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"SGT\",\"EQ\",\"OR\"]"
+  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"SGT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (>)       "[\"SGT\"]"
 end
 
@@ -105,9 +105,9 @@ module mach.int.UInt64
   syntax val      ( / )     "[\"DIV\"]"
   syntax val      ( % )     "[\"MOD\"]"
   syntax val      (=)       "[\"EQ\"]"
-  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"LT\",\"EQ\",\"OR\"]"
+  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"LT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (<)       "[\"LT\"]"
-  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"GT\",\"EQ\",\"OR\"]"
+  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"GT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (>)       "[\"GT\"]"
 end
 
@@ -121,9 +121,9 @@ module mach.int.Int128
   syntax val      ( / )     "[\"SDIV\"]"
   syntax val      ( % )     "[\"SMOD\"]"
   syntax val      (=)       "[\"EQ\"]"
-  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"SLT\",\"EQ\",\"OR\"]"
+  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"SLT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (<)       "[\"SLT\"]"
-  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"SGT\",\"EQ\",\"OR\"]"
+  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"SGT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (>)       "[\"SGT\"]"
 end
 
@@ -138,9 +138,9 @@ module mach.int.UInt128
   syntax val      ( / )     "[\"DIV\"]"
   syntax val      ( % )     "[\"MOD\"]"
   syntax val      (=)       "[\"EQ\"]"
-  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"LT\",\"EQ\",\"OR\"]"
+  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"LT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (<)       "[\"LT\"]"
-  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"GT\",\"EQ\",\"OR\"]"
+  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"GT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (>)       "[\"GT\"]"
 end
 
@@ -154,9 +154,9 @@ module mach.int.Int256
   syntax val      ( / )     "[\"SDIV\"]"
   syntax val      ( % )     "[\"SMOD\"]"
   syntax val      (=)       "[\"EQ\"]"
-  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"SLT\",\"EQ\",\"OR\"]"
+  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"SLT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (<)       "[\"SLT\"]"
-  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"SGT\",\"EQ\",\"OR\"]"
+  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"SGT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (>)       "[\"SGT\"]"
 end
 
@@ -171,13 +171,14 @@ module mach.int.UInt256
   syntax val      ( / )     "[\"DIV\"]"
   syntax val      ( % )     "[\"MOD\"]"
   syntax val      (=)       "[\"EQ\"]"
-  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"LT\",\"EQ\",\"OR\"]"
+  syntax val      (<=)      "[\"DUP2\",\"DUP2\",\"LT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (<)       "[\"LT\"]"
-  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"GT\",\"EQ\",\"OR\"]"
+  syntax val      (>=)      "[\"DUP2\",\"DUP2\",\"GT\",\"SWAP2\",\"EQ\",\"OR\"]"
   syntax val      (>)       "[\"GT\"]"
 end
 
 module mach.evm.Gas
 
   syntax val add_gas  "add_gas"
+  syntax val get_remaining_gas  "get_gas"
 end
