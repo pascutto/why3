@@ -266,9 +266,9 @@ let replace rev f1 f2 t =
    - Else call recursively on subterms of t *)
 (* If a substitution s is found then new premises are computed as e -> s.e *)
 let replace_subst lp lv llet f1 f2 withed_terms t =
-  (* is_replced is common to the whole execution of replace_subst. Once an
+  (* is_replaced is common to the whole execution of replace_subst. Once an
      occurence is found, it changes to Some (s) so that only one instanciation
-     is rewrritten during execution *)
+     is rewritten during execution *)
   let rec replace is_replaced f1 f2 t : _ * Term.term =
     match is_replaced with
     | Some(subst_ty,subst) ->
