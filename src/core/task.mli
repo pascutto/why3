@@ -60,8 +60,12 @@ val find_meta_tds  : task -> meta -> tdecl_set
 
 (** {2 Constructors} *)
 
-val add_decl : task -> decl -> task
-val add_tdecl : task -> tdecl -> task
+val add_decl : ?ignore_if_there_is_already_a_goal:bool -> task -> decl -> task
+(** if [ignore_if_there_is_already_a_goal] is set, then do not fail if
+   there is already a goal in the task, but just add nothing. Defaults
+   to [false] *)
+
+val add_tdecl : ?ignore_if_there_is_already_a_goal:bool -> task -> tdecl -> task
 
 val use_export : task -> theory -> task
 val clone_export : task -> theory -> th_inst -> task

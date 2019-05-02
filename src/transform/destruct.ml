@@ -388,17 +388,17 @@ let destruct ~recursive pr : Task.task tlist =
     create_goal ~expl:destruct_expl new_pr t
   in
 
-  decl_goal_l (fun d ->
+  decl_l (fun d ->
       match d.d_node with
       | Dprop (Paxiom, dpr, ht) when Ident.id_equal dpr.pr_name pr.pr_name ->
           let decl_list = destruct_fmla ~recursive ht in
           List.map (fun l -> List.map (fun x ->
               match x with
-              | Axiom_term t -> Normal_decl (create_destruct_axiom t)
-              | Param d -> Normal_decl d
-              | Goal_term t -> Goal_decl (create_destruct_goal t)
+              | Axiom_term t -> create_destruct_axiom t
+              | Param d -> d
+              | Goal_term t -> create_destruct_goal t
             ) l) decl_list
-      | _ -> [[Normal_decl d]]) None
+      | _ -> [[d]]) None
 
 (* from task [delta, name:forall x.A |- G,
      build the task [delta,name:forall x.A,name':A[x -> t]] |- G]

@@ -141,7 +141,10 @@ let expl_init =
   let init = Task.add_decl None d_ts_type in
   let init = Task.add_param_decl init ps_equ in
   let init = Task.add_param_decl init (ls_extend ps_sort) in
-  let init = List.fold_left Task.add_decl init d_witness in
+  let init =
+    List.fold_left
+      (Task.add_decl ~ignore_if_there_is_already_a_goal:false)
+      init d_witness in
   init
 
 let guards =

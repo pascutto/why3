@@ -80,7 +80,7 @@ val decl_l : (decl -> decl list list) -> task -> task tlist
     [t1;d111;d112;d21], [t1;d111;d112;d221;d222], [t1;d12;d21] and
     [t1;d12;d221;d222] *)
 
-
+(*
 type diff_decl =
   | Goal_decl of Decl.decl
   | Normal_decl of Decl.decl
@@ -113,6 +113,7 @@ val decl_goal_l: (decl -> diff_decl list list) -> task -> task tlist
     Current disallowed cases:
     - Creating a goal twice in the same branch
     - Creating a goal when analysing the goal of [t2]
+*)
 *)
 
 val tdecl   : (decl -> tdecl list     ) -> task -> task trans

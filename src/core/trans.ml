@@ -132,11 +132,12 @@ let gen_decl_l add fn =
   in
   fold_l fn
 
-let decl    = gen_decl   Task.add_decl
-let decl_l  = gen_decl_l Task.add_decl
-let tdecl   = gen_decl   add_tdecl
-let tdecl_l = gen_decl_l add_tdecl
+let decl    = gen_decl   (Task.add_decl ~ignore_if_there_is_already_a_goal:true)
+let decl_l  = gen_decl_l (Task.add_decl ~ignore_if_there_is_already_a_goal:true)
+let tdecl   = gen_decl   (Task.add_tdecl ~ignore_if_there_is_already_a_goal:true)
+let tdecl_l = gen_decl_l (Task.add_tdecl ~ignore_if_there_is_already_a_goal:true)
 
+            (*
 type diff_decl =
   | Goal_decl of Decl.decl
   | Normal_decl of Decl.decl
@@ -195,6 +196,7 @@ let decl_goal_l (fn: decl -> diff_decl list list) =
   in
 
   fold_map_l fn None
+             *)
 
 let apply_to_goal fn d = match d.d_node with
   | Dprop (Pgoal,pr,f) -> fn pr f
@@ -210,10 +212,10 @@ let gen_goal_l add fn = function
       List.map (List.fold_left add prev) (apply_to_goal fn d)
   | _ -> assert false
 
-let goal    = gen_goal   Task.add_decl
-let goal_l  = gen_goal_l Task.add_decl
-let tgoal   = gen_goal   add_tdecl
-let tgoal_l = gen_goal_l add_tdecl
+let goal    = gen_goal   (Task.add_decl ~ignore_if_there_is_already_a_goal:false)
+let goal_l  = gen_goal_l (Task.add_decl ~ignore_if_there_is_already_a_goal:false)
+let tgoal   = gen_goal   (Task.add_tdecl ~ignore_if_there_is_already_a_goal:false)
+let tgoal_l = gen_goal_l (Task.add_tdecl ~ignore_if_there_is_already_a_goal:false)
 
 let rewrite fn = decl (fun d -> [decl_map fn d])
 let rewriteTF fnT fnF = rewrite (TermTF.t_select fnT fnF)
@@ -223,8 +225,8 @@ let gen_add_decl add decls = store (function
       Task.add_decl (List.fold_left add prev decls) d
   | _ -> assert false)
 
-let add_decls  = gen_add_decl Task.add_decl
-let add_tdecls = gen_add_decl add_tdecl
+let add_decls  = gen_add_decl (Task.add_decl ~ignore_if_there_is_already_a_goal:true)
+let add_tdecls = gen_add_decl (Task.add_tdecl ~ignore_if_there_is_already_a_goal:true)
 
 (** dependent transformations *)
 

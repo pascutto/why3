@@ -305,7 +305,7 @@ let update_task = let ht = Hint.create 5 in fun drv ->
                   | Use _ -> add_tdecl task tdm
                   | Clone (_,sm) ->
                       let tdm = Theory.clone_meta tdm th sm in
-                      Opt.fold add_tdecl task tdm
+                      Opt.fold (add_tdecl ~ignore_if_there_is_already_a_goal:false) task tdm
                   | _ -> assert false
                 ) tdms task
             ) tdcs task

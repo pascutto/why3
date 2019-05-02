@@ -7,6 +7,7 @@ constant x: int
 predicate p int
 
 axiom H: not (p 0)
+
 axiom H1: p 0
 
 goal g: false

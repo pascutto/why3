@@ -152,6 +152,13 @@ let new_decl task d td =
 
 let new_decl task d td = try new_decl task d td with KnownIdent _ -> task
 
+let new_decl ?(ignore_if_there_is_already_a_goal=false) task d td =
+  if ignore_if_there_is_already_a_goal then
+    match find_goal task with
+    | Some _ -> task
+    | None -> new_decl task d td
+  else new_decl task d td
+
 let new_clone task th td =
   let cl = cm_add (task_clone task) th td in
   mk_task td (check_task task) (task_known task) cl (task_meta task)
@@ -162,7 +169,8 @@ let new_meta task t td =
 
 (* declaration constructors + add_decl *)
 
-let add_decl task d = new_decl task d (create_decl d)
+let add_decl ?(ignore_if_there_is_already_a_goal=false) task d =
+  new_decl ~ignore_if_there_is_already_a_goal task d (create_decl d)
 
 let add_ty_decl tk ts = add_decl tk (create_ty_decl ts)
 let add_data_decl tk dl = add_decl tk (create_data_decl dl)
@@ -171,11 +179,12 @@ let add_logic_decl tk dl = add_decl tk (create_logic_decl dl)
 let add_ind_decl tk s dl = add_decl tk (create_ind_decl s dl)
 let add_prop_decl tk k p f = add_decl tk (create_prop_decl k p f)
 
+
 (* task constructors *)
 
-let add_tdecl task td = match td.td_node with
-  | Decl d -> new_decl task d td
-  | Use th ->
+let add_tdecl ?(ignore_if_there_is_already_a_goal=false) task td = match td.td_node with
+  | Decl d -> new_decl ~ignore_if_there_is_already_a_goal task d td
+  |  Use th ->
       if Stdecl.mem td (find_clone_tds task th).tds_set then task else
       new_clone task th td
   | Clone (th,_) -> new_clone task th td

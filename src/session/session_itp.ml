@@ -1382,6 +1382,7 @@ let save_detached_theory parent_name old_s detached_theory s =
     save_detached_goals old_s detached_theory.theory_goals s (Theory detached_theory)
   in
   assert (detached_theory.theory_parent_name = parent_name);
+  (* FIXME e.g. on examples/bts/311_destruct *)
   detached_theory.theory_goals <- goalsID;
   detached_theory.theory_is_detached <- true;
   detached_theory
@@ -1709,7 +1710,8 @@ let merge_file  ~shape_version env (ses : session) (old_ses : session) file =
       ses ~shape_version ~old_ses ~old_theories ~file_is_detached:false
       ~env file_name new_theories format;
     None
-  with e -> (* TODO: capture only parsing and typing errors *)
+  with e when not (Debug.test_flag Debug.stack_trace) ->
+    (* TODO: capture only parsing and typing errors *)
     merge_file_section
       ses ~shape_version ~old_ses ~old_theories ~file_is_detached:true
       ~env file_name [] format;

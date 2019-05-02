@@ -171,7 +171,8 @@ let rec introduce hd =
       let mal, task = apply_prev introduce hd in
       let kn = Some (Task.task_known task) in
       let dl = intros kn (List.rev mal) pr f in
-      [], List.fold_left Task.add_decl task dl
+      [], List.fold_left
+            (Task.add_decl ~ignore_if_there_is_already_a_goal:false) task dl
   | Theory.Meta (m,[ma])
     when Theory.meta_equal m meta_intro_ls ||
          Theory.meta_equal m meta_intro_pr ->

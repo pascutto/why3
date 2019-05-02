@@ -111,14 +111,18 @@ let elim le_int le_real neg_real type_kept kn
       let f = t_implies (t_app is_finite [t_var v] None) f in
       let f = t_forall_close [v] [] f in
       let ax_decl = create_prop_decl Paxiom pr f in
-      (known_lit, List.fold_left Task.add_decl task
+      (known_lit,
+       List.fold_left (Task.add_decl ~ignore_if_there_is_already_a_goal:false) task
          [ty_decl; proj_decl; isFinite_decl; ax_decl])
   | _ ->
       let (known_lit, local_decl), d =
         decl_map_fold
           (abstract_terms kn range_metas float_metas type_kept)
           (known_lit,[]) d in
-      let t = List.fold_left Task.add_decl task (List.rev local_decl) in
+      let t =
+        List.fold_left
+          (Task.add_decl ~ignore_if_there_is_already_a_goal:false)
+          task (List.rev local_decl) in
       (known_lit, Task.add_decl t d)
 
 let eliminate le_int le_real neg_real type_kept
