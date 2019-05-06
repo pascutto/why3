@@ -16,6 +16,9 @@ open Number
 (*          explanations       *)
 (*******************************)
 
+(* TODO replace this *)
+let tag_hyp = '@'
+
 let expl_prefixes = ref ["expl:"]
 
 let arg_extra_expl_prefix =
@@ -454,7 +457,8 @@ let t_shape_task ~version ~expl t =
               begin match d.d_node with
               | Dparam _ls -> ()
               | Dprop (_, _pr, f) ->
-                 t_shape ~version c m f
+                  pushc tag_hyp;
+                  t_shape ~version c m f
               | _ -> ()
               end
            | _ -> () in
@@ -838,6 +842,36 @@ module Pairing(Old: S)(New: S) = struct
     else if s1.[n] = s2.[n] then lcp (n+1) s1 s2 else n
   let lcp = lcp 0
 
+  let rec lcp_rec l ls1 ls2 =
+    match ls1, ls2 with
+    | hd1 :: tl1, hd2 :: tl2 ->
+        lcp_rec (l @ [lcp hd1 hd2]) tl1 tl2
+    | _ -> l
+
+  let lcp_list s1 s2 =
+    (* TODO here we don't need the split as there is an equivalent program that
+       only go through the strings once. The same as for lcp. *)
+    let ls1 = Strings.split tag_hyp s1 in
+    let ls2 = Strings.split tag_hyp s2 in
+    let l = lcp_rec [] ls1 ls2 in
+    (* TODO remove debugging here. *)
+    Format.eprintf "l = ";
+    List.iter (fun x -> Format.eprintf "%d " x) l;
+    Format.eprintf "\n@.";
+    Format.eprintf "%s \n\n%s\n\n@." s1 s2;
+    l
+
+  let rec compare_list ls1 ls2 =
+    match ls1, ls2 with
+    | hd1 :: tl1, hd2 :: tl2 ->
+        let n = Pervasives.compare hd1 hd2 in
+        if Pervasives.compare hd1 hd2 = 0 then
+          compare_list tl1 tl2
+        else n
+    | _ :: _, _ -> 1 (* ls1 > ls2 *)
+    | _, _ :: _ -> -1 (* ls1 < ls2 *)
+    | _ -> 0
+
   open Ident
 
   type goal_index = Old of int | New of int
@@ -877,6 +911,11 @@ module Pairing(Old: S)(New: S) = struct
     if p == x then n.prev <- n (* left bound *)
     else if n == x then p.next <- p (* right bound *)
     else begin p.next <- n; n.prev <- p end
+
+  let compare_only_goal s1 s2 =
+    let hd1 = match Strings.split tag_hyp s1 with hd1 :: _ -> hd1 | _ -> assert false in
+    let hd2 = match Strings.split tag_hyp s2 with hd2 :: _ -> hd2 | _ -> assert false in
+    Pervasives.compare hd1 hd2
 
   (* priority queues for pairs of nodes *)
 
@@ -933,24 +972,35 @@ module Pairing(Old: S)(New: S) = struct
     let allgoals = Hashtbl.fold add old_checksums newgoals in
     Hashtbl.clear old_checksums;
     (* phase 2: pair goals according to shapes *)
-    let compare e1 e2 = Pervasives.compare e1.shape e2.shape in
+    (* TODO here the idea is to compare only goals. This is consistent with the
+       original idea of shapes. The idea is to add to the PQ in priority the
+       goals that have the same goal_shape. *)
+    let compare e1 e2 = compare_only_goal e1.shape e2.shape in
     let allgoals = List.sort compare allgoals in
     build_list allgoals;
     if allgoals <> [] then begin
       let module E = struct
-        let dummy = let n = List.hd allgoals (* safe *) in 0, (n, n)
-        type t = int * (node * node)
-        let compare (v1, _) (v2, _) = Pervasives.compare v2 v1
+        let dummy = let n = List.hd allgoals (* safe *) in [], (n, n)
+        type t = int list * (node * node)
+        let compare (v1, _) (v2, _) = compare_list v2 v1
       end in
       let module PQ = Pqueue.Make(E) in
       let pq = PQ.create () in
       let add x y = match x.elt, y.elt with
         | Old _, New _ | New _, Old _ ->
-            PQ.insert (lcp x.shape y.shape, (x, y)) pq
+            PQ.insert (lcp_list x.shape y.shape, (x, y)) pq
         | Old _, Old _ | New _, New _ -> () in
+      (* TODO can be made more efficient as the list is sorted *)
+      (* TODO this assume we can add each elements more than twice ->
+         should be ok. *)
+      List.iter (fun x -> List.iter (fun y -> if compare x y = 0 && x.elt <> y.elt then add x y) allgoals) allgoals;
       iter_pairs add allgoals;
       (* FIXME: exit earlier, as soon as we get min(old,new) pairs *)
       while not (PQ.is_empty pq) do
+        (* TODO here I say that there can be several pairs which are maximum.
+           So, we can refine using the non-goal hypothesis because in the case,
+           where only an axiom was changed, it is better: *all* Old are changed
+           in the same way compared to New *)
         let _, (x, y) = PQ.extract_min_exn pq in
         if x.valid && y.valid then begin
           let o, n = match x.elt, y.elt with

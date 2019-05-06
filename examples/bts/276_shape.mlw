@@ -1,5 +1,6 @@
 use int.Int
 constant x : int
-axiom h : x = 0 \/ x <> 0
-axiom k : x + x + x + x + x = 0
-goal g : x = 0 \/ x <> 0
+axiom h : x = 1 \/ x <> 0
+axiom k : x + x + x = 0
+(* TODO work when both changing x = 0 to x = 1 everywhere or when removing x + x ... in k *)
+goal g : x = 1 \/ x <> 0
