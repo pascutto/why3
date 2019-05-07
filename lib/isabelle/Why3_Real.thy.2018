@@ -225,6 +225,10 @@ why3_vc Sqrt_le
   using assms
   by auto
 
+why3_vc Sqrt_lt
+  using assms
+  by auto
+
 why3_vc Sqrt_mul by (simp add: NthRoot.real_sqrt_mult)
 
 why3_vc Sqrt_square
@@ -263,6 +267,10 @@ why3_vc Log_mul
 why3_vc Log_one by auto
 
 why3_vc Exp_zero by auto
+
+why3_vc Log_lt
+  using assms
+  by auto
 
 why3_end
 

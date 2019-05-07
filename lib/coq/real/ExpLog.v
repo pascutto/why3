@@ -70,6 +70,15 @@ Lemma Exp_log :
 exact exp_ln.
 Qed.
 
+(* Why3 goal *)
+Lemma log_lt :
+  forall (x:Reals.Rdefinitions.R) (y:Reals.Rdefinitions.R),
+  (0%R < x)%R /\ (x < y)%R -> ((Reals.Rpower.ln x) < (Reals.Rpower.ln y))%R.
+Proof.
+  intros x y (h1,h2).
+  exact (ln_increasing x y h1 h2).
+Qed.
+
 (* Why3 assumption *)
 Definition log2 (x:Reals.Rdefinitions.R) : Reals.Rdefinitions.R :=
   ((Reals.Rpower.ln x) / (Reals.Rpower.ln 2%R))%R.

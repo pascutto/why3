@@ -1,0 +1,633 @@
+(*  This module implements constructive reals (exact real numbers),
+    following the algorithms given in Valérie Ménissier-Morain's
+    thesis: "conception, algorithmique et performances d'une
+    implémentation informatique en précision arbitraire".
+
+    The division algorithm is different from the one presented in the thesis.
+
+ *)
+
+module Z
+
+      use mach.int.Int
+      use real.RealInfix
+      use int.Power
+
+      use int.EuclideanDivision as ED
+
+      let rec power2 (l:int)
+         requires { 0 <= l }
+         ensures { result = power 2 l }
+         variant { l }
+       =
+       if l = 0 then 1 else 2 * power2 (l-1)
+
+      let shift_left (z: int) (l:int) : int
+           requires { 0 <= l }
+           ensures { result = z * (power 2 l) } =
+         z * (power2 l)
+
+      let lemma euclid_uniq (x y q : int) : unit
+        requires { y > 0 }
+        requires { q * y <= x < q * y + y }
+        ensures  { ED.div x y = q } =
+        ()
+
+      let ediv_mod (x:int) (y:int) : (int, int)
+         requires { 0 < y }
+         ensures { let d,r = result in
+                   d = ED.div x y /\ r = ED.mod x y } =
+         let rec aux (x q r:int) : (int, int)
+            requires { x = q * y + r }
+            requires { 0 <= r }
+            ensures { let q,_ = result in ED.div x y = q }
+            ensures { let _,r = result in ED.mod x y = r }
+            variant { r }
+           =
+            if r < y then q,r
+            else aux x (q+1) (r-y)
+         in
+         if 0 <= x then
+           aux x 0 x
+         else
+           let q,r = aux (-x) 0 (-x) in
+           if 0 = r then begin euclid_uniq x y (-q); (-q,0) end
+           else begin euclid_uniq x y (-q-1); (-q-1,y - r) end
+
+      let shift_right (z: int) (l:int) : int
+         requires { 0 <= l }
+         ensures { result = ED.div z (power 2 l) } =
+         let d,_ = ediv_mod z (power2 l) in
+         d
+
+     use real.Square
+     use real.FromInt
+     use real.Truncate
+
+     let function isqrt (n:int) : int
+         requires { 0 <= n }
+         ensures { result = floor (sqrt (from_int n)) } =
+       let rec aux (res sum:int) : int
+         requires { 0 <= res }
+         requires { from_int n >=. sqr (from_int res) }
+         requires { from_int sum = sqr (from_int (res + 1)) }
+         ensures { result = floor (sqrt (from_int n)) }
+         variant { n - sum } =
+         if n < sum then begin
+           assert { from_int res <=. (sqrt (from_int n))
+                by sqrt (sqr (from_int res)) <=. (sqrt (from_int n))
+             };
+           assert { (sqrt (from_int n)) <. (from_int res) +. 1. };
+           res
+         end
+         else begin
+           aux (res + 1) (sum + (2 * res) + 3)
+         end
+      in
+      aux 0 1
+
+end
+
+module RealArith
+
+     use Z
+     use mach.int.Int
+     use real.RealInfix
+     use real.FromInt
+     use real.Truncate
+
+     use int.EuclideanDivision as ED
+     use int.Power
+
+
+     lemma mul_str_ordr: forall x y z. 0. <. z -> x <. y -> x *. z <. y *. z
+     lemma mul_str_ordl: forall x y z. 0. <. z -> x <. y -> z *. x <. z *. y
+     lemma mul_ordr: forall x y z. 0. <=. z -> x <=. y -> x *. z <=. y *. z
+     lemma mul_ordl: forall x y z. 0. <=. z -> x <=. y -> z *. x <=. z *. y
+     lemma mul_ord_zero: forall x z. 0. <=. z -> 0. <=. x -> 0. <=. z *. x
+     lemma mul_mul_div_mul_mul: forall x y z t. 0. <> z -> 0. <> t -> (x *. y) /. (z *. t) = (x /. z) *. (y /. t)
+
+
+      let lemma invord (a b: real) : unit
+        requires { 0. <. a <. b }
+        ensures  { 0. <. 1./.b <. 1. /. a } =
+        assert { a *. inv a <=. b *. inv a };
+        assert { inv b <=. inv a };
+        ()
+
+      use real.ExpLog
+
+      lemma log2_pos: 0. <. log 2.
+
+
+      lemma compatorderlog : forall x y :real. 0. <. x <. y -> log2 x <. log2 y
+      let lemma invlog (x :real)
+         requires { 0. <. x }
+         ensures  { log (inv x) = -. log x } =
+       assert { log (x *. inv x) = log 1. }
+
+      lemma invlog2 : forall x :real. 0. <. x -> log2 (inv x) = -. log2 x
+
+      let lemma div_mult (a b y:int) : unit
+        requires { 0 < b <= y }
+        requires { 0 <= a }
+        ensures  { ED.div (a*b) y <= a } =
+         assert { a * b = ED.div (a*b) y * y + ED.mod (a*b) y };
+         assert { a * b >= ED.div (a*b) y * y };
+         assert { ED.div (a*b) y >= 0 };
+         assert { ED.div (a*b) y * y >= ED.div (a*b) y * b };
+         assert { a * b >= ED.div (a*b) y * b };
+        let rec lemma mult_ord (a b c:int) : unit
+         requires { b > 0 }
+         requires { a >= 0 }
+         requires { c >= 0 }
+         requires { a * b >= c * b }
+         ensures  { a >= c }
+         variant { c } =
+          if c = 0 then ()
+          else
+            mult_ord a b (c-1)
+        in
+        mult_ord a b (ED.div (a*b) y);
+        assert { a >= ED.div (a*b) y };
+        ()
+
+      let lemma euclid_uniq (x y q : int) : unit
+        requires { y > 0 }
+        requires { q * y <= x < q * y + y }
+        ensures  { ED.div x y = q } =
+        ()
+
+
+      let lemma floor_div_is_ed_div (a b : int) : unit
+        requires { 0 < a }
+        requires { 0 < b }
+        ensures { ED.div a b = floor ((from_int a) /. (from_int b)) } =
+        let q = floor ((from_int a) /. (from_int b)) in
+        assert { q * b <= a
+                by from_int q <=. ((from_int a) /. (from_int b))
+                so from_int q *. (from_int b) <=. ((from_int a) /. (from_int b)) *. (from_int b) = from_int a };
+        assert { q * b + b > a
+                by from_int q *. (from_int b) +. (from_int b) >. (((from_int a) /. (from_int b)) -. 1.) *. from_int b +. from_int b = from_int a
+                so from_int (q * b + b) >. from_int a };
+        ()
+
+      let lemma big_den_at_least_one_for_succ (a b : int) : unit
+         requires { 0 < a }
+         requires { 0 < b }
+         requires { ED.div a b < b }
+         ensures { ED.div a (b+1) = (if ED.mod a b < ED.div a b
+                   then (ED.div a b) - 1
+                   else (ED.div a b)) } =
+         if ED.mod a b < ED.div a b then
+             let q = (ED.div a b) - 1 in
+             assert { q * (b+1) = ED.div a b * b + ED.div a b - b - 1 = a - ED.mod a b + ED.div a b - b - 1 <= a };
+             assert { q * (b+1) + (b+1) = ED.div a b * b + ED.div a b = a - ED.mod a b + ED.div a b > a };
+             euclid_uniq a (b+1) q
+         else
+             let q = (ED.div a b) in
+             assert { q * (b+1) = ED.div a b * b + ED.div a b = a - ED.mod a b + ED.div a b <= a };
+             assert { q * (b+1) + (b+1) = ED.div a b * b + ED.div a b + b + 1 = a - ED.mod a b + ED.div a b + b + 1 > a };
+             euclid_uniq a (b+1) q
+
+      let lemma big_den_at_least_one_for_pred (a b : int) : unit
+         requires { 0 < a }
+         requires { 1 < b }
+         requires { ED.div a b < b - 1 }
+         ensures { ED.div a (b-1) = (if ED.mod a b + ED.div a b < b - 1
+                   then (ED.div a b)
+                   else (ED.div a b) + 1) } =
+         if ED.mod a b + ED.div a b < b - 1  then
+             let q = (ED.div a b) in
+             assert { q * (b-1) = ED.div a b * b - ED.div a b = a - ED.mod a b - ED.div a b <= a };
+             assert { q * (b-1) + (b-1) = ED.div a b * b - ED.div a b + b - 1 = a - ED.mod a b - ED.div a b + b - 1 > a };
+             euclid_uniq a (b-1) q
+         else
+             let q = (ED.div a b) + 1 in
+             assert { q * (b-1) = ED.div a b * b - ED.div a b + b - 1 = a - ED.mod a b - ED.div a b + b - 1 <= a };
+             assert { q * (b-1) + (b-1) = ED.div a b * b - ED.div a b + 2*b - 2 = a - ED.mod a b - ED.div a b + 2*b - 2 >= a };
+             euclid_uniq a (b-1) q
+
+
+end
+
+module Power
+
+       use Z
+       use mach.int.Int
+       use real.RealInfix
+       use real.FromInt
+       use real.Truncate
+
+     use RealArith
+
+     use int.EuclideanDivision as ED
+     use int.Power
+     use real.Square
+     use real.PowerReal
+
+     constant b : real = 4.
+
+     function _B (n:int) : real = pow b (from_int n)
+
+      let lemma _B_pos (n: int)
+       ensures { 0. <. _B n } = ()
+
+      let lemma _B_add (n:int) (m:int)
+         ensures { _B n *. _B m = _B (n+m) } =
+         ()
+
+       let lemma _B_neg (n:int)
+        ensures { _B n *. _B (-n) = 1. } =
+          _B_add n (-n)
+
+      let lemma _B_sqrt (a:real) (n:int)
+          requires { 0. <=. a }
+          ensures { sqrt (a *. _B (-2*n)) = sqrt a *. _B (-n) }
+          =
+          assert { sqrt (a *. _B (-2*n)) = sqrt a *. sqrt (_B (-2*n)) };
+          assert { sqrt (_B (-2*n)) = pow (_B (-2*n)) 0.5 };
+          assert { sqrt (_B (-2*n)) = pow 4. (from_int (-2*n)*.0.5) };
+          assert { sqrt (_B (-2*n)) = pow 4. (from_int (-n)) };
+          ()
+
+      let rec lemma power_2_4 (y:int)
+          requires { 0 <= y }
+          ensures { power 2 (2 * y) = power 4 y }
+          variant { y } =
+        if y = 0 then ()
+        else begin
+           power_2_4 (y-1);
+           ()
+        end
+
+
+
+      let lemma power_int_is_power_on_int_pos (x:int) (y:int)
+          requires { 0 <= y }
+          ensures { from_int (power 4 y) = _B y }
+          =
+          assert { _B y = pow (from_int 4) (from_int y) }
+
+      let lemma power_int_is_power_on_int_neg (x:int) (y:int)
+          requires { y < 0 }
+          ensures { inv (from_int (power 4 (-y))) = _B y }
+          =
+          power_int_is_power_on_int_pos x (-y)
+
+
+end
+
+module CReal
+
+
+       use mach.int.Int
+       use real.RealInfix
+       use real.FromInt
+       use real.Truncate
+       use real.Abs
+
+       use RealArith
+       use Power
+       use Z
+       use int.Power
+
+       predicate framing (x:real) (p:int) (n:int) =
+          (from_int p -. 1.) *. (_B (-n)) <. x <. (from_int p +. 1.) *. (_B (-n))
+
+       let round_z_over_4 (z : int)
+         ensures { ((from_int z) -. 2.) *. (_B (-1)) <. from_int result <=. ((from_int z) +. 2.) *. (_B (-1)) }
+       =
+         let r = shift_right (z + 2) 2 in
+         assert { 4 = power 2 2 };
+         assert { _B 1 = from_int 4 };
+         assert { z + 2 = 4 * r + ED.mod (z + 2) 4};
+         assert { ED.mod (z + 2) 4 = - 4 * r + z + 2 };
+         assert { 0 <= - 4 * r + z + 2 < 4 };
+         assert { -4 <  4 * r - z - 2 <= 0 };
+         assert { z - 2 <  4 * r <= z + 2 };
+         assert { z - 2 <  r * 4 <= z + 2 };
+         assert { (from_int z) -. 2. <.  from_int r *. 4. <=. (from_int z) +. 2. };
+         r
+
+      let compute_round (n:int) (ghost z : real) (zp: int)
+           requires { (from_int zp -. 2.) *. _B (-(n+1)) <. z <=. (from_int zp +. 2.) *. _B (-(n+1)) }
+           ensures { framing z result n } =
+          let p = round_z_over_4 zp in
+           assert { _B (-1) = 0.25 };
+           assert { ((from_int p) -. 1.) *. _B (-n) <=. ((((from_int zp) +. 2.) *. (_B (-1)) ) -. 1. ) *. _B (-n) };
+           _B_add (-1) (-n);
+           _B_pos (-n);
+           assert { ((from_int p) -. 1.) *. _B (-n) <=. ((from_int zp) -. 2.) *. _B (-(n+1)) };
+           assert { ((from_int p) -. 1.) *. _B (-n) <. z };
+
+           assert { ((from_int p) +. 1.) *. _B (-n) >. ((((from_int zp) -. 2.) *. (_B (-1)) ) +. 1. ) *. _B (-n) };
+           assert { ((from_int p) +. 1.) *. _B (-n) >. ((from_int zp) +. 2.) *. _B (-(n+1)) };
+           assert { ((from_int p) +. 1.) *. _B (-n) >. z };
+          p
+
+
+       let compute_add (n: int) (ghost x : real) (xp : int) (ghost y : real) (yp : int)
+           requires { framing x xp (n+1) }
+           requires { framing y yp (n+1) }
+           ensures  { framing (x+.y) result n } =
+           let ghost z = x +. y in
+           let zp = xp + yp in
+           assert { (from_int zp) = (from_int xp) +. (from_int yp) };
+           assert { ((from_int zp) -. 2.) *. _B (-(n+1)) = ((from_int xp) -. 1.) *. _B (-(n+1)) +.
+                    ((from_int yp) -. 1.) *. _B (-(n+1)) };
+           assert { ((from_int zp) +. 2.) *. _B (-(n+1)) = ((from_int xp) +. 1.) *. _B (-(n+1)) +.
+                    ((from_int yp) +. 1.) *. _B (-(n+1)) };
+           let p = compute_round n z zp in
+           p
+
+       let compute_neg (n: int) (ghost x : real) (xp : int)
+           requires { framing x xp n }
+           ensures  { framing (-. x) result n } =
+           - xp
+
+       let compute_sub (n: int) (ghost x : real) (xp : int) (ghost y : real) (yp : int)
+           requires { framing x xp (n+1) }
+           requires { framing y yp (n+1) }
+           ensures  { framing (x-.y) result n } =
+           compute_add n x xp (-. y) (compute_neg (n+1) y yp)
+
+       let compute_cst (n: int) (x : int) : int
+           ensures { framing (from_int x) result n } =
+           if n = 0 then begin
+             x
+           end else if n < 0 then begin
+             assert { (from_int (power 2 (2 * (-n)))) = _B (-n) };
+             let r = shift_right x (2*(-n)) in
+             assert { r = ED.div x (power 2 (2*(-n))) };
+             assert { x = r * (power 2 (2*(-n))) + ED.mod x (power 2 (2*(-n))) };
+             assert { x - r * (power 2 (2*(-n))) = ED.mod x (power 2 (2*(-n))) };
+             assert { 0 <= x - r * (power 2 (2*(-n))) < (power 2 (2*(-n))) };
+             assert { 0. <=. from_int x -. from_int r *. _B (-n) <. _B (-n) };
+             assert { from_int r *. _B (-n) <=. from_int x <. (from_int r +. 1.) *. _B (-n) };
+             r
+           end else begin
+             assert { from_int (power 2 (2 * n)) = _B n };
+             let r = shift_left x (2*n) in
+             assert { r = x * (power 2 (2 * n)) };
+             assert { from_int r = (from_int x) *. _B n };
+             assert { from_int r *. _B (-n) = (from_int x) };
+             r
+           end
+
+      use real.Square
+
+       type term =
+       | Cst int
+       | Add term term
+       | Neg term
+       | Sub term term
+       | Inv term
+       | Sqrt term
+
+       function interp (t:term) : real =
+         match t with
+          | Cst i -> from_int i
+          | Add t1 t2 -> (interp t1) +. (interp t2)
+          | Neg t1 -> -. (interp t1)
+          | Sub t1 t2 -> (interp t1) -. (interp t2)
+          | Inv t -> inv (interp t)
+          | Sqrt t -> sqrt (interp t)
+         end
+
+      predicate wf_term (t:term) =
+         match t with
+         | Cst _ -> true
+         | Neg t1 -> wf_term t1
+         | Add t1 t2 | Sub t1 t2 -> wf_term t1 /\ wf_term t2
+         | Inv t1 -> wf_term t1 /\ interp t1 <> 0.
+         | Sqrt t1 -> wf_term t1 /\ 0. <=. interp t1
+         end
+
+      use int.EuclideanDivision as ED
+
+      use real.ExpLog
+
+
+      let inv_simple_simple (ghost x:real) (p:int) (n:int)
+          requires { framing x p (n+1) }
+          requires { 0 <= n }
+          requires { 1. <=. x }
+          ensures  { framing (inv x) result n } =
+       let k = n + 1 in
+       let ghost p' = from_int p in
+       assert { 4 = power 2 (2*1) <= power 2 (2*k) <= p
+                by x <. ( p' +. 1. ) *. _B (- k)
+                so 1. <. ( p' +. 1. ) *. _B (- k)
+                so _B k <. ( p' +. 1. )
+                so _B k -. 1. <. p'
+                (* so from_int 1 = 1. *)
+                so from_int (power 2 (2*k)) -. from_int 1 <. from_int p
+                so from_int (power 2 (2*k) - 1) <. from_int p
+                so power 2 (2*k) - 1 < p
+              };
+        let d,r = ediv_mod (power2 (2*(n+k))) p in
+        let ghost b ()
+          ensures { 1. /. (_B (-k)) = _B (n+k) *. _B (-n)  }
+         =
+          _B_add n (-n);
+          _B_add (n+k) (-n);
+           ()
+        in
+        b();
+        assert { (power 2 (2*(n+k))) = power 2 (2*n) * power 2 (2*k) };
+        assert { 0 <= d <= power 2 (2*n) };
+        assert { 0. <. (p' -. 1.) *. _B (-k) <. x <. (p' +. 1.) *. _B (-k) };
+        invord ((p' -. 1.) *. _B (-k)) x;
+        invord x ((p' +. 1.) *. _B (-k));
+        assert { from_int (floor (_B (n + k) /. (p' +. 1.)))  *. _B (-n) <. 1. /. x <. from_int (floor (_B (n + k) /. (p' -. 1.)) + 1) *. _B (-n)
+                 by 1. /. ((p' +. 1.) *. _B (-k)) <. 1. /. x <. 1. /. ((p' -. 1.) *. _B (-k))
+                 so (1. *. 1.) /. ((p' +. 1.) *. _B (-k)) <. 1. /. x <. (1. *. 1.) /. ((p' -. 1.) *. _B (-k))
+                 so (1. /. (p' +. 1.)) *. (1. /. _B (-k)) <. 1. /. x <. (1. /. (p' -. 1.)) *. (1. /. _B (-k))
+                 so (1. /. (p' +. 1.)) *. _B (n + k) *. _B (-n) <. 1. /. x <. (1. /. (p' -. 1.)) *. _B (n + k) *. _B (-n)
+                 so (_B (n + k) /. (p' +. 1.))  *. _B (-n) <. 1. /. x <. (_B (n + k) /. (p' -. 1.)) *. _B (-n)
+                 so from_int (floor (_B (n + k) /. (p' +. 1.)))  *. _B (-n) <. 1. /. x <. from_int (ceil (_B (n + k) /. (p' -. 1.))) *. _B (-n)
+                };
+        let ghost num = (power 2 (2*(n+k))) in
+        floor_div_is_ed_div num (p + 1);
+        floor_div_is_ed_div num (p - 1);
+        power_int_is_power_on_int_pos 4 (n+k);
+        power_2_4 (n+k);
+        assert { from_int (ED.div num (p + 1))  *. _B (-n) <. 1. /. x <. from_int (ED.div num (p - 1) + 1) *. _B (-n) };
+        let d' = if 2*r <= p then d else d+1 in
+        big_den_at_least_one_for_succ num p;
+        big_den_at_least_one_for_pred num p;
+        d'
+
+      let lemma smaller (x:real) (n:int)
+          requires { 0. <. abs x <. 2. *. _B (-n) }
+          requires { 0 <= n }
+          ensures { floor (log2 (abs x)) < 1 - (n*2) } =
+          assert { log2 2. = 1. };
+          assert { log2 (abs x) <. log2 (2. *. _B (-n)) };
+          assert { log2 (abs x) <. log2 2. +. log2 (_B (-n)) };
+          assert { log2 (abs x) <. 1. +. log2 (exp ((from_int (-n)) *. log 4.)) };
+          assert { log 4. = 2. *. log 2. };
+          assert { log2 (exp ((from_int (-n)) *. log 4.)) = ((from_int (-n)) *. log 4.) /. log 2. };
+          assert { log2 (abs x) <. 1. -. 2. *. from_int (n) };
+          assert { floor (log2 (abs x)) < 1 - (n*2) }
+
+      use int.MinMax
+
+      let function isqr (n:int) : int = n*n
+
+      let lemma sqr_is_isqr (n:int)
+          ensures { sqr (from_int n) = from_int (isqr n) } =
+          ()
+
+      let lemma sqrt_pred (n:int)
+          requires { 1 <= n }
+          ensures { isqrt n - 1 <= isqrt (n - 1) } =
+          assert { isqrt (n-1) = floor (sqrt (from_int (n-1))) };
+          let c = isqrt (n - 1) + 1 in
+          assert { from_int (isqrt (n - 1)) <=. sqrt (from_int (n-1)) <. from_int c };
+          assert { sqr (sqrt (from_int (n-1))) <. sqr (from_int c) };
+          assert { sqr (sqrt (from_int (n-1))) <. sqr (from_int c) };
+          assert { from_int (n-1) <. from_int (isqr c) };
+          assert { (n-1) < (isqr c) };
+          assert { (n-1) < n <= (isqr c) };
+          assert { from_int n <=. from_int (isqr c) };
+          assert { from_int n <=. sqr (from_int c) };
+          assert { sqrt (from_int n) <=. sqrt (sqr (from_int c)) };
+          assert { from_int (isqrt n) <=. from_int c };
+          ()
+
+      let lemma sqrt_succ (n:int)
+          requires { 0 <= n }
+          ensures { ceil (sqrt (from_int (n + 1))) - 1 <= isqrt n } =
+          let c = ceil (sqrt (from_int (n + 1))) - 1 in
+          assert { from_int (c) <. sqrt (from_int (n+1)) };
+          assert { sqr (from_int c) <. from_int (n+1) };
+          assert { isqr c < n+1 };
+          assert { isqr c <= n < n+1 };
+          assert { sqr (from_int c) <=. from_int n };
+          assert { from_int c <=. sqrt (from_int (n)) };
+          assert { from_int c <=. from_int (floor (sqrt (from_int (n)))) };
+          ()
+
+
+      let compute_sqrt (n: int) (ghost x : real) (xp : int)
+          requires { 0. <=. x }
+          requires { framing x xp (2*n) }
+          ensures  { framing (sqrt x) result n } =
+          if xp <= 0 then begin
+            assert { 0. <=. x <. _B (-2*n) };
+            _B_sqrt 1. n;
+            assert { 0. <=. sqrt x <. sqrt (_B (-2*n)) = _B (-n) };
+            0
+          end
+          else
+           let r = isqrt xp in
+           let ghost xp' = from_int xp in
+           assert { sqrt ((xp' -. 1.) *. _B (-2*n)) <. sqrt x <. sqrt ((xp' +. 1.) *. _B (-2*n)) };
+           assert { sqrt (xp' -. 1.) *. _B (-n) <. sqrt x <. sqrt (xp' +. 1.) *. _B (-n) };
+           assert { from_int (floor (sqrt (xp' -. 1.))) *. _B (-n) <. sqrt x <. from_int (ceil (sqrt (xp' +. 1.))) *. _B (-n) };
+           sqrt_pred xp;
+           sqrt_succ xp;
+           assert { from_int (floor (sqrt (from_int (xp - 1)))) *. _B (-n) <. sqrt x <. from_int (ceil (sqrt (from_int (xp + 1)))) *. _B (-n) };
+           r
+
+        let inv_simple (ghost x) p m n
+            requires { 0 <= m }
+            requires { 0 <= n }
+            requires { _B (-m) <. x }
+            requires { framing x p (n+1+2*m) }
+            ensures { framing (inv x) result n }
+          =
+            assert { 1. <=. x *. _B m
+                by _B (-m) *. _B m <. x *. _B m };
+            assert { _B (-(n+1+2*m)) = _B (-(n+1+m)) *. _B (-m) };
+            assert { _B (-(n+1+m)) *. _B (-m) *. _B m = _B (-(n+1+m)) };
+            assert { from_int (p - 1) *. _B (-(n+1+2*m)) <. x <. from_int (p + 1) *. _B (-(n+1+2*m)) };
+            assert { from_int (p - 1) *. _B (-(n+1+m)) *. _B (-m) <. x <. from_int (p + 1) *. _B (-(n+1+m)) *. _B (-m) };
+            assert { from_int (p - 1) *. _B (-(n+1+m)) *. _B (-m) *. _B m <. x *. _B m <. from_int (p + 1) *. _B (-(n+1+m)) *. _B (-m) *. _B m};
+            assert { from_int (p - 1) *. _B (-(n+1+m)) <. x *. _B m <. from_int (p + 1) *. _B (-(n+1+m)) };
+            let r = inv_simple_simple (x *. _B m) p (n+m) in
+            assert { from_int (r - 1) *. _B ((-n)+(-m)) = from_int (r - 1) *. (_B (-n) *. _B (-m)) };
+            assert { inv (x *. _B m) = inv x *. inv (_B m)};
+            assert { from_int (r + 1) *. _B ((-n)+(-m)) = from_int (r + 1) *. (_B (-n) *. _B(-m)) };
+            assert { from_int (r - 1) *. (_B (-n) *. _B (-m)) *. _B m <. inv x *. inv (_B m) *. _B m <. from_int (r + 1) *. (_B (-n) *. _B(-m)) *. _B m };
+            assert { from_int (r - 1) *. _B (-n) *. (_B (-m) *. _B m) <. inv x *. (inv (_B m) *. _B m) <. from_int (r + 1) *. _B (-n) *. (_B(-m) *. _B m) };
+            _B_add (-m) m;
+            assert { (_B (-m) *. _B m) = 1. };
+            r
+
+
+
+      let rec compute (t:term) (n:int) : int
+        requires { wf_term t }
+        requires { 0 <= n }
+        ensures { framing (interp t) result n }
+        variant { t, 1 - floor (log2 (abs (interp t))) - n }
+      =
+        match t with
+        | Cst i -> compute_cst n i
+        | Add t1 t2 -> compute_add n (interp t1) (compute t1 (n+1)) (interp t2) (compute t2 (n+1))
+        | Neg t1    -> compute_neg n (interp t1) (compute t1 n)
+        | Sub t1 t2 -> compute_sub n (interp t1) (compute t1 (n+1)) (interp t2) (compute t2 (n+1))
+        | Sqrt t1   -> compute_sqrt n (interp t1) (compute t1 (2*n))
+        | Inv t ->
+          let m,sgn = msd t 0 (compute t 0) in
+          let ghost x = interp t in
+          let p = compute t (n+1+2*m) in
+          if sgn
+          then inv_simple x p m n
+          else begin
+            let r = inv_simple (-. x) (-p) m n in
+            assert { inv (-. x) = -. inv x };
+            assert { from_int (r - 1) *. _B (-n) <. -. inv x <. from_int (r + 1) *. _B (-n) };
+            assert { -. (from_int (r + 1) *. _B (-n)) <. -. (-. inv x) <. -. (from_int (r - 1) *. _B (-n)) };
+            assert { from_int (- r - 1) *. _B (-n) <. inv x <. from_int (- r + 1) *. _B (-n) };
+            - r
+          end
+        end
+
+       with msd (t:term) (n:int) (c:int) : (int, bool)
+        requires { 0 <= n }
+        requires { wf_term t }
+        requires { interp t <> 0. }
+        requires { framing (interp t) c n }
+        ensures { let m,sgn = result in
+                 0 <= m /\
+                 if sgn then _B (-m) <. interp t else interp t <. -. _B (-m) }
+        variant { t, 1 - floor (log2 (abs (interp t))) - n } =
+        assert { from_int 0 = 0. };
+        if c = 0 || c = 1 || c = -1 then begin
+          smaller (interp t) n;
+          let c = compute t (n+1) in
+          msd t (n+1) c
+        end
+        else begin
+          assert { from_int 1 = 1. };
+          if 1 < c then begin
+          assert { 1 <= c - 1 };
+          assert { 0. <=. 1. <=. from_int c -. 1. };
+          assert { _B (-n) <=. (from_int c -. 1.) *. _B (-n) <. interp t };
+          n, true
+          end
+          else begin
+          assert { c + 1 <= -1 };
+          assert { (from_int c +. 1.) <=. -1. <=. 0. };
+          assert { interp t <. (from_int c +. 1.) *. _B (-n) <=. -. 1. *. _B (-n) };
+          n, false
+          end
+        end
+
+  let exec0 () : int =
+    compute (Cst 2) 4
+
+  let exec1 () : int =
+    compute (Add (Cst 2) (Cst 4)) 4
+
+  let exec2 () : int =
+    compute (Inv (Cst 2)) 4
+
+  let exec3 () : int =
+    compute (Sqrt (Cst 2)) 4
+
+end

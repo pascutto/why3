@@ -67,3 +67,15 @@ intros x y (h1 & h2); apply sqrt_le_1; auto.
 apply Rle_trans with x; auto.
 Qed.
 
+(* Why3 goal *)
+Lemma Sqrt_lt :
+  forall (x:Reals.Rdefinitions.R) (y:Reals.Rdefinitions.R),
+  (0%R <= x)%R /\ (x < y)%R ->
+  ((Reals.R_sqrt.sqrt x) < (Reals.R_sqrt.sqrt y))%R.
+Proof.
+  intros x y (h1 & h2).
+  apply sqrt_lt_1; auto.
+  apply Rlt_le.
+  apply Rle_lt_trans with x; auto.
+Qed.
+
