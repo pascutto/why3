@@ -222,9 +222,9 @@ let debug = Debug.register_info_flag "session_pairing"
   ~desc:"Print@ debugging@ messages@ about@ reconstruction@ of@ \
          session@ trees@ after@ modification@ of@ source@ files."
 
-let current_shape_version = 7
+let current_shape_version = 8
 
-type shape_version = SV1 | SV2 | SV3 | SV4 | SV5 | SV6
+type shape_version = SV1 | SV2 | SV3 | SV4 | SV5 | SV6 | SV7
 
 module Shape = struct
 
@@ -319,7 +319,7 @@ let const_shape v c =
   let fmt = Format.formatter_of_buffer shape_buffer in
   begin match v with
   | SV1 | SV2 | SV3 | SV4 -> Common.const_v1 fmt c
-  | SV5 | SV6 -> Common.const_v2 fmt c
+  | SV5 | SV6 | SV7 -> Common.const_v2 fmt c
   end;
   Format.pp_print_flush fmt ();
   check ()
@@ -330,8 +330,10 @@ let rec pat_shape ~version c m p : 'a =
     | Pvar _ -> pushc tag_var
     | Papp (f, l) ->
        pushc tag_app;
-       (if version = SV6 then ident_v6 m f.ls_name
-       else ident_v5 m f.ls_name);
+       begin match version with
+       | SV1 | SV2 | SV3 | SV4 | SV5 -> ident_v5 m f.ls_name
+       | SV6 | SV7 -> ident_v6 m f.ls_name
+       end;
        List.iter (pat_shape ~version c m) l
     | Pas (p, _) -> pat_shape ~version c m p; pushc tag_as
     | Por (p, q) ->
@@ -342,15 +344,21 @@ let rec t_shape ~version c m t =
   match t.t_node with
     | Tconst c -> pushc tag_const; const_shape version c
     | Tvar v -> pushc tag_var;
-        if version = SV6 then ident_v6 m v.vs_name else ident_v5 m v.vs_name
+        begin match version with
+        | SV1 | SV2 | SV3 | SV4 | SV5 -> ident_v5 m v.vs_name
+        | SV6 | SV7 -> ident_v6 m v.vs_name
+        end
     | Tapp (s,l) ->
        pushc tag_app;
-       if version = SV6 then ident_v6 m s.ls_name else ident_v5 m s.ls_name;
+       begin match version with
+       | SV1 | SV2 | SV3 | SV4 | SV5 -> ident_v5 m s.ls_name
+       | SV6 | SV7 -> ident_v6 m s.ls_name
+       end;
        List.iter fn l
     | Tif (f,t1,t2) ->
       begin match version with
       | SV1 | SV2 -> pushc tag_if; fn f; fn t1; fn t2
-      | SV3 | SV4 | SV5 | SV6 -> pushc tag_if; fn t2; fn t1; fn f
+      | SV3 | SV4 | SV5 | SV6 | SV7 -> pushc tag_if; fn t2; fn t1; fn f
       end
     | Tcase (t1,bl) ->
         let br_shape b =
@@ -360,7 +368,7 @@ let rec t_shape ~version c m t =
             pat_shape ~version c m p;
             pat_rename_alpha c m p;
             t_shape ~version c m t2
-          | SV3 | SV4 | SV5 | SV6 ->
+          | SV3 | SV4 | SV5 | SV6 | SV7 ->
             pat_rename_alpha c m p;
             t_shape ~version c m t2;
             pat_shape ~version c m p
@@ -370,7 +378,7 @@ let rec t_shape ~version c m t =
                  pushc tag_case;
                  fn t1;
                  List.iter br_shape bl
-        | SV3 | SV4 | SV5 | SV6 ->
+        | SV3 | SV4 | SV5 | SV6 | SV7 ->
            pushc tag_case;
            List.iter br_shape bl;
            fn t1
@@ -412,14 +420,14 @@ let rec t_shape ~version c m t =
           match version with
             | SV1 ->
                pushc tag_let; fn t1; t_shape ~version c m t2
-            | SV2 | SV3 | SV4 | SV5 | SV6 ->
+            | SV2 | SV3 | SV4 | SV5 | SV6 | SV7 ->
                      (* t2 first, intentionally *)
                      t_shape ~version c m t2; pushc tag_let; fn t1
         end
     | Tnot f ->
       begin match version with
       | SV1 | SV2 -> fn f; pushc tag_not
-      | SV3 | SV4 | SV5 | SV6 -> pushc tag_not; fn f
+      | SV3 | SV4 | SV5 | SV6 | SV7 -> pushc tag_not; fn f
       end
     | Ttrue -> pushc tag_true
     | Tfalse -> pushc tag_false
@@ -434,13 +442,13 @@ let t_shape_task ~version ~expl t =
       (* expl *)
       begin match version with
       | SV1 | SV2 -> ()
-      | SV3 | SV4 | SV5 | SV6 -> push expl end;
+      | SV3 | SV4 | SV5 | SV6 | SV7 -> push expl end;
       (* goal shape *)
       t_shape ~version c m f;
       (* All declarations shape *)
       begin match version with
       | SV1 | SV2 | SV3 -> ()
-      | SV4 | SV5 | SV6 ->
+      | SV4 | SV5 | SV6 | SV7 ->
          let open Decl in
          let do_td td = match td.Theory.td_node with
            | Theory.Decl d ->
@@ -458,21 +466,121 @@ let t_shape_task ~version ~expl t =
   in
   Buffer.contents shape_buffer
 
+let hyp_sep = "H"
+
+module Gshape = struct
+
+  open Wstdlib
+
+  (* buf is the global printed variables as saved on the shape file;
+     hyp_shape associate a shape to its index in the file;
+     index_sh associate an index to a shape;
+     n is the last shape variable *)
+  type gshape = { buf: Buffer.t;
+                  mutable hyp_shape: int Mstr.t;
+                  mutable index_sh: string Mint.t;
+                  mutable n: int }
+
+  let create () =
+    { buf = Buffer.create 8192;
+      hyp_shape = Mstr.empty;
+      index_sh = Mint.empty;
+      n = 0 }
+
+  let clear gs =
+    Buffer.clear gs.buf;
+    gs.hyp_shape <- Mstr.empty;
+    gs.index_sh <- Mint.empty;
+    gs.n <- 0
+
+  let save_shape gs s =
+    try Mstr.find s gs.hyp_shape with
+    | Not_found ->
+        gs.hyp_shape <- Mstr.add s gs.n gs.hyp_shape;
+        gs.index_sh  <- Mint.add gs.n s gs.index_sh;
+        Buffer.add_string gs.buf (s ^ "\n");
+        gs.n <- gs.n + 1;
+        gs.n - 1
+
+  let get_shape gs i =
+    Mint.find i gs.index_sh
+
+end
+
+let clear_global_hyp_shape, t_shape_task_v7, global_buffer, add_to_global_buffer, get_shape =
+
+  let gs = Gshape.create () in
+
+  let clear () =
+    Gshape.clear gs in
+
+  let save_shape s : int =
+    Gshape.save_shape gs s in
+
+  let get_shape (i: int) : string =
+    Gshape.get_shape gs i in
+
+  let add_to_global_buffer s =
+    ignore(save_shape s) in
+
+  let save_and_append current_shape (s : string) : unit =
+    (* Do not save empty expl. Other empty shape should not happen *)
+    if s = "" then () else
+      (* TODO make that a buffer ? *)
+      current_shape := !current_shape ^ hyp_sep ^ (string_of_int (save_shape s)) in
+
+  let t_shape_task_v7 ~expl t =
+    let current_shape = ref "" in
+    Buffer.clear shape_buffer;
+    let c = ref (-1) in
+    let m = ref Ident.Mid.empty in
+    save_and_append current_shape expl;
+    (* All declarations shape *)
+    let local_decls =
+      let ut = Task.used_symbols (Task.used_theories t) in
+      Task.local_decls t ut in
+    let open Decl in
+    let do_d d =
+      match d.d_node with
+      | Dparam _ls -> ()
+      | Dprop (_, _pr, f) ->
+          let sh =
+            (try t_shape ~version:SV7 c m f with ShapeTooLong -> ());
+            Buffer.contents shape_buffer in
+          Buffer.clear shape_buffer;
+          save_and_append current_shape sh
+      | _ -> () in
+    List.iter do_d local_decls;
+    !current_shape
+  in
+  (clear, t_shape_task_v7, gs.Gshape.buf, add_to_global_buffer, get_shape)
+
 end
 
 (*
 let time = ref 0.0
  *)
 
+(* TODO remove these duplications *)
+let global_buffer = Shape.global_buffer
+
+let add_to_global_buffer = Shape.add_to_global_buffer
+
+let clear_global_hyp_shape = Shape.clear_global_hyp_shape
+
 let t_shape_task ?(version=current_shape_version) ~expl t =
   let version = match version with
     | 1 -> SV1 | 2 -> SV2 | 3 | 4 -> SV3 | 5 -> SV4 | 6 -> SV5 | 7 -> SV6
+    | 8 -> SV7
     | _ -> assert false
   in
 (*
   let tim = Unix.gettimeofday () in
  *)
-  let s = Shape.t_shape_task ~version ~expl t in
+  let s =
+    match version with
+    | SV1 | SV2 | SV3 | SV4 | SV5 | SV6 -> Shape.t_shape_task ~version ~expl t
+    | SV7 -> Shape.t_shape_task_v7 ~expl t in
 (*
   let tim = Unix.gettimeofday () -. tim in
   time := !time +. tim;
@@ -781,7 +889,7 @@ let task_checksum ?(version=current_shape_version) t =
   let version = match version with
     | 1 | 2 | 3 -> CV1
     | 4 | 5 -> CV2
-    | 6 | 7 -> CV3
+    | 6 | 7 | 8 -> CV3
     | _ -> assert false
   in
 (*
@@ -830,6 +938,43 @@ module Pairing(Old: S)(New: S) = struct
     if String.length s1 <= n || String.length s2 <= n then n
     else if s1.[n] = s2.[n] then lcp (n+1) s1 s2 else n
   let lcp = lcp 0
+
+  let rec count_same_sorted n l1 l2 =
+    match l1, l2 with
+    | hd1 :: tl1, hd2 :: _ when hd1 < hd2 ->
+        count_same_sorted n tl1 l2
+    | hd1 :: _, hd2 :: tl2 when hd1 > hd2 ->
+        count_same_sorted n l1 tl2
+    | hd1 :: tl1, hd2 :: tl2 when hd1 = hd2 ->
+        count_same_sorted (n + 1) tl1 tl2
+    | _ -> n
+
+  let count_common sl1 sl2 =
+    let sl1 = List.sort Pervasives.compare (List.tl (List.rev (List.tl sl1))) in
+    let sl2 = List.sort Pervasives.compare (List.tl (List.rev (List.tl sl2))) in
+    count_same_sorted 0 sl1 sl2
+
+  let rec remove_empty l =
+    match l with
+    | [] -> []
+    | hd :: tl -> if hd = "" then remove_empty tl else hd :: remove_empty tl
+
+  let lcp_list s1 s2 =
+    (* TODO redo this calculation *)
+    let sl1 = remove_empty (String.split_on_char 'H' s1) in
+    let sl2 = remove_empty (String.split_on_char 'H' s2) in
+    let sl1 = List.map int_of_string sl1 in
+    let sl2 = List.map int_of_string sl2 in
+    (* TODO ugly but this makes the idea *)
+    let gsl1 = List.hd (List.rev sl1) in
+    let gsl2 = List.hd (List.rev sl2) in
+    let explsl1 = List.hd sl1 in
+    let explsl2 = List.hd sl2 in
+    let common_hypotheses = count_common sl1 sl2 in
+    let lcp_goal = lcp (Shape.get_shape gsl1) (Shape.get_shape gsl2) in
+    let lcp_expl = lcp (Shape.get_shape explsl1) (Shape.get_shape explsl2) in
+    (common_hypotheses, lcp_expl, lcp_goal)
+
 
   open Ident
 
@@ -926,20 +1071,21 @@ module Pairing(Old: S)(New: S) = struct
     let allgoals = Hashtbl.fold add old_checksums newgoals in
     Hashtbl.clear old_checksums;
     (* phase 2: pair goals according to shapes *)
+    (* TODO not possible to use lcp_list here to sort ? *)
     let compare e1 e2 = Pervasives.compare e1.shape e2.shape in
     let allgoals = List.sort compare allgoals in
     build_list allgoals;
     if allgoals <> [] then begin
       let module E = struct
-        let dummy = let n = List.hd allgoals (* safe *) in 0, (n, n)
-        type t = int * (node * node)
+        let dummy = let n = List.hd allgoals (* safe *) in (0, 0, 0), (n, n)
+        type t = (int * int * int) * (node * node)
         let compare (v1, _) (v2, _) = Pervasives.compare v2 v1
       end in
       let module PQ = Pqueue.Make(E) in
       let pq = PQ.create () in
       let add x y = match x.elt, y.elt with
         | Old _, New _ | New _, Old _ ->
-            PQ.insert (lcp x.shape y.shape, (x, y)) pq
+            PQ.insert (lcp_list x.shape y.shape, (x, y)) pq
         | Old _, Old _ | New _, New _ -> () in
       iter_pairs add allgoals;
       (* FIXME: exit earlier, as soon as we get min(old,new) pairs *)

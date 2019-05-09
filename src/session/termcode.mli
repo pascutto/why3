@@ -45,6 +45,10 @@ val print_shape: Format.formatter -> shape -> unit
 val t_shape_task: ?version:int -> expl:string -> Task.task -> shape
   (** returns the shape of a given task *)
 
+val global_buffer: Buffer.t
+val add_to_global_buffer: string -> unit
+val clear_global_hyp_shape: unit -> unit
+
 (** Checksums *)
 
 type checksum

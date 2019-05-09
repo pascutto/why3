@@ -1227,6 +1227,25 @@ let read_sum_and_shape ch =
         raise (ShapesFileError "shapes files corrupted (premature end of file), ignored");
       | Exit -> Bytes.unsafe_to_string sum, Buffer.contents shape
 
+(* Read the first part of the shapes: a list of shapes which are then referred
+   as H1 ... Hn in the shape corresponding to tasks *)
+let rec read_global_buffer ch =
+  Buffer.clear shape;
+  try
+    while true do
+      let c = C.input_char ch in
+      if c = '\n' then raise Exit;
+      Buffer.add_char shape c
+    done;
+    assert false
+  with
+  | End_of_file ->
+        raise (ShapesFileError "shapes files corrupted (premature end of file), ignored");
+  | Exit ->
+      let g_shape = Buffer.contents shape in
+      Buffer.clear shape;
+      if g_shape <> "" then
+        (Termcode.add_to_global_buffer g_shape; read_global_buffer ch)
 
   let has_shapes = ref true
 
@@ -1251,10 +1270,26 @@ let read_sum_and_shape ch =
       with _ -> has_shapes := false; attrs
     else attrs
 
+let get_version (xml: Xml.t) =
+  match xml.Xml.content.Xml.name with
+  | "why3session" ->
+    let shape_version = int_attribute_def "shape_version" xml.Xml.content 1 in
+    shape_version
+  | s ->
+    Warning.emit "[Warning] Session.load_session: unexpected element '%s'@."
+                 s;
+    Termcode.current_shape_version
+
+
 let read_xml_and_shapes xml_fn compressed_fn =
   has_shapes := true;
   try
     let ch = C.open_in compressed_fn in
+    (* We need to parse the file first to get the shape version *)
+    let shape_version =
+      let xml = Xml.from_file xml_fn in
+      get_version xml in
+    if shape_version >= 8 then read_global_buffer ch;
     let xml = Xml.from_file ~fixattrs:(fix_attributes ch) xml_fn in
     C.close_in ch;
     xml, !has_shapes
@@ -1997,6 +2032,13 @@ let save fname shfname session =
       provers Mint.empty
   in
   Mint.iter (save_prover fmt) provers_to_save;
+  if Termcode.current_shape_version >= 8 then
+    begin
+      (* In version higher than 8, first save the list of variables that are
+         referenced in shapes. *)
+      Compress.Compress_z.output_string chsh (Buffer.contents Termcode.global_buffer);
+      Compress.Compress_z.output_string chsh "\n";
+    end;
   let ctxt = { prover_ids = prover_ids; provers = provers; ch_shapes = chsh } in
   Hfile.iter (save_file session ctxt fmt) session.session_files;
   fprintf fmt "@]@\n</why3session>";
@@ -2006,6 +2048,28 @@ let save fname shfname session =
 
 
 let save_session (s : session) =
+  (* TODO this is inefficient. Think about trying to change the datastructure of
+     global maps in shapes *)
+  let uniformize_shape () =
+    Termcode.clear_global_hyp_shape ();
+    fold_all_session s (fun () any ->
+        match any with
+        | APn g ->
+            let t = get_task s g in
+            let (_, expl, _) =
+              let root =
+                match get_proof_parent s g with
+                | Trans _ -> false | Theory _ -> true in
+              Termcode.goal_expl_task ~root t in
+            let version = Termcode.current_shape_version in
+            let shape = Termcode.t_shape_task ~expl ~version t in
+            let (checksum, _) = Hpn.find s.session_sum_shape_table g in
+            Hpn.replace s.session_sum_shape_table g (checksum, shape)
+        | _ -> ()) () in
+  (* Used here so that shape do not save artifacts of the old saved shapes or
+     removed goals (making them grow). It also ensures the order of hypothesis
+     is deterministic between two runs of Why3. *)
+  uniformize_shape ();
   let f = Filename.concat s.session_dir db_filename in
   Sysutil.backup_file f;
   let fs = Filename.concat s.session_dir shape_filename in
