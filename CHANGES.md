@@ -1,34 +1,61 @@
 :x: marks a potential source of incompatibility
 
 Standard library
-  * set library revamped
-    - set.Fset
-      type `set` -> type `fset` and `choose` -> `pick`
-    - `appset.Appset` -> `set.SetApp` and `impset.Impset` -> `set.SetImp`
-      type `t` -> `set` and `.contents` -> `.to_fset`
-      `empty` -> `empty ()`
+  * the `set` library has been revamped :x:
+      - in `set.Fset`, type `set` becomes `fset`; `choose` becomes `pick`
+      - module `appset.Appset` becomes `set.SetApp`;
+        `impset.Impset` becomes `set.SetImp`
+      - in `set.SetApp` and `set.SetImp`, type `t` becomes `set`;
+        field `contents` becomes `to_fset`; call to `empty` becomes `empty ()`
+
+Language
+  * It is now possible to give a name to requires and assertions.
+    `requires Hyp { a = 3 }` tries to give the name `Hyp` to the corresponding
+    hypothesis after introduction. This uses the attribute [@hyp_name:] which is
+    now reserved.
 
 Tools
-  * why3prove counterexamples output is not JSON by default. To restore previous
-   behavior, pass the argument --json
+  * counterexamples given by `why3prove` are no longer printed using JSON
+    by default; pass option `--json` to restore the previous behavior
 
 API
-  * function Call_provers.print_prover_result now takes an additional boolean
-  argument ~json_model which state if the counterexamples are printed with json
-  format :x:
+  * `Call_provers.print_prover_result` now takes an additional argument
+    `~json_model` to indicate whether counterexamples are printed using JSON :x:
+  * Counterexamples: indices of array are now model_value. :x:
+  * ITP constructor Task now contain the location of the goal :x:
 
 Transformations
-  * Improvement of apply/rewrite in presence of let. Solve a bug that prevents
-  applying hypothesis with nested let-bindings :x:
-  * Adding arguments to transformations without arguments is now forbidden
-  (previously ignored):x:
-  * Fix crash of eliminate_unknown_types
-  * Giving too many arguments to a transformation do not display a popup anymore
-  * Fix behavior of induction_arg_ty_lex (now equivalent to induction_ty_lex)
+  * `apply`/`rewrite` behaves better in presence of `let`;
+    hypotheses with nested let-bindings can now be applied :x:
+  * passing arguments to argument-free transformations is now forbidden
+    (previously ignored) :x:
+  * passing too many arguments to a transformation does not display a popup anymore
+  * `induction_arg_ty_lex` is now equivalent to `induction_ty_lex`
+  * `induction_arg_pr` now takes an optional argument that indicates what to
+    generalize in the induction
+  * `destruct` now destruct `not p` into `p -> false`. `destruct_rec` is
+     allowed to further destruct afterwards.
+    `destruct` can also destruct `true` and `false`.
+  * decision procedures used for reflection now must be declared explicitly using
+    `meta reflection val <function_name>` :x:
+  * `remove` should not raise unnecessary popups anymore. Added `remove_rec`.
+    `bisect` should not raise unnecessary popups too.
 
-Counterexamples
-  * Improved display of counterexamples in Task view
+IDE
+  * display of counterexamples in the Task view has been improved
+  * auto jumping to next unproved goal can now be disabled in the preferences
+  * add a "reset proofs" command in the Tools menu. It removes all proofs in
+    the session
+  * strategies can now be defined using %t (resp. %m) for using a prover with
+    the default timelimit (resp. memlimit)
 
+Realizations
+  * Added experimental realizations for new Set theories in both Isabelle and
+    Coq
+
+Provers
+  * support for CVC4 1.7 (released April 9, 2019)
+  * support for Alt-Ergo 2.3.0 (released February 11, 2019)
 
 Version 1.2.0, February 11, 2019
 --------------------------------
@@ -42,7 +69,6 @@ Drivers
     be replaced by `syntax literal` and/or `syntax function` :x:
 
 Language
-  * the `any` expression is now always ghost :x:
   * a syntactic sugar called "auto-dereference" is introduced, so as
     to avoid, on simple programs, the heavy use of `(!)` character on
     references; see details in Section A.1 of the manual

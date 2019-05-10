@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "http://why3.lri.fr/why3session.dtd">
-<why3session shape_version="6">
+<why3session shape_version="7">
 <prover id="0" name="Z3" version="4.6.0" timelimit="1" steplimit="0" memlimit="1000"/>
 <prover id="1" name="Alt-Ergo" version="2.2.0" timelimit="1" steplimit="0" memlimit="1000"/>
 <prover id="2" name="CVC4" version="1.6" timelimit="1" steplimit="0" memlimit="1000"/>
 <file proved="true">
-<path name=".."/>
-<path name="dijkstra.mlw"/>
+<path name=".."/><path name="dijkstra.mlw"/>
 <theory name="DijkstraShortestPath" proved="true">
  <goal name="VC relax" expl="VC for relax" proved="true">
- <proof prover="2"><result status="valid" time="0.05"/></proof>
+ <proof prover="2"><result status="valid" time="0.05" steps="13347"/></proof>
  </goal>
  <goal name="Length_nonneg" proved="true">
  <transf name="induction_pr" proved="true" >
@@ -23,7 +22,7 @@
  </transf>
  </goal>
  <goal name="Path_inversion" proved="true">
- <proof prover="2"><result status="valid" time="0.04"/></proof>
+ <proof prover="2"><result status="valid" time="0.04" steps="10933"/></proof>
  </goal>
  <goal name="Path_shortest_path" proved="true">
  <transf name="introduce_premises" proved="true" >
@@ -40,7 +39,7 @@
  </transf>
  </goal>
  <goal name="Main_lemma" proved="true">
- <proof prover="2"><result status="valid" time="0.14"/></proof>
+ <proof prover="2"><result status="valid" time="0.14" steps="23796"/></proof>
  </goal>
  <goal name="Completeness_lemma" proved="true">
  <transf name="induction_pr" proved="true" >
@@ -161,7 +160,7 @@
   <goal name="VC shortest_path_code.9" expl="assertion" proved="true">
   <transf name="destruct" proved="true" arg1="H">
    <goal name="VC shortest_path_code.9.0" expl="assertion" proved="true">
-   <proof prover="0"><result status="valid" time="0.11"/></proof>
+   <proof prover="0"><result status="valid" time="0.11" steps="162263"/></proof>
    </goal>
    <goal name="VC shortest_path_code.9.1" expl="assertion" proved="true">
    <proof prover="1"><result status="valid" time="0.10" steps="458"/></proof>
@@ -253,7 +252,7 @@
   <proof prover="2"><result status="valid" time="0.16"/></proof>
   </goal>
   <goal name="VC shortest_path_code.17" expl="loop invariant preservation" proved="true">
-  <proof prover="0"><result status="valid" time="0.17"/></proof>
+  <proof prover="0"><result status="valid" time="0.17" steps="410589"/></proof>
   <proof prover="1"><result status="valid" time="0.76" steps="3102"/></proof>
   </goal>
   <goal name="VC shortest_path_code.18" expl="postcondition" proved="true">

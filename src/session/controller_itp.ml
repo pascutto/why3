@@ -90,6 +90,20 @@ let set_session_max_tasks n =
   session_max_tasks := n;
   Prove_client.set_max_running_provers n
 
+let set_session_memlimit c n =
+  let main = Whyconf.get_main c.controller_config in
+  let timelimit = Whyconf.timelimit main in
+  let run_max = Whyconf.running_provers_max main in
+  let main = Whyconf.set_limits main timelimit n run_max in
+  c.controller_config <- Whyconf.set_main c.controller_config main
+
+let set_session_timelimit c n =
+  let main = Whyconf.get_main c.controller_config in
+  let memlimit = Whyconf.memlimit main in
+  let run_max = Whyconf.running_provers_max main in
+  let main = Whyconf.set_limits main n memlimit run_max in
+  c.controller_config <- Whyconf.set_main c.controller_config main
+
 let set_session_prover_upgrade_policy c p u =
   c.controller_config <- Whyconf.set_prover_upgrade_policy c.controller_config p u
 
@@ -177,7 +191,7 @@ module PSession = struct
     match x.tkind with
     | Session -> "", Hfile.fold (fun _ f -> n (File f)) (get_files s) []
     | File f ->
-       string_of_file_path (file_path f),
+       Pp.sprintf "%a" Sysutil.print_file_path (file_path f),
        List.fold_right (fun th -> n (Theory th)) (file_theories f) []
     | Theory th ->
        let id = theory_name th in
@@ -571,8 +585,9 @@ let schedule_proof_attempt c id pr ?save_to ~limit ~callback ~notification =
       let script =
         if save_to = None then
           Opt.map (fun s ->
-                            Debug.dprintf debug_sched "Script file = %s@." s;
-                            Filename.concat (get_dir ses) s) a.proof_script
+              let s = Pp.sprintf "%a" Sysutil.print_file_path s in
+              Debug.dprintf debug_sched "Script file = %s@." s;
+              Filename.concat (get_dir ses) s) a.proof_script
         else
           save_to
       in
@@ -606,14 +621,11 @@ let create_file_rel_path c pr pn =
   let th = get_encapsulating_theory session (APn pn) in
   let th_name = (Session_itp.theory_name th).Ident.id_string in
   let f = get_encapsulating_file session (ATh th) in
-  let fn = Filename.chop_extension (Session_itp.basename (file_path f)) in
+  let fn = Filename.chop_extension (Sysutil.basename (file_path f)) in
   let file = Driver.file_of_task driver fn th_name task in
   let file = Filename.concat session_dir file in
   let file = Sysutil.uniquify file in
-  let file = Sysutil.relativize_filename session_dir file in
-  match file with
-  | [f] -> f
-  | _ -> assert false
+  Sysutil.relativize_filename session_dir file
 
 let prepare_edition c ?file pn pr ~notification =
   let session = c.controller_session in
@@ -647,7 +659,7 @@ let prepare_edition c ?file pn pr ~notification =
   let file = Opt.get pa.proof_script in
   let old_res = pa.proof_state in
   let session_dir = Session_itp.get_dir session in
-  let file = Filename.concat session_dir file in
+  let file = Sysutil.system_dependent_absolute_path session_dir file in
   let old =
     if Sys.file_exists file
     then
@@ -771,6 +783,9 @@ let run_strategy_on_goal
     else
       match Array.get strat pc with
       | Icall_prover(p,timelimit,memlimit) ->
+         let main = Whyconf.get_main c.controller_config in
+         let timelimit = Opt.get_def (Whyconf.timelimit main) timelimit in
+         let memlimit = Opt.get_def (Whyconf.memlimit main) memlimit in
          let callback panid res =
            callback_pa panid res;
            match res with
@@ -867,7 +882,26 @@ let clean c ~removed nid =
     if do_remove then
       remove_subtree ~notification ~removed c any
   in
+  match nid with
+  | Some nid ->
+      Session_itp.fold_all_any s clean_aux () nid
+  | None ->
+      Session_itp.fold_all_session s clean_aux ()
 
+let reset_proofs c ~removed ~notification nid =
+  let s = c.controller_session in
+  (* This function is applied on leafs first for the case of removes *)
+  let clean_aux () any =
+    let do_remove =
+      Session_itp.is_detached s any ||
+      match any with
+      | APa _ -> true
+      | ATn _ -> true
+      | _ -> false
+    in
+    if do_remove then
+      remove_subtree ~notification ~removed c any
+  in
   match nid with
   | Some nid ->
       Session_itp.fold_all_any s clean_aux () nid
