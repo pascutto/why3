@@ -36,7 +36,7 @@ files, and check the validity of goals with external provers, in a
 friendly way. This section presents the basic use of this GUI. Please
 refer to Section~\ref{sec:ideref} for a more complete description.
 
-%EXECUTE bin/why3 ide --batch "snap doc/gui-1.png" doc/hello_proof.why
+%EXECUTE bin/why3 ide --batch="snap doc/gui-1.png" doc/hello_proof.why
 \begin{figure}[tbp]
 %HEVEA\centering
   \includegraphics[width=\textwidth]{gui-1.png}
@@ -59,7 +59,7 @@ allows to browse inside the theories.
 % like the screenshot of Figure~\ref{fig:gui2}.
 In this tree view, we have a structured view of the file: this file
 contains one theory, itself containing three goals.
-%EXECUTE bin/why3 ide --batch "type next;snap -crop 1024x384+0+0 doc/gui-2.png" doc/hello_proof.why
+%EXECUTE bin/why3 ide --batch="type next;snap -crop 1024x384+0+0 doc/gui-2.png" doc/hello_proof.why
 \begin{figure}[tbp]
 %HEVEA\centering
  \includegraphics[width=\textwidth]{gui-2.png}
@@ -91,7 +91,7 @@ or the parent file.
 Let us now select the theory ``HelloProof'' and
 run the Alt-Ergo prover. After a short time, you should
 get the display of Figure~\ref{fig:gui3}.
-%EXECUTE bin/why3 ide --batch "type alt-ergo;view source;wait 3;type next;snap -crop 1024x384+0+0 doc/gui-3.png" doc/hello_proof.why
+%EXECUTE bin/why3 ide --batch="type alt-ergo;view source;wait 3;type next;snap -crop 1024x384+0+0 doc/gui-3.png" doc/hello_proof.why
 \begin{figure}[tbp]
 %HEVEA\centering
 \includegraphics[width=\textwidth]{gui-3.png}
@@ -117,7 +117,7 @@ are already proved: this can be done by the menu \textsf{View/Collapse
   proved goals}, or even better by its shortcut ``Ctrl-C''.  You
 should see now what is displayed on Figure~\ref{fig:gui4}.
 
-%EXECUTE bin/why3 ide --batch "type alt-ergo;wait 3;type next;type split_vc;wait 1;snap -crop 1024x384+0+0 doc/gui-4.png;save;wait 1" doc/hello_proof.why
+%EXECUTE bin/why3 ide --batch="type alt-ergo;wait 3;type next;type split_vc;wait 1;snap -crop 1024x384+0+0 doc/gui-4.png;save;wait 1" doc/hello_proof.why
 \begin{figure}[tbp]
 %HEVEA\centering
  \includegraphics[width=\textwidth]{gui-4.png}
@@ -162,9 +162,9 @@ We can refresh the goals using menu \textsf{File/Save all and Refresh
   session}, or the shortcut ``Ctrl-R''. We get the tree view shown on
 Figure~\ref{fig:gui5}.
 
-%EXECUTE bin/why3 ide --batch "type next;type coq;wait 1;save;wait 1" doc/hello_proof.why
+%EXECUTE bin/why3 ide --batch="type next;type coq;wait 1;save;wait 1" doc/hello_proof.why
 %EXECUTE sed -i -e 's/true -> false/false -> false/' doc/hello_proof.why
-%EXECUTE bin/why3 ide --batch "type next;type expand;snap -crop 1024x384+0+0 doc/gui-5.png" doc/hello_proof.why
+%EXECUTE bin/why3 ide --batch="type next;type expand;snap -crop 1024x384+0+0 doc/gui-5.png" doc/hello_proof.why
 \begin{figure}[tbp]
 %HEVEA\centering
   \includegraphics[width=\textwidth]{gui-5.png}

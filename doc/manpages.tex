@@ -592,9 +592,9 @@ window, this time interleaved with the code, as shown in Figure~\ref{fig:ce_exam
 %EXECUTE rm -rf doc/cedoc/
 %EXECUTE cp bench/ce/cedoc.mlw doc/
 
-%EXECUTE bin/why3 ide -C doc/why3ide-doc.conf --batch "down;down;type cvc4;wait 2;down;snap -crop 1024x600+0+0 doc/images/ce_example0_p1.png" doc/cedoc.mlw
+%EXECUTE bin/why3 ide -C doc/why3ide-doc.conf --batch="down;down;type cvc4;wait 2;down;snap -crop 1024x600+0+0 doc/images/ce_example0_p1.png" doc/cedoc.mlw
 
-%EXECUTE bin/why3 ide -C doc/why3ide-doc.conf --batch "down;down;type cvc4;wait 2;down;type get-ce;wait 2;down;faketype get-ce;snap -crop 1024x600+0+0 doc/images/ce_example0_p2.png" doc/cedoc.mlw
+%EXECUTE bin/why3 ide -C doc/why3ide-doc.conf --batch="down;down;type cvc4;wait 2;down;type get-ce;wait 2;down;faketype get-ce;snap -crop 1024x600+0+0 doc/images/ce_example0_p2.png" doc/cedoc.mlw
 
 %%Cleaning of the environment
 %EXECUTE rm -r doc/cedoc.mlw

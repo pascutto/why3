@@ -17,7 +17,7 @@ do
             make bench
             ;;
         ide)
-            WHY3CONFIG="" xvfb-run bin/why3 ide --batch "" examples/logic/einstein.why
+            WHY3CONFIG="" xvfb-run bin/why3 ide --batch="" examples/logic/einstein.why
             bin/why3config --detect
             bench/ide-bench
             ;;
