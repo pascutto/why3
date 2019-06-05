@@ -1,0 +1,24 @@
+module Gas
+
+       use int.Int
+       use int.ComputerDivision
+       use ref.Ref
+       use mach.int.UInt256
+
+       val gas: ref int
+       val alloc: ref int
+
+       val add_gas(g:int) (a:int) : unit
+           requires { 0 <= g }
+           requires { 0 <= a }
+           ensures { !gas = old !gas + g }
+           ensures { !alloc = old !alloc + a }
+           writes { gas, alloc }
+
+       val get_remaining_gas unit : uint256
+           reads { gas }
+
+       function actual_gas_used (gas:int) (alloc:int) : int =
+                gas + 3 * alloc + div (alloc*2) 512
+
+end
