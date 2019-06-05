@@ -10,7 +10,7 @@
 <prover id="7" name="CVC4" version="1.4" timelimit="5" steplimit="0" memlimit="1000"/>
 <prover id="8" name="Z3" version="4.3.1" timelimit="1" steplimit="0" memlimit="1000"/>
 <prover id="9" name="Spass" version="3.7" timelimit="1" steplimit="0" memlimit="1000"/>
-<prover id="10" name="Alt-Ergo" version="2.0.0" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="10" name="Alt-Ergo" version="2.3.0" timelimit="1" steplimit="0" memlimit="1000"/>
 <prover id="12" name="Yices" version="1.0.38" timelimit="2" steplimit="0" memlimit="4000"/>
 <prover id="13" name="Z3" version="3.2" timelimit="1" steplimit="0" memlimit="1000"/>
 <prover id="14" name="Metis" version="2.3" timelimit="1" steplimit="0" memlimit="1000"/>

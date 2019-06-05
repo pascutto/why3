@@ -6,7 +6,7 @@
 <prover id="2" name="Spass" version="3.7" timelimit="6" steplimit="0" memlimit="1000"/>
 <prover id="4" name="Vampire" version="0.6" timelimit="6" steplimit="0" memlimit="1000"/>
 <prover id="5" name="Eprover" version="2.0" timelimit="5" steplimit="0" memlimit="1000"/>
-<prover id="6" name="Alt-Ergo" version="2.0.0" timelimit="5" steplimit="0" memlimit="1000"/>
+<prover id="6" name="Alt-Ergo" version="2.3.0" timelimit="5" steplimit="0" memlimit="1000"/>
 <prover id="9" name="CVC4" version="1.5" timelimit="5" steplimit="0" memlimit="1000"/>
 <file proved="true">
 <path name=".."/><path name="verifythis_2015_parallel_gcd.mlw"/>
