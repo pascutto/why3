@@ -217,8 +217,13 @@ let wp_forall vl wp = t_forall_close_simp vl [] wp
 let sp_exists vl sp = t_exists_close_simp vl [] sp
 
 let wp_let v t wp =
-  if pv_is_unit v then t_subst_single v.pv_vs t_void wp
-                  else t_let_close_simp v.pv_vs t wp
+  if pv_is_unit v then
+    t_subst_single v.pv_vs t_void wp
+  else if Ident.relevant_for_counterexample v.pv_vs.vs_name then
+    (* Disable optimization for counterexamples variables *)
+    t_let_close v.pv_vs t wp
+  else
+    t_let_close_simp v.pv_vs t wp
 
 let sp_let v t sp rd =
   if pv_is_unit v then t_subst_single v.pv_vs t_void sp else
