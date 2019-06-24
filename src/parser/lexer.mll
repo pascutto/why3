@@ -271,6 +271,8 @@ rule token = parse
 
   let parse_term = build_parsing_function Parser.term_eof
 
+  let parse_decl = build_parsing_function Parser.decl_eof
+
   let parse_term_list = build_parsing_function Parser.term_comma_list_eof
 
   let parse_qualid = build_parsing_function Parser.qualid_eof
@@ -278,6 +280,8 @@ rule token = parse
   let parse_list_ident = build_parsing_function Parser.ident_comma_list_eof
 
   let parse_list_qualid = build_parsing_function Parser.qualid_comma_list_eof
+
+  let parse_mlw_file = build_parsing_function Parser.mlw_file_parsing_only
 
   open Wstdlib
   open Ident
