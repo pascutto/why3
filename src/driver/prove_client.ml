@@ -135,6 +135,9 @@ let connect_internal () =
   try_connect 5 0.1; (* 0.1, 0.4, 1.6, 6.4, 25.6 *)
   at_exit (fun () -> (* only if succesfully connected *)
     (try client_disconnect () with NotConnected -> ());
+    (* Remove socket if still present *)
+    if Sys.file_exists socket_name then
+      Sys.remove socket_name;
     ignore (Unix.waitpid [] pid))
 
 (* TODO/FIXME: how should we handle disconnect if there are still
