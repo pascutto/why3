@@ -7,7 +7,7 @@ open Cert_syntax
 
 (** Utility functions on <cterm> and <ctask> *)
 
-let rec cterm_equal t1 t2 = match t1, t2 with
+let rec cterm_node_equal t1 t2 = match t1, t2 with
   | CTbvar lvl1, CTbvar lvl2 -> lvl1 = lvl2
   | CTfvar i1, CTfvar i2 -> id_equal i1 i2
   | CTapp (tl1, tr1), CTapp (tl2, tr2) ->
@@ -19,13 +19,22 @@ let rec cterm_equal t1 t2 = match t1, t2 with
   | CTnot t1, CTnot t2 -> cterm_equal t1 t2
   | _ -> false
 
+and cterm_equal t1 t2 =
+  t1.ct_ty = t2.ct_ty && cterm_node_equal t1.ct_node t2.ct_node
+
+
 let cterm_pos_equal (t1, p1) (t2, p2) =
   cterm_equal t1 t2 && p1 = p2
 
 let ctask_equal cta1 cta2 = Mid.equal cterm_pos_equal cta1 cta2
 
 (* bound variable substitution *)
-let rec ct_bv_subst k u t = match t with
+let rec ct_bv_subst k u t =
+  { ct_node = ct_node_bv_subst k u t.ct_node;
+    ct_ty   = t.ct_ty }
+
+and ct_node_bv_subst k (u : cterm_node) (t : cterm_node) =
+  match t with
   | CTbvar i -> if i = k then u else t
   | CTfvar _ -> t
   | CTapp (t1, t2) ->
@@ -48,7 +57,7 @@ let ct_open t u = ct_bv_subst 0 u t
 (* checks if the term is locally closed *)
 let locally_closed =
   let di = id_register (id_fresh "dummy_locally_closed_ident") in
-  let rec term = function
+  let rec term t = match t.ct_node with
     | CTbvar _ -> false
     | CTapp (t1, t2)
     | CTbinop (_, t1, t2) -> term t1 && term t2
@@ -59,7 +68,11 @@ let locally_closed =
   term
 
 (* free variable substitution *)
-let rec ct_fv_subst z u t = match t with
+let rec ct_fv_subst z u t =
+  { ct_node = ct_node_fv_subst z u t.ct_node;
+    ct_ty   = t.ct_ty }
+
+and ct_node_fv_subst z u t = match t with
   | CTfvar x -> if id_equal z x then u else t
   | CTapp (t1, t2) ->
       let nt1 = ct_fv_subst z u t1 in
@@ -76,7 +89,11 @@ let rec ct_fv_subst z u t = match t with
   | CTbvar _ | CTtrue | CTfalse -> t
 
 (* variable closing *)
-let rec ct_fv_close x k t = match t with
+let rec ct_fv_close x k t =
+  { ct_node = ct_node_fv_close x k t.ct_node;
+    ct_ty   = t.ct_ty }
+
+and ct_node_fv_close x k t = match t with
   | CTbvar _ | CTtrue | CTfalse-> t
   | CTfvar y -> if id_equal x y then CTbvar k else t
   | CTnot t -> CTnot (ct_fv_close x k t)
@@ -93,7 +110,7 @@ let rec ct_fv_close x k t = match t with
 let ct_close x t = ct_fv_close x 0 t
 
 (* free variable with respect to a term *)
-let rec mem_cont x t cont = match t with
+let rec mem_cont x t cont = match t.ct_node with
   | CTfvar y -> cont (id_equal x y)
   | CTapp (t1, t2)
   | CTbinop (_, t1, t2) ->
@@ -148,18 +165,20 @@ let find_ident h cta =
 
 let rec check_rewrite_term tl tr t path =
   (* returns <t> where the instance at <path> of <tl> is replaced by <tr> *)
-  match path, t with
-  | [], t when cterm_equal t tl -> tr
+  match path, t.ct_node with
+  | [], _ when cterm_equal t tl -> tr
   | Left::prest, CTbinop (op, t1, t2) ->
       let t1' = check_rewrite_term tl tr t1 prest in
-      CTbinop (op, t1', t2)
+      { ct_node = CTbinop (op, t1', t2);
+        ct_ty = t.ct_ty }
   | Right::prest, CTbinop (op, t1, t2) ->
       let t2' = check_rewrite_term tl tr t2 prest in
-      CTbinop (op, t1, t2')
+      { ct_node = CTbinop (op, t1, t2');
+        ct_ty = t.ct_ty }
   | _ -> verif_failed "Can't follow the rewrite path"
 
 let check_rewrite cta rev h g terms path : ctask list =
-  let rec introduce acc inst_terms t = match t, inst_terms with
+  let rec introduce acc inst_terms t = match t.ct_node, inst_terms with
     | CTbinop (Timplies, t1, t2), _ -> introduce (t1::acc) inst_terms t2
     | CTquant (Tforall, t), inst::inst_terms -> introduce acc inst_terms (ct_open t inst)
     | t, [] -> acc, t
@@ -196,7 +215,7 @@ let rec check_certif cta (r, g : certif) : ctask list =
         else verif_failed "Terms have wrong positivities in the task"
     | Trivial ->
         let t, pos = find_ident g cta in
-        begin match t, pos with
+        begin match t.ct_node, pos with
         | CTfalse, false | CTtrue, true -> []
         | _ -> verif_failed "Non trivial hypothesis"
         end
@@ -206,7 +225,7 @@ let rec check_certif cta (r, g : certif) : ctask list =
         check_certif cta1 c1 @ check_certif cta2 c2
     | Split (c1, c2) ->
         let t, pos = find_ident g cta in
-        begin match t, pos with
+        begin match t.ct_node, pos with
         | CTbinop (Tand, t1, t2), true | CTbinop (Tor, t1, t2), false ->
             let cta1 = Mid.add g (t1, pos) cta in
             let cta2 = Mid.add g (t2, pos) cta in
@@ -214,26 +233,29 @@ let rec check_certif cta (r, g : certif) : ctask list =
         | _ -> verif_failed "Not splittable" end
     | Unfold c ->
         let t, pos = find_ident g cta in
-        begin match t with
+        begin match t.ct_node with
         | CTbinop (Tiff, t1, t2) ->
-            let imp_pos = CTbinop (Timplies, t1, t2) in
-            let imp_neg = CTbinop (Timplies, t2, t1) in
-            let unfolded_iff = CTbinop (Tand, imp_pos, imp_neg), pos in
+            let imp_pos = ctbinop Timplies t1 t2 in
+            let imp_neg = ctbinop Timplies t2 t1 in
+            let unfolded_iff = ctbinop Tand imp_pos imp_neg, pos in
             let cta = Mid.add g unfolded_iff cta in
             check_certif cta c
         | CTbinop (Timplies, t1, t2) ->
-            let unfolded_imp = CTbinop (Tor, CTnot t1, t2), pos in
+            let nt1 = ctnot t1 in
+            let unfolded_imp = ctbinop Tor nt1 t2, pos in
             let cta = Mid.add g unfolded_imp cta in
             check_certif cta c
         | _ -> verif_failed "Nothing to unfold" end
     | Swap_neg c ->
         let t, pos = find_ident g cta in
-        let neg_t = match t with CTnot t -> t | t -> CTnot t in
+        let neg_t = match t.ct_node with
+          | CTnot t' -> t'
+          | _ -> ctnot t in
         let cta = Mid.add g (neg_t, not pos) cta in
         check_certif cta c
     | Destruct (h1, h2, c) ->
         let t, pos = find_ident g cta in
-        begin match t, pos with
+        begin match t.ct_node, pos with
         | CTbinop (Tand, t1, t2), false | CTbinop (Tor, t1, t2), true ->
             let cta = Mid.remove g cta
                       |> Mid.add h1 (t1, pos)
@@ -242,7 +264,7 @@ let rec check_certif cta (r, g : certif) : ctask list =
         | _ -> verif_failed "Nothing to destruct"  end
     | Dir (d, c) ->
         let t, pos = find_ident g cta in
-        begin match t, d, pos with
+        begin match t.ct_node, d, pos with
         | CTbinop (Tor, t, _), Left, true | CTbinop (Tor, _, t), Right, true
         | CTbinop (Tand, t, _), Left, false | CTbinop (Tand, _, t), Right, false ->
           let cta = Mid.add g (t, pos) cta in
@@ -253,7 +275,7 @@ let rec check_certif cta (r, g : certif) : ctask list =
         check_certif cta c
     | Intro_quant (h, c) ->
         let t, pos = find_ident g cta in
-        begin match t, pos with
+        begin match t.ct_node, pos with
         | CTquant (Tforall, t), true | CTquant (Texists, t), false ->
             if mem h t then verif_failed "non-free variable" else
             let cta = Mid.add g (ct_open t (CTfvar h), pos) cta in
@@ -261,16 +283,16 @@ let rec check_certif cta (r, g : certif) : ctask list =
         | _ -> verif_failed "Nothing to introduce" end
     | Inst_quant (h, t_inst, c) ->
         let t, pos = find_ident g cta in
-        begin match t, pos with
+        begin match t.ct_node, pos with
         | CTquant (Tforall, t), false | CTquant (Texists, t), true ->
-            let cta = Mid.add h (ct_open t t_inst, pos) cta in
+            let cta = Mid.add h (ct_open t t_inst.ct_node, pos) cta in
             check_certif cta c
         | _ -> verif_failed "trying to instantiate a non-quantified hypothesis"
         end
     | Revert (h, c) ->
         let t, pos = find_ident g cta in
-        let closed_t = if pos then CTquant (Tforall, ct_close h t)
-                       else CTquant (Texists, ct_close h t) in
+        let closed_t = if pos then ctquant Tforall (ct_close h t)
+                       else ctquant Texists (ct_close h t) in
         let cta = Mid.add g (closed_t, pos) cta in
         check_certif cta c
     | Rewrite (h, path, rev, lc) ->

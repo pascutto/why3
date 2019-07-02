@@ -396,7 +396,7 @@ let exfalso : ctrans = fun task ->
      | _ -> [decl]) None in
   let g = task_goal task in
   [Trans.apply trans task],
-  (Cut (CTfalse, (Weakening skip, g.pr_name), (Trivial, h.pr_name)), h.pr_name)
+  (Cut (ctfalse, (Weakening skip, g.pr_name), (Trivial, h.pr_name)), h.pr_name)
 
 let case t = fun task ->
   let h = create_prsymbol (gen_ident "H") in
@@ -405,7 +405,7 @@ let case t = fun task ->
             [ [create_prop_decl Paxiom h t; decl];
               [create_prop_decl Paxiom h (t_not t); decl] ]
      | _ -> [[decl]]) None in
-  let not_ct = CTnot (translate_term t) in
+  let not_ct = ctnot (translate_term t) in
   Trans.apply trans task,
   (Cut (not_ct, (Swap_neg skip, h.pr_name), skip),
    h.pr_name)
@@ -443,7 +443,7 @@ let revert ls task =
   [task],
   (Cut (translate_term close_t,
         (Weakening skip, idg.pr_name),
-        (Inst_quant (hinst, CTfvar ls.ls_name, (Axiom hinst, idg.pr_name)), gpr.pr_name)),
+        (Inst_quant (hinst, ctfvar ls.ls_name, (Axiom hinst, idg.pr_name)), gpr.pr_name)),
    gpr.pr_name)
 
 
@@ -478,7 +478,7 @@ let pose (name: string) (t: term) : ctrans = fun task ->
   let eq_cert = Unfold (Split (id_cert, id_cert), hpose), hpose in
   let ct = translate_term t in
   [Trans.apply trans_new_task task],
-  (Cut (CTquant (Texists, CTbinop (Tiff, CTbvar 0, ct)),
+  (Cut (ctquant Texists (ctbinop Tiff (ctbvar 0) ct),
         (Inst_quant (hpose, ct, eq_cert),
          pr.pr_name),
         (Intro_quant (ls.ls_name, skip), pr.pr_name)

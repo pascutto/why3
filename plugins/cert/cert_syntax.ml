@@ -11,7 +11,11 @@ open Format
 (** To certify transformations, we will represent Why3 tasks by the type <ctask>
     and we equip transformations with a certificate <certif> *)
 
-type cterm =
+type cterm = {
+  ct_node : cterm_node;
+  ct_ty : bool }
+
+and cterm_node =
   | CTbvar of int (* bound variables use De Bruijn indices *)
   | CTfvar of ident (* free variables use a name *)
   | CTapp of cterm * cterm
@@ -20,6 +24,22 @@ type cterm =
   | CTnot of cterm
   | CTtrue
   | CTfalse
+
+let formula ctn = { ct_node = ctn; ct_ty = true }
+
+let ctbvar i = formula (CTbvar i)
+
+let ctfvar id = formula (CTfvar id)
+
+let ctbinop bop ct1 ct2 = formula (CTbinop (bop, ct1, ct2))
+
+let ctquant q ct = formula (CTquant (q, ct))
+
+let ctnot ct = formula (CTnot ct)
+
+let cttrue = formula CTtrue
+
+let ctfalse = formula CTfalse
 
 type ctask = (cterm * bool) Mid.t
 (* We will denote a ctask <M> by <Γ ⊢ Δ> where :
@@ -88,27 +108,30 @@ let skip = Skip, id_register (id_fresh "dummy_skip_ident")
 
 (** Translating a Why3 <task> into a <ctask> *)
 
+let translate_type = function
+  | None -> false
+  | Some _ -> true
+
 let rec translate_term_rec bv_lvl lvl t =
+  { ct_node = translate_term_node_rec bv_lvl lvl t.t_node;
+    ct_ty   = translate_type t.t_ty }
+
+and translate_term_node_rec bv_lvl lvl (t_node :term_node) : cterm_node =
   (* level <lvl> is the number of forall above in the whole term *)
   (* <bv_lvl> is mapping bound variables to their respective level *)
-  match t.t_node with
+  match t_node with
   | Tvar v ->
       let ids = v.vs_name in
-      begin match Mid.find_opt ids bv_lvl with
-        | None -> CTfvar ids
-        | Some lvl_s ->
-            assert (lvl_s <= lvl); (* a variable should not be above its definition *)
-            CTbvar (lvl - lvl_s)
-      end
+      translate_var bv_lvl lvl ids
   | Tapp (ls, lt) ->
       let ids = ls.ls_name in
-      let vs = match Mid.find_opt ids bv_lvl with
-        | None -> CTfvar ids
-        | Some lvl_s ->
-            assert (lvl_s <= lvl); (* a variable should not be above its definition *)
-            CTbvar (lvl - lvl_s) in
-      List.fold_left (fun acc t -> CTapp (acc, translate_term_rec bv_lvl lvl t))
-        vs lt
+      let ctapp t1 t2 =
+        { ct_node = CTapp (t1, t2);
+          ct_ty   = t1.ct_ty && t2.ct_ty } in
+      let vs = { ct_node = translate_var bv_lvl lvl ids;
+                 ct_ty = translate_type ls.ls_value } in
+      (List.fold_left (fun acc t -> ctapp acc (translate_term_rec bv_lvl lvl t))
+        vs lt).ct_node
   | Tbinop (op, t1, t2) ->
       let ct1 = translate_term_rec bv_lvl lvl t1 in
       let ct2 = translate_term_rec bv_lvl lvl t2 in
@@ -128,6 +151,14 @@ let rec translate_term_rec bv_lvl lvl t =
   | Tlet _ -> invalid_arg "Cert_syntax.translate_term Tlet"
   | Tcase _ -> invalid_arg "Cert_syntax.translate_term Tcase"
   | Teps _ -> invalid_arg "Cert_syntax.translate_term Teps"
+
+
+and translate_var bv_lvl lvl ids : cterm_node =
+  match Mid.find_opt ids bv_lvl with
+  | None -> CTfvar ids
+  | Some lvl_s ->
+      assert (lvl_s <= lvl); (* a variable should not be above its definition *)
+      CTbvar (lvl - lvl_s)
 
 
 let translate_term t = translate_term_rec Mid.empty 0 t
@@ -168,7 +199,7 @@ and prle sep pre fmt le =
   let prl = pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt sep) pre in
   fprintf fmt "[%a]" prl le
 
-let rec pcte fmt = function
+let rec pcte fmt t = match t.ct_node with
   | CTbvar lvl -> pp_print_int fmt lvl
   | CTfvar i -> pri fmt i
   | CTapp (f, arg) -> fprintf fmt "%a@ %a" pcte f pcte arg
