@@ -16,6 +16,8 @@ module Peano
 
   type t = abstract { v: int }
   meta coercion function v
+  
+  axiom injectivity: forall x y: t. (x:int) = y -> x = y
 
   val to_int (x: t) : int
     ensures { result = x.v }
