@@ -1,0 +1,9 @@
+predicate p (a : 'a)
+
+axiom p_bool : forall x : bool. p x
+
+axiom p_bool2 : forall x : (bool, bool). not p x
+
+constant y : bool
+
+goal G : false

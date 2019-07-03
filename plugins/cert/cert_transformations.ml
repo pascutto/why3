@@ -485,6 +485,17 @@ let pose (name: string) (t: term) : ctrans = fun task ->
      ),
    pr.pr_name)
 
+let contra h1 h2 y _ =
+  let h1 = h1.pr_name and h2 = h2.pr_name and y = translate_term y in
+  let hp = id_register (gen_ident "Hpos") in
+  let hn = id_register (gen_ident "Hneg") in
+  [],
+  (Inst_quant (hp, y,
+                (Inst_quant (hn, y,
+                             (Swap_neg (Axiom hp, hn), hn))
+                ,h2))
+  ,h1)
+
 
 (** Derived transformations with a certificate *)
 

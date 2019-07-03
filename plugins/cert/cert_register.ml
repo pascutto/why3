@@ -25,6 +25,8 @@ let case_trans t              = checker_ctrans (case t)
 let rewrite_trans g rev where = checker_ctrans (rewrite g rev where)
 let clear_trans l             = checker_ctrans (clear l)
 let pose_trans name t         = checker_ctrans (pose name t)
+let contra_trans h1 h2 y      = checker_ctrans (contra h1 h2 y)
+
 
 (** Register certified transformations *)
 
@@ -93,5 +95,10 @@ let () =
 
   wrap_and_register ~desc:"A certified version of (simplified) coq tactic [pose]"
     "pose_cert" (Tstring (Tformula Ttrans_l))
-    (fun name t -> store (pose_trans name t))
+    (fun name t -> store (pose_trans name t));
+
+  wrap_and_register ~desc:"BOOOOM"
+    "contra_cert" (Tprsymbol (Tprsymbol (Tterm Ttrans_l)))
+    (fun h1 h2 y -> store (contra_trans h1 h2 y))
+
 

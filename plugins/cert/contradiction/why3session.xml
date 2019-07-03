@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
+"http://why3.lri.fr/why3session.dtd">
+<why3session shape_version="5">
+<file proved="true">
+<path name=".."/>
+<path name="contradiction.mlw"/>
+<theory name="Top" proved="true">
+ <goal name="G" proved="true">
+ <transf name="contra_cert" proved="true" arg1="p_bool" arg2="p_bool2" arg3="y">
+ </transf>
+ </goal>
+</theory>
+</file>
+</why3session>
