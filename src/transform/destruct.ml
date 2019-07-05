@@ -122,28 +122,31 @@ let destruct_term ?names replace (x: term) : Task.task tlist =
                                acc_task_list r)
                            [] task_list in
                        List.map (add_decl d) add_r)
-                | Dlogic dls          ->
+                | Dlogic _ | Dind _ ->
                     let ls_of_x =
-                      List.fold_left
-                        (fun acc (ls, _) -> Term.Sls.remove ls acc)
-                        ls_of_x dls in
+                      Term.Sls.fold (fun ls acc ->
+                        if Ident.Sid.mem ls.ls_name d.d_news then
+                          Term.Sls.remove ls acc
+                        else
+                          acc) ls_of_x ls_of_x in
                     ((ls_of_x, r, defined), List.map (add_decl d) task_list)
                 | Dparam ls ->
                     let ls_of_x = Term.Sls.remove ls ls_of_x in
-                    ((ls_of_x, r, defined), List.map (add_decl d) task_list)
-                | Dind (_, ils) ->
-                    let ls_of_x =
-                      List.fold_left
-                        (fun acc (ls, _) -> Term.Sls.remove ls acc)
-                        ls_of_x ils in
                     ((ls_of_x, r, defined), List.map (add_decl d) task_list)
                 | Ddata dls ->
                     begin try
                         let cls = List.assoc ts dls in
                         let r = build_decls ~names cls x in
                         ((ls_of_x, r, defined), List.map (add_decl d) task_list)
-                      with Not_found -> ((ls_of_x, r, defined),
-                                         List.map (add_decl d) task_list)
+                      with Not_found ->
+                        let ls_of_x =
+                          Term.Sls.fold (fun ls acc ->
+                              if Ident.Sid.mem ls.ls_name d.d_news then
+                                Term.Sls.remove ls acc
+                              else
+                                acc) ls_of_x ls_of_x in
+                        ((ls_of_x, r, defined),
+                         List.map (add_decl d) task_list)
                     end
                 | Dprop (Pgoal, _, _) ->
                     ((ls_of_x, r, defined), List.map (add_decl d) task_list)
@@ -248,6 +251,10 @@ let destruct_fmla ~recursive (t: term) =
     in
 
     match t.t_node with
+    | Tfalse ->
+        []
+    | Ttrue ->
+        [[]]
     | Tbinop (Tand, t1, t2) ->
         let l1 = destruct_fmla_exception ~toplevel:false t1 in
         let l2 = destruct_fmla_exception ~toplevel:false t2 in
@@ -321,6 +328,9 @@ let destruct_fmla ~recursive (t: term) =
       else
         (* The hypothesis is trivial because Cs1 <> Cs2 thus useless *)
         [[]]
+    | Tnot t1 ->
+        (* Keep toplevel: this is considered an implication *)
+        destruct_fmla_exception ~toplevel (t_implies t1 t_false)
     | Tif (t1, t2, t3) ->
         let ts2 =
           destruct_fmla_exception ~toplevel:false t2 |>
@@ -414,25 +424,50 @@ let instantiate ~rem (pr: Decl.prsymbol) lt =
       | _ -> [d]) None
 
 let () = wrap_and_register
-    ~desc:"instantiate <prop> <term list> generates a new hypothesis with quantified variables of prop replaced with terms"
+    ~desc:"instantiate <prop> <term list>@ \
+      generates@ a@ new@ hypothesis@ with@ quantified@ variables@ \
+      of@ <prop>@ replaced@ with@ the@ given@ terms."
     "instantiate"
     (Tprsymbol (Ttermlist Ttrans)) (instantiate ~rem:false)
 
 let () = wrap_and_register
-    ~desc:"instantiate <prop> <term list> generates a new hypothesis with quantified variables of prop replaced with terms. Also remove the old hypothesis."
+    ~desc:"instantiate <prop> <term list>@ \
+      generates@ a@ new@ hypothesis@ with@ quantified@ variables@ \
+      of@ <prop>@ replaced@ with@ then@ given@ terms.@ \
+      Also@ removes@ the@ old@ hypothesis."
     "inst_rem"
     (Tprsymbol (Ttermlist Ttrans)) (instantiate ~rem:true)
 
-let () = wrap_and_register ~desc:"destruct <name> destructs the head logic constructor of hypothesis name (/\\, \\/, -> or <->).\nTo destruct a literal of algebraic type, use destruct_term."
+let () = wrap_and_register
+    ~desc:"destruct <name>@ \
+      destructs@ the@ top-most@ propositional@ connector@ \
+      (/\\,@ \\/,@ ->@ or@ <->)@ of@ the@ given@ hypothesis.@ \
+      To@ destruct@ a@ literal@ of@ an@ algebraic@ type,@ \
+      use@ 'destruct_term'."
     "destruct" (Tprsymbol Ttrans_l) (destruct ~recursive:false)
 
-let () = wrap_and_register ~desc:"destruct <name> recursively destructs the head logic constructor of hypothesis name (/\\, \\/, -> or <->).\nTo destruct a literal of algebraic type, use destruct_term."
+let () = wrap_and_register
+    ~desc:"destruct_rec <name>@ \
+      recursively@ destructs@ the@ top@ propositional@ connectors@ \
+      (/\\,@ \\/,@ ->@ or@ <->)@ of@ the@ given@ hypothesis.@ \
+      To@ destruct@ a@ literal@ of@ an@ algebraic@ type,@ \
+      use@ 'destruct_term'."
     "destruct_rec" (Tprsymbol Ttrans_l) (destruct ~recursive:true)
 
-let () = wrap_and_register ~desc:"destruct <name> as an algebraic type. Option using can be used to name elements created by destruct_term"
+let () = wrap_and_register
+    ~desc:"destruct_term <term> [using] <id list>@ \
+      destructs@ the@ given@ term@ of@ an@ algebraic@ type.@ \
+      Option@ 'using'@ can@ be@ used@ to@ name@ the@ elements@ \
+      created@ by@ 'destruct_term'."
     "destruct_term" (Tterm (Topt ("using", Tidentlist Ttrans_l)))
     (fun t names -> destruct_term ?names false t)
 
-let () = wrap_and_register ~desc:"destruct <name> as an algebraic type and substitute the definition if an lsymbol was provided. Option using can be used to name elements created by destruct_term_subst"
+let () = wrap_and_register
+    ~desc:"destruct_term_subst <term> [using] <id list>@ \
+      destructs@ the@ given@ term@ of@ an@ algebraic@ type@ \
+      and@ substitutes@ the@ definition@ if@ the@ term@ is@ \
+      a@ constant@ function@ symbol.@ \
+      Option@ 'using'@ can@ be@ used@ to@ name@ the@ elements@ \
+      created@ by@ 'destruct_term_subst'."
     "destruct_term_subst" (Tterm (Topt ("using", Tidentlist Ttrans_l)))
     (fun t names -> destruct_term ?names true t)

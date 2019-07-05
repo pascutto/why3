@@ -30,7 +30,7 @@ let debug_parse_only = Debug.register_flag "parse_only"
 let debug_type_only  = Debug.register_flag "type_only"
   ~desc:"Stop@ after@ type-checking."
 
-let debug_useless_at = Debug.register_flag "ignore_useless_at"
+let debug_ignore_useless_at = Debug.register_flag "ignore_useless_at"
   ~desc:"Remove@ warning@ for@ useless@ at/old."
 
 (** symbol lookup *)
@@ -53,26 +53,51 @@ let string_list_of_qualid q =
     | Qident id -> id.id_str :: acc in
   sloq [] q
 
-exception UnboundSymbol of qualid
+(* Type of symbol queried *)
+type symbol_kind =
+  | Prop
+  | Type
+  | Fun_pre
+  | Fun
+  | Predicate
+  | Exc
+  | Prog
 
-let find_qualid get_id find ns q =
+let symbol_kind_to_string qs =
+  match qs with
+  | Prop      -> "proposition"
+  | Type      -> "type"
+  | Fun_pre   -> "function or predicate"
+  | Fun       -> "function"
+  | Predicate -> "predicate"
+  | Exc       -> "exception"
+  | Prog      -> "program function or variable"
+
+(* [UnboundSymbol (s, q)]: s is the type of the qualid searched. It depends on
+   the namespace queried: find_*_ns. *)
+exception UnboundSymbol of (symbol_kind * qualid)
+
+let find_qualid ~ty get_id find ns q =
   let sl = string_list_of_qualid q in
   let r = try find ns sl with Not_found ->
-    Loc.error ~loc:(qloc q) (UnboundSymbol q) in
+    Loc.error ~loc:(qloc q) (UnboundSymbol (ty, q)) in
   if Debug.test_flag Glob.flag then Glob.use ~kind:"" (qloc_last q) (get_id r);
   r
 
-let find_prop_ns     ns q = find_qualid (fun pr -> pr.pr_name) ns_find_pr ns q
-let find_tysymbol_ns ns q = find_qualid (fun ts -> ts.ts_name) ns_find_ts ns q
-let find_lsymbol_ns  ns q = find_qualid (fun ls -> ls.ls_name) ns_find_ls ns q
+let find_prop_ns     ns q =
+  find_qualid ~ty:Prop (fun pr -> pr.pr_name) ns_find_pr ns q
+let find_tysymbol_ns ns q =
+  find_qualid ~ty:Type (fun ts -> ts.ts_name) ns_find_ts ns q
+let find_lsymbol_ns ?ty ns q =
+  find_qualid ~ty:(Opt.get_def Fun_pre ty) (fun ls -> ls.ls_name) ns_find_ls ns q
 
 let find_fsymbol_ns ns q =
-  let ls = find_lsymbol_ns ns q in
+  let ls = find_lsymbol_ns ~ty:Fun ns q in
   if ls.ls_value <> None then ls else
     Loc.error ~loc:(qloc q) (FunctionSymbolExpected ls)
 
 let find_psymbol_ns ns q =
-  let ls = find_lsymbol_ns ns q in
+  let ls = find_lsymbol_ns ~ty:Predicate ns q in
   if ls.ls_value = None then ls else
     Loc.error ~loc:(qloc q) (PredicateSymbolExpected ls)
 
@@ -92,10 +117,10 @@ let find_prop_of_kind k tuc q =
         | Plemma -> "a lemma" | Paxiom -> "an axiom" | Pgoal -> "a goal")
 
 let find_itysymbol_ns ns q =
-  find_qualid (fun s -> s.its_ts.ts_name) Pmodule.ns_find_its ns q
+  find_qualid ~ty:Type (fun s -> s.its_ts.ts_name) Pmodule.ns_find_its ns q
 
 let find_xsymbol_ns ns q =
-  find_qualid (fun s -> s.xs_name) Pmodule.ns_find_xs ns q
+  find_qualid ~ty:Exc (fun s -> s.xs_name) Pmodule.ns_find_xs ns q
 
 let find_prog_symbol_ns ns p =
   let get_id_ps = function
@@ -104,7 +129,7 @@ let find_prog_symbol_ns ns p =
       (* FIXME: this is incorrect, but we cannot
         know the correct symbol at this stage *)
     | OO ss -> (Srs.choose ss).rs_name in
-  find_qualid get_id_ps ns_find_prog_symbol ns p
+  find_qualid ~ty:Prog get_id_ps ns_find_prog_symbol ns p
 
 (** Parsing types *)
 
@@ -433,7 +458,7 @@ let rec dterm ns km crcmap gvars at denv {term_desc = desc; term_loc = loc} =
       (* check if the label has actually been defined *)
       ignore (Loc.try2 ~loc gvars (Some l) (Qident id));
       let e1 = dterm ns km crcmap gvars (Some l) denv e1 in
-      if not (Hstr.find at_uses l) && Debug.test_noflag debug_useless_at then
+      if not (Hstr.find at_uses l) && Debug.test_noflag debug_ignore_useless_at then
         Warning.emit ~loc "this `at'/`old' operator is never used";
       Hstr.remove at_uses l;
       DTattr (e1, Sattr.empty)
@@ -475,6 +500,7 @@ open Dexpr
 let ty_of_pty tuc = ty_of_pty (get_namespace tuc)
 
 let get_namespace muc = List.hd muc.Pmodule.muc_import
+let get_namespace_export muc = List.hd muc.Pmodule.muc_export
 
 let dterm muc =
   let uc = muc.muc_theory in
@@ -483,6 +509,10 @@ let dterm muc =
 let find_xsymbol     muc q = find_xsymbol_ns     (get_namespace muc) q
 let find_itysymbol   muc q = find_itysymbol_ns   (get_namespace muc) q
 let find_prog_symbol muc q = find_prog_symbol_ns (get_namespace muc) q
+
+let find_rsymbol muc q =
+  let ns = get_namespace_export muc in
+  find_qualid ~ty:Prog (fun rs -> rs.rs_name) ns_find_rs ns q
 
 let find_special muc test nm q =
   match find_prog_symbol muc q with
@@ -1030,7 +1060,10 @@ let rec dexpr muc denv {expr_desc = desc; expr_loc = loc} =
       let gvars _at q = try match find_prog_symbol muc q with
         | PV v -> Some v | _ -> None with _ -> None in
       let get_dty pure_denv =
+        let nw = Debug.test_noflag debug_ignore_useless_at in
+        if nw then Debug.set_flag debug_ignore_useless_at;
         let dt = dterm muc gvars None pure_denv t in
+        if nw then Debug.unset_flag debug_ignore_useless_at;
         match dt.dt_dty with Some dty -> dty | None -> dty_bool in
       DEpure (get_term, denv_pure denv get_dty)
   | Ptree.Eassert (ak, f) ->
@@ -1453,6 +1486,7 @@ let add_decl muc env file d =
         | Ptree.Max q  -> MApr (find_prop_of_kind Paxiom tuc q)
         | Ptree.Mlm q  -> MApr (find_prop_of_kind Plemma tuc q)
         | Ptree.Mgl q  -> MApr (find_prop_of_kind Pgoal  tuc q)
+        | Ptree.Mval q -> MAid (find_rsymbol muc q).rs_name
         | Ptree.Mstr s -> MAstr s
         | Ptree.Mint i -> MAint i in
       add_meta muc (lookup_meta id.id_str) (List.map convert al)
@@ -1559,6 +1593,7 @@ let add_decl loc d =
 (** Exception printing *)
 
 let () = Exn_printer.register (fun fmt e -> match e with
-  | UnboundSymbol q ->
-      Format.fprintf fmt "unbound symbol '%a'" print_qualid q
+  | UnboundSymbol (ty, q) ->
+      Format.fprintf fmt "unbound %s symbol '%a'" (symbol_kind_to_string ty)
+        print_qualid q
   | _ -> raise e)

@@ -65,7 +65,21 @@ ifeq (@OCAMLBEST@,opt)
 #DEPFLAGS += -native
 endif
 
-RUBBER = @RUBBER@
+ifeq (@LATEX@,rubber)
+   LATEXCOMP=rubber --warn all --pdf
+   LATEXCLEAN=rubber --pdf --clean
+endif
+
+ifeq (@LATEX@,latexmk)
+   LATEXCOMP=latexmk --pdf
+   LATEXCLEAN=latexmk --pdf -C
+endif
+
+ifeq (@LATEX@,pdflatex)
+   LATEXCOMP=pdflatex
+   LATEXCLEAN=true
+endif
+
 HEVEA = @HEVEA@
 HACHA = @HACHA@
 EMACS = @EMACS@
@@ -948,7 +962,7 @@ COQLIBS_REAL = $(addprefix lib/coq/real/, $(COQLIBS_REAL_FILES))
 COQLIBS_NUMBER_FILES = Divisibility Gcd Parity Prime Coprime
 COQLIBS_NUMBER = $(addprefix lib/coq/number/, $(COQLIBS_NUMBER_FILES))
 
-COQLIBS_SET_FILES = Set
+COQLIBS_SET_FILES = Set Cardinal Fset FsetInduction FsetInt FsetSum SetApp SetAppInt SetImp SetImpInt
 COQLIBS_SET = $(addprefix lib/coq/set/, $(COQLIBS_SET_FILES))
 
 COQLIBS_MAP_FILES = Map Const Occ MapPermut MapInjection
@@ -1056,8 +1070,8 @@ update-coq-option: bin/why3realize.@OCAMLBEST@ drivers/coq-realizations.aux stdl
 update-coq-bv: bin/why3realize.@OCAMLBEST@ drivers/coq-realizations.aux stdlib/bv.mlw
 	for f in $(COQLIBS_BV_FILES); do WHY3CONFIG="" bin/why3realize.@OCAMLBEST@ -L stdlib -D drivers/coq-realize.drv -T bv.$$f -o $(GENERATED_PREFIX_COQ)/bv/; done
 
-update-coq-for-drivers: bin/why3realize.@OCAMLBEST@ drivers/coq-realizations.aux theories/for_drivers.why
-	for f in $(COQLIBS_FOR_DRIVERS_FILES); do WHY3CONFIG="" bin/why3realize.@OCAMLBEST@ -L theories -D drivers/coq-realize.drv -T for_drivers.$$f -o $(GENERATED_PREFIX_COQ)/for_drivers/; done
+update-coq-for-drivers: bin/why3realize.@OCAMLBEST@ drivers/coq-realizations.aux stdlib/for_drivers.mlw
+	for f in $(COQLIBS_FOR_DRIVERS_FILES); do WHY3CONFIG="" bin/why3realize.@OCAMLBEST@ -L stdlib -D drivers/coq-realize.drv -T for_drivers.$$f -o $(GENERATED_PREFIX_COQ)/for_drivers/; done
 
 update-coq-ieee_float: bin/why3realize.@OCAMLBEST@ drivers/coq-realizations.aux stdlib/ieee_float.mlw
 	for f in $(COQLIBS_IEEEFLOAT_FILES); do WHY3CONFIG="" bin/why3realize.@OCAMLBEST@ -L stdlib -D drivers/coq-realize.drv -T ieee_float.$$f -o $(GENERATED_PREFIX_COQ)/ieee_float/; done
@@ -1734,6 +1748,7 @@ bench-api:
 	$(MAKE) test-api-logic.@OCAMLBEST@
 	$(MAKE) test-api-transform.@OCAMLBEST@
 	$(MAKE) test-api-mlw-tree.@OCAMLBEST@
+	$(MAKE) test-api-mlw-expr.@OCAMLBEST@
 #	$(MAKE) test-api-mlw.@OCAMLBEST@
 	$(MAKE) test-session.@OCAMLBEST@
 
@@ -1797,6 +1812,19 @@ test-api-mlw-tree.opt: examples/use_api/mlw_tree.ml lib/why3/why3.cmxa
 	&& ./test-api-mlw-tree.opt > /dev/null) \
 	|| (rm -f test-api-mlw-tree.opt; printf "Test of Why3 API calls failed. Please fix it"; exit 2)
 	@rm -f test-api-mlw-tree.opt
+
+test-api-mlw-expr.byte: examples/use_api/mlw_expr.ml lib/why3/why3.cma
+	$(SHOW) 'Ocaml    $<'
+	$(HIDE)ocaml -I lib/why3 $(INCLUDES) $(EXTCMA) lib/why3/why3.cma $< > /dev/null\
+	|| (rm -f test-api-mlw-expr.byte; printf "Test of Why3 API calls failed. Please fix it"; exit 2)
+	@rm -f test-api-mlw-expr.byte;
+
+test-api-mlw-expr.opt: examples/use_api/mlw_expr.ml lib/why3/why3.cmxa
+	$(SHOW) 'Ocamlopt $<'
+	$(HIDE)($(OCAMLOPT) -o $@ -I lib/why3 $(INCLUDES) $(EXTCMXA) lib/why3/why3.cmxa $< \
+	&& ./test-api-mlw-expr.opt > /dev/null) \
+	|| (rm -f test-api-mlw-expr.opt; printf "Test of Why3 API calls failed. Please fix it"; exit 2)
+	@rm -f test-api-mlw-expr.opt
 
 test-api-mlw.byte: examples/use_api/mlw.ml lib/why3/why3.cma
 	$(SHOW) 'Ocaml    $<'
@@ -1902,6 +1930,9 @@ doc/generated/call_provers__%.ml: src/driver/call_provers.ml doc/extract_ocaml_c
 doc/generated/mlw_tree__%.ml: examples/use_api/mlw_tree.ml doc/extract_ocaml_code
 	doc/extract_ocaml_code $* < $< > $@
 
+doc/generated/mlw_expr__%.ml: examples/use_api/mlw_expr.ml doc/extract_ocaml_code
+	doc/extract_ocaml_code $* < $< > $@
+
 doc/generated/transform__%.ml: examples/use_api/transform.ml doc/extract_ocaml_code
 	doc/extract_ocaml_code $* < $< > $@
 
@@ -1926,6 +1957,8 @@ OCAMLCODE_MLWTREE = buildenv openmodule useimport \
 	source1 code1 helper1 source2 code2 source3 code3 \
 	closemodule checkingvcs
 
+OCAMLCODE_MLWEXPR = buildenv source2 code2_import code2 createmodule checkingvcs
+
 OCAMLCODE_COUNTEREXAMPLES =  ce_declarepropvars ce_adaptgoals \
 	ce_get_cvc4ce ce_callprover ce_nobuiltin
 
@@ -1934,6 +1967,7 @@ OCAMLCODE = \
 	$(addprefix doc/generated/call_provers__, $(addsuffix .ml, $(OCAMLCODE_CALLPROVERS))) \
 	$(addprefix doc/generated/transform__, $(addsuffix .ml, $(OCAMLCODE_TRANSFORM))) \
 	$(addprefix doc/generated/mlw_tree__, $(addsuffix .ml, $(OCAMLCODE_MLWTREE))) \
+	$(addprefix doc/generated/mlw_expr__, $(addsuffix .ml, $(OCAMLCODE_MLWEXPR))) \
 	$(addprefix doc/generated/counterexample__, $(addsuffix .ml, $(OCAMLCODE_COUNTEREXAMPLES))) \
 	doc/generated/whyconf__provertype.ml
 
@@ -1944,7 +1978,15 @@ DOC = api glossary ide intro exec macros manpages install \
 DOCTEX = $(DOC:%=doc/%.tex)
 
 doc/manual.pdf: $(BNFTEX) $(OCAMLCODE) $(DOCTEX) doc/manual.bib share/provers-detection-data.conf
-	cd doc; $(RUBBER) --warn all --pdf manual.tex
+	cd doc; $(LATEXCOMP) manual.tex
+ifeq (@LATEX@,pdflatex)
+	cd doc; if grep 'may have changed. Rerun to get' manual.log; then \
+		bibtex manual ; makeindex manual; pdflatex manual; \
+	fi
+	cd doc; if grep 'may have changed. Rerun to get' manual.log; then \
+		pdflatex manual; \
+	fi
+endif
 
 update-doc-png:
 	export UBUNTU_MENUPROXY=0; \
@@ -1974,7 +2016,7 @@ endif
 
 clean::
 	rm -rf doc/bnf$(EXE) $(BNFTEX) doc/html doc/manual.image.out; \
-	cd doc; $(RUBBER) --pdf --clean manual.tex
+	cd doc; $(LATEXCLEAN) manual.tex
 
 else
 
@@ -2060,46 +2102,33 @@ install:: install-bash
 
 .PHONY: stdlibdoc
 
+STDMACHLIBS = \
+	array bv c float fxp int matrix onetime peano tagset
+
 STDLIBS = \
-	algebra \
-	appmap \
-	appset \
-	array \
-	bag \
-	bintree \
-	bool \
-	bv \
-	floating_point \
-	graph \
-	hashtbl \
-	ieee_float \
-	impmap \
-	impset \
-	int \
+	algebra appmap array \
+	bag bintree bool bv \
+	cursor \
+	exn \
+	floating_point function \
+	graph hashtbl \
+	ieee_float impmap int \
 	list \
-	map \
-	matrix \
-	number \
-	option \
-	pigeon \
-	pqueue \
+	map matrix \
+	null number option ocaml \
+	pigeon pqueue \
 	queue \
-	random \
-	real \
-	ref \
-	relations \
-	seq \
-	set \
-	stack \
-	string \
-	sum \
+	random real ref regexp relations \
+	seq set stack string sum \
+	tree \
 	witness \
-        mach/array \
-	mach/int \
-        mach/matrix \
-	mach/onetime \
-	mach/peano
-# function ? tptp ?
+	$(addprefix mach/, $(STDMACHLIBS))
+
+# NO NEED DOC:
+# debug: too basic, needs large improvement
+# io: too basic, needs large improvement
+# tptp: for TPTP provers ?
+# for_drivers: used only in drivers
 
 STDLIBFILES = $(patsubst %,stdlib/%.mlw, $(STDLIBS))
 

@@ -220,6 +220,7 @@ type naming_table = {
     coercion : Coercion.t;
     printer : Ident.ident_printer;
     aprinter : Ident.ident_printer;
+    meta_id_args : Ident.ident Mstr.t;
  }
 (** In order to interpret, that is type, string arguments as symbols or
    terms, a transformation may need a [naming_table]. Typing arguments
@@ -260,6 +261,8 @@ val lookup_trans_desc: string -> Pp.formatted
    description. *)
 
 val list_trans : unit -> string list
+
+exception Unnecessary_arguments of string list
 
 val apply_transform : string -> Env.env -> task -> task list
 (** apply a registered 1-to-1 or a 1-to-n, directly.*)

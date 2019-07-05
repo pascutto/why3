@@ -9,4 +9,10 @@
 (*                                                                  *)
 (********************************************************************)
 
-val revert_tr_symbol: Args_wrapper.symbol list -> Task.task Trans.trans
+(* [tr] is a function that associates a symbol of the task with an attribute.
+   This is used to add new attributes (such as @induction) on some quantified
+   variables (see induction_arg_pr).
+*)
+val revert_tr_symbol:
+  ?tr:(Args_wrapper.symbol -> Ident.attribute option) ->
+    Args_wrapper.symbol list -> Task.task Trans.trans

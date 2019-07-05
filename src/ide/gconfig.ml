@@ -44,8 +44,8 @@ type t =
       mutable show_time_limit : bool;
       mutable max_boxes : int;
       mutable allow_source_editing : bool;
-      mutable saving_policy : int;
-      (** 0 = always, 1 = never, 2 = ask *)
+      mutable saving_policy : int; (* 0 = always, 1 = never, 2 = ask *)
+      mutable auto_next : bool; (* true if auto jump to next goal *)
       mutable premise_color : string;
       mutable neg_premise_color : string;
       mutable goal_color : string;
@@ -81,6 +81,7 @@ type ide = {
   ide_max_boxes : int;
   ide_allow_source_editing : bool;
   ide_saving_policy : int;
+  ide_auto_next : bool;
   ide_premise_color : string;
   ide_neg_premise_color : string;
   ide_goal_color : string;
@@ -108,6 +109,7 @@ let default_ide =
     ide_max_boxes = 16;
     ide_allow_source_editing = true;
     ide_saving_policy = 2;
+    ide_auto_next = true;
     ide_premise_color = "chartreuse";
     ide_neg_premise_color = "pink";
     ide_goal_color = "gold";
@@ -152,6 +154,8 @@ let load_ide section =
       get_bool section ~default:default_ide.ide_allow_source_editing "allow_source_editing";
     ide_saving_policy =
       get_int section ~default:default_ide.ide_saving_policy "saving_policy";
+    ide_auto_next =
+      get_bool section ~default:default_ide.ide_auto_next "auto_next";
     ide_premise_color =
       get_string section ~default:default_ide.ide_premise_color
         "premise_color";
@@ -216,6 +220,7 @@ let load_config config original_config =
     max_boxes = ide.ide_max_boxes;
     allow_source_editing = ide.ide_allow_source_editing ;
     saving_policy = ide.ide_saving_policy ;
+    auto_next = ide.ide_auto_next ;
     premise_color = ide.ide_premise_color;
     neg_premise_color = ide.ide_neg_premise_color;
     goal_color = ide.ide_goal_color;
@@ -265,6 +270,7 @@ let save_config t =
   let ide = set_int ide "max_boxes" t.max_boxes in
   let ide = set_bool ide "allow_source_editing" t.allow_source_editing in
   let ide = set_int ide "saving_policy" t.saving_policy in
+  let ide = set_bool ide "auto_next" t.auto_next in
   let ide = set_string ide "premise_color" t.premise_color in
   let ide = set_string ide "neg_premise_color" t.neg_premise_color in
   let ide = set_string ide "goal_color" t.goal_color in
@@ -724,14 +730,37 @@ let general_settings (c : t) (notebook:GPack.notebook) =
       (fun () -> c.session_cntexample <- not c.session_cntexample)
   in
 *)
+  (* IDE options *)
+  let ide_options_frame =
+    GBin.frame ~label:"IDE options" ~packing:page_pack ()
+  in
+  let ide_options_box =
+    GPack.button_box
+      `VERTICAL ~border_width:5 ~spacing:5
+      ~packing:ide_options_frame#add ()
+  in
+  let ide_options_box_pack =
+    ide_options_box#pack ?from:None ?expand:None ?fill:None ?padding:None
+  in
   (* source editing allowed *)
-  let source_editing_check = GButton.check_button ~label:"allow editing source files"
-    ~packing:vb#add ()
-    ~active:c.allow_source_editing
+  let source_editing_check = GButton.check_button
+    ~label:"allow editing source files"
+    ~packing:ide_options_box_pack
+    ~active:c.allow_source_editing ()
   in
   let (_: GtkSignal.id) =
     source_editing_check#connect#toggled ~callback:
       (fun () -> c.allow_source_editing <- not c.allow_source_editing)
+  in
+  (* jump to the next unproved goal *)
+  let auto_next_check = GButton.check_button
+      ~label:"jump to the next unproved goal"
+      ~packing:ide_options_box_pack
+      ~active:c.auto_next ()
+  in
+  let (_: GtkSignal.id) =
+    auto_next_check#connect#toggled ~callback:
+      (fun () -> c.auto_next <- not c.auto_next)
   in
   (* session saving policy *)
   let set_saving_policy n () = c.saving_policy <- n in

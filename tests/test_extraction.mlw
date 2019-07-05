@@ -97,6 +97,22 @@ module TestExtraction
   exception Empty (list int, int)
   exception Out_of_bounds int
 
+  let ref_f (y:int63) =
+    let ref x = 42 in
+    let ref z = 13 in
+    x <- y;
+    x <- z
+
+  let ref_g (r: ref int63) (c: int63) = {r with contents = c}
+
+  let ref_h (r : ref int63) = match r with {contents = c} -> c end
+
+  type r' = { x : int63; y : int63 }
+
+  let r_g (x: r') (c:int63) = { x with x = c }
+
+  let r_h (x: r') = match x with { x = a; y = b } -> a + b end
+
   (* exception are unary constructors *)
 (*
   let raise1 () =
@@ -239,6 +255,14 @@ module TestExtraction
      match x with None -> y | Some x -> x + y end
   let constant opt_c = opt_g (Some 40) 2
 
+  let opt_f_poly (x [@ocaml:optional]: option 'a) (y: int) : int =
+    match x with
+    | None -> y
+    | Some _ -> 89
+    end
+
+  let call_f_poly (x: 'a) = opt_f_poly (Some x) 42
+
   (* FIXME: partial application with named arguments not yet supported *)
   let constant opt_b = fun y -> opt_g y 42
   let opt_h () = fun y -> opt_f 40 y
@@ -325,6 +349,29 @@ module TestExtraction
       ()
     done
 
+  let test_if (b:bool) (t:ty) : int =
+  if b
+  then let r = ref 0 in
+       r := (match t with A -> 1 | B -> 2 | C -> 3 end);
+       !r
+  else match t with A -> 2 | B -> 3 | C -> 1 end
+
+  let i1 [@extraction:inline] (x:int63) = x+2
+
+  let i2 [@extraction:inline] (x:int63) (y:int63) =
+    requires { y <> 0 }
+    let d = x / y in
+    let m = x % y in
+    y * d + m
+
+  let i3 [@extraction:inline] (n:int63) =
+    i1 (i2 n n)
+
+  let inlining () =
+    let a = 40 in
+    let b = i1 a + i1 a in
+    let c = i2 b b in
+    i3 c
 end
 
 (*

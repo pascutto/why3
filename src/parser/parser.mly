@@ -23,12 +23,6 @@
 
   let id_anonymous loc = { id_str = "_"; id_ats = []; id_loc = loc }
 
-  let mk_int_const neg lit =
-    Number.{ ic_negative = neg ; ic_abs = lit}
-
-  let mk_real_const neg lit =
-    Number.{ rc_negative = neg ; rc_abs = lit}
-
   let mk_id id s e = { id_str = id; id_ats = []; id_loc = floc s e }
 
   let get_op  q s e = Qident (mk_id (Ident.op_get q) s e)
@@ -205,9 +199,9 @@
 (* Tokens *)
 
 %token <string> LIDENT CORE_LIDENT UIDENT CORE_UIDENT
-%token <Number.integer_literal> INTEGER
+%token <Number.int_constant> INTEGER
 %token <string> OP1 OP2 OP3 OP4 OPPREF
-%token <Number.real_literal> REAL
+%token <Number.real_constant> REAL
 %token <string> STRING
 %token <string> ATTRIBUTE
 %token <Loc.position> POSITION
@@ -299,14 +293,15 @@ term_eof:
 (* Modules and scopes *)
 
 mlw_file:
-| mlw_module* EOF
+| EOF
+| mlw_module mlw_module_no_decl* EOF
     { Typing.close_file () }
-| module_decl+ EOF
-    { let loc = floc $startpos($2) $endpos($2) in
+| module_decl module_decl_no_head* EOF
+    { let loc = floc $startpos($3) $endpos($3) in
       Typing.close_module loc; Typing.close_file () }
 
 mlw_module:
-| module_head module_decl* END
+| module_head module_decl_no_head* END
     { Typing.close_module (floc $startpos($3) $endpos($3)) }
 
 module_head:
@@ -327,6 +322,20 @@ module_decl:
       add_record_projections d
     }
 | use_clone { () }
+
+mlw_module_no_decl:
+| SCOPE | IMPORT | USE | CLONE | pure_decl | prog_decl | meta_decl
+   { let loc = floc $startpos $endpos in
+     Loc.errorm ~loc "trying to open a module inside another module" }
+| mlw_module
+   { $1 }
+
+module_decl_no_head:
+| THEORY | MODULE
+   { let loc = floc $startpos $endpos in
+     Loc.errorm ~loc "trying to open a module inside another module" }
+| module_decl
+   { $1 }
 
 (* Use and clone *)
 
@@ -394,6 +403,7 @@ meta_arg:
 | AXIOM     qualid  { Max $2 }
 | LEMMA     qualid  { Mlm $2 }
 | GOAL      qualid  { Mgl $2 }
+| VAL       qualid  { Mval $2 }
 | STRING            { Mstr $1 }
 | INTEGER           { Mint (Number.to_small_integer $1) }
 
@@ -444,8 +454,8 @@ typedefn:
       TDfloat (Number.to_small_integer $4, Number.to_small_integer $5) }
 
 int_constant:
-| INTEGER       { Number.compute_int_literal $1 }
-| MINUS INTEGER { BigInt.minus (Number.compute_int_literal $2) }
+| INTEGER       { $1.Number.il_int }
+| MINUS INTEGER { BigInt.minus ($2.Number.il_int) }
 
 vis_mut:
 | (* epsilon *)     { Public, false }
@@ -684,10 +694,8 @@ single_term_:
     { Tat ($1, $3) }
 | prefix_op single_term %prec prec_prefix_op
     { Tidapp (Qident $1, [$2]) }
-| MINUS INTEGER
-    { Tconst (Number.ConstInt (mk_int_const true $2)) }
-| MINUS REAL
-    { Tconst (Number.ConstReal (mk_real_const true $2)) }
+| MINUS numeral
+    { Tconst (Number.neg $2) }
 | l = single_term ; o = bin_op ; r = single_term
     { Tbinop (l, o, r) }
 | l = single_term ; o = infix_op_1 ; r = single_term
@@ -804,8 +812,8 @@ quant:
 | EXISTS  { Dterm.DTexists }
 
 numeral:
-| INTEGER { Number.ConstInt (mk_int_const false $1) }
-| REAL    { Number.ConstReal (mk_real_const false $1) }
+| INTEGER { Number.ConstInt $1 }
+| REAL    { Number.ConstReal $1 }
 
 (* Program declarations *)
 
@@ -954,10 +962,8 @@ single_expr_:
     { Enot $2 }
 | prefix_op single_expr %prec prec_prefix_op
     { Eidapp (Qident $1, [$2]) }
-| MINUS INTEGER
-    { Econst (Number.ConstInt (mk_int_const true $2)) }
-| MINUS REAL
-    { Econst (Number.ConstReal (mk_real_const true $2)) }
+| MINUS numeral
+    { Econst (Number.neg $2) }
 | l = single_expr ; o = infix_op_1 ; r = single_expr
     { Einfix (l,o,r) }
 | l = single_expr ; o = infix_op_234 ; r = single_expr
@@ -1092,8 +1098,13 @@ single_expr_:
     { Ematch ($2, [], $4) }
 | GHOST single_expr
     { Eghost $2 }
-| assertion_kind LEFTBRC term RIGHTBRC
-    { Eassert ($1, $3) }
+| assertion_kind option(ident_nq) LEFTBRC term RIGHTBRC
+    { match $2 with
+      | None -> Eassert ($1, $4)
+      | Some name ->
+         let attr = ATstr (Ident.create_attribute ("hyp_name:" ^ name.id_str)) in
+         let t = { $4 with term_desc = Tattr (attr, $4) } in
+         Eassert ($1, t) }
 | attr single_expr %prec prec_attr
     { Eattr ($1, $2) }
 | single_expr cast
@@ -1193,8 +1204,13 @@ spec:
 | single_spec spec                  { spec_union $1 $2 }
 
 single_spec:
-| REQUIRES LEFTBRC term RIGHTBRC
-    { { empty_spec with sp_pre = [$3] } }
+| REQUIRES option(ident_nq) LEFTBRC term RIGHTBRC
+    { match $2 with
+      | None -> { empty_spec with sp_pre = [$4] }
+      | Some name ->
+         let attr = ATstr (Ident.create_attribute ("hyp_name:" ^ name.id_str)) in
+         let t = { $4 with term_desc = Tattr (attr, $4) } in
+         { empty_spec with sp_pre = [t] } }
 | ENSURES LEFTBRC ensures RIGHTBRC
     { { empty_spec with sp_post = [floc $startpos($3) $endpos($3), $3] } }
 | RETURNS LEFTBRC match_cases(term) RIGHTBRC

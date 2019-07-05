@@ -258,7 +258,7 @@ let treat_notification fmt n =
   | File_contents _ -> fprintf fmt "got a File_contents notification not yet supported@." (* TODO *)
   | Source_and_ce _ -> fprintf fmt "got a Source_and_ce notification not yet supported@." (* TODO *)
   | Next_Unproven_Node_Id _ -> fprintf fmt "got a Next_Unproven_Node_Id notification not yet supported@." (* TODO *)
-  | Task (id, s, _list_loc)       ->
+  | Task (id, s, _list_loc, _)       ->
     (* coloring the source is useless in shell *)
     try
       let node = Hnode.find nodes id in
@@ -283,7 +283,9 @@ let print_proof_attempt fmt pa_id =
   | None -> fprintf fmt "%s" pa.node_name
   | Some _pr ->
     fprintf fmt "%s %a"
-      pa.node_name (Pp.print_option Call_provers.print_prover_result) (get_result pa.node_proof)
+      pa.node_name
+      (Pp.print_option (Call_provers.print_prover_result ~json_model:false))
+      (get_result pa.node_proof)
 
 let rec print_proof_node (fmt: Format.formatter) goal_id =
   let goal = Hnode.find nodes goal_id in

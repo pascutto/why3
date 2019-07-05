@@ -16,9 +16,13 @@ do
             ;;
         ide)
             WHY3CONFIG="" xvfb-run bin/why3 ide --batch "" examples/logic/einstein.why
+            bin/why3config --detect-provers
+            bench/ide-bench
             ;;
         doc)
             make doc
+            make stdlibdoc
+            make apidoc
             ;;
         ce-bench)
             bin/why3config --detect-provers

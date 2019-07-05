@@ -219,7 +219,7 @@ let rec num_lines s acc tr =
 
   let print_file s fmt f =
     (* fprintf fmt "<h1>File %s</h1>@\n" f.file_name; *)
-    let fn = basename (file_path f) in
+    let fn = Sysutil.basename (file_path f) in
     let fn = Filename.chop_extension fn in
     fprintf fmt "%a"
       (Pp.print_list Pp.newline (print_theory s fn)) (file_theories f)
@@ -239,7 +239,8 @@ struct
 
   let print_proof_status fmt = function
     | None -> fprintf fmt "No result"
-    | Some res -> fprintf fmt "Done: %a" Call_provers.print_prover_result res
+    | Some res -> fprintf fmt "Done: %a"
+                    (Call_provers.print_prover_result ~json_model:true) res
 
   let print_proof_attempt s fmt pa =
     let pa = get_proof_attempt_node s pa in
@@ -274,7 +275,7 @@ struct
 
   let print_file s fmt f =
     fprintf fmt "<li>%a%a</li>"
-      print_file_path (file_path f)
+      Sysutil.print_file_path (file_path f)
       (print_ul (print_theory s)) (file_theories f)
 
   let print_session _name fmt s =

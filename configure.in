@@ -292,12 +292,6 @@ MENHIRVERSION=`$MENHIR --version | sed -n -e 's,.*version *\(.*\)$,\1,p'`
 AX_VERSION_GE([$MENHIRVERSION], 20151112, [],
   [AC_MSG_ERROR(You need Menhir 20151112 or higher.)])
 
-
-AC_CHECK_PROG(DUNE,dune,dune,no)
-if test "$DUNE" = no ; then
-	AC_MSG_ERROR(Cannot find dune.)
-fi
-
 ## Where are the library we need
 # we look for ocamlfind; if not present, we just don't use it to find
 # libraries
@@ -373,14 +367,14 @@ else
   COMPILERLIBSPKG=
 fi
 
-# checking for rubber
+# checking for rubber or latexmk or pdflatex
 if test "$enable_doc" = yes ; then
-   AC_CHECK_PROG(RUBBER,rubber,rubber,no)
-   if test "$RUBBER" = no ; then
+   AC_CHECK_PROGS(LATEX,rubber latexmk pdflatex,no)
+   if test "$LATEX" = no ; then
       enable_doc=no
       enable_html_doc=no
-      reason_doc=" (rubber not found)"
-      AC_MSG_WARN([Cannot find rubber, documentation disabled.])
+      reason_doc=" ((rubber|latexmk|pdflatex) not found)"
+      AC_MSG_WARN([Cannot find any latex compiler, documentation disabled.])
    fi
 else
    enable_html_doc=no
@@ -578,11 +572,11 @@ if test "$enable_ide" = yes ; then
    if test "$USEOCAMLFIND" = yes; then
       case $GTKVERSION in
         2)
-           LIB_SOURCEVIEW=lablgtksourceview$GTKVERSION
-           PKG_SOURCEVIEW=lablgtk$GTKVERSION.sourceview$GTKVERSION
+           LIB_SOURCEVIEW=lablgtksourceview2
+           PKG_SOURCEVIEW=lablgtk2.sourceview2
            DIR=$(ocamlfind query $PKG_SOURCEVIEW)
            if test -z "$DIR"; then
-              PKG_SOURCEVIEW=lablgtksourceview$GTKVERSION
+              PKG_SOURCEVIEW=lablgtksourceview2
               DIR=$(ocamlfind query $PKG_SOURCEVIEW)
            fi
            ;;
@@ -592,7 +586,6 @@ if test "$enable_ide" = yes ; then
            DIR=$(ocamlfind query $PKG_SOURCEVIEW)
            ;;
         *)
-           enable_coq_support=no
            AC_MSG_ERROR(Unknown gtk version $GTKVERSION)
            ;;
       esac
@@ -622,7 +615,6 @@ if test "$enable_ide" = yes ; then
            LABLGTKLIB="threads lablgtk3"
            ;;
         *)
-           enable_coq_support=no
            AC_MSG_ERROR(Unknown gtk version $GTKVERSION)
            ;;
       esac
@@ -979,7 +971,7 @@ AC_SUBST(enable_hypothesis_selection)
 AC_SUBST(enable_doc)
 AC_SUBST(enable_html_doc)
 
-AC_SUBST(RUBBER)
+AC_SUBST(LATEX)
 AC_SUBST(HEVEA)
 AC_SUBST(HACHA)
 
@@ -1055,7 +1047,7 @@ if test "$enable_frama_c" = yes ; then
 fi
 echo "Documentation               : $enable_doc$reason_doc"
 if test "$enable_doc" = yes ; then
-   echo "    PDF                     : yes"
+   echo "    PDF                     : with $LATEX"
    echo "    HTML                    : $enable_html_doc$reason_html_doc"
 fi
 echo "Support for interactive proof assistants"

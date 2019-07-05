@@ -118,7 +118,7 @@ let () =
       if Debug.test_flag debug then
         Printf.eprintf "Progress: %d/%d/%d                       \r%!" w s r)
 
-let print_result = Call_provers.print_prover_result
+let print_result = Call_provers.print_prover_result ~json_model:false
 
 module S = Session_itp
 
@@ -149,7 +149,7 @@ let print_statistics ses files =
   in
   let print_file (f,ths,n,m) =
     if n<m then begin
-      printf "   +--file [%a]: %d/%d@." S.print_file_path (S.file_path f) n m;
+      printf "   +--file [%a]: %d/%d@." Sysutil.print_file_path (S.file_path f) n m;
       List.iter print_theory (List.rev ths)
     end
   in

@@ -22,6 +22,7 @@ type float_type =
   | Minus_zero
   | Not_a_number
   | Float_value of string * string * string
+    (* Float_value (sign, exponent, mantissa) *)
   | Float_hexa of string * float
 
 val interp_float: ?interp:bool -> string -> string -> string -> float_type
@@ -39,7 +40,7 @@ type model_value =
  | Apply of string * model_value list
  | Unparsed of string
 and  arr_index = {
-  arr_index_key : string;
+  arr_index_key : model_value;
   arr_index_value : model_value;
 }
 and model_array = {
@@ -58,14 +59,13 @@ val array_create_constant :
 
 val array_add_element :
   array : model_array ->
-  index : string      ->
+  index : model_value ->
   value : model_value ->
   model_array
 (** Adds an element to the array.
     @param array : the array to that the element will be added
 
     @param index : the index on which the element will be added.
-    Note that the index must be of value model_value.Integer
 
     @param value : the value of the element to be added
 *)
