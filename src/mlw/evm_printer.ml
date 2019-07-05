@@ -9,58 +9,7 @@
 (*                                                                  *)
 (********************************************************************)
 
-(** Printer for extracted Yul code *)
-
-(** Currently we target strict-assembly instead of Yul,
-    because it is not mature enough. For example built-in functions
-    are not defined.
-*)
-
-(** From https://solidity.readthedocs.io/en/latest/assembly.html
-    ethereum Revision cc4d30a7
-
-AssemblyBlock = '{' AssemblyItem* '}'
-AssemblyItem =
-    Identifier |
-    AssemblyBlock |
-    AssemblyExpression |
-    AssemblyLocalDefinition |
-    AssemblyAssignment |
-    AssemblyStackAssignment |
-    LabelDefinition |
-    AssemblyIf |
-    AssemblySwitch |
-    AssemblyFunctionDefinition |
-    AssemblyFor |
-    'break' |
-    'continue' |
-    SubAssembly
-AssemblyExpression = AssemblyCall | Identifier | AssemblyLiteral
-AssemblyLiteral = NumberLiteral | StringLiteral | HexLiteral
-Identifier = [a-zA-Z_$] [a-zA-Z_0-9]*
-AssemblyCall = Identifier '(' ( AssemblyExpression ( ',' AssemblyExpression )* )? ')'
-AssemblyLocalDefinition = 'let' IdentifierOrList ( ':=' AssemblyExpression )?
-AssemblyAssignment = IdentifierOrList ':=' AssemblyExpression
-IdentifierOrList = Identifier | '(' IdentifierList ')'
-IdentifierList = Identifier ( ',' Identifier)*
-AssemblyStackAssignment = '=:' Identifier
-LabelDefinition = Identifier ':'
-AssemblyIf = 'if' AssemblyExpression AssemblyBlock
-AssemblySwitch = 'switch' AssemblyExpression AssemblyCase*
-    ( 'default' AssemblyBlock )?
-AssemblyCase = 'case' AssemblyExpression AssemblyBlock
-AssemblyFunctionDefinition = 'function' Identifier '(' IdentifierList? ')'
-    ( '->' '(' IdentifierList ')' )? AssemblyBlock
-AssemblyFor = 'for' ( AssemblyBlock | AssemblyExpression )
-    AssemblyExpression ( AssemblyBlock | AssemblyExpression ) AssemblyBlock
-SubAssembly = 'assembly' Identifier AssemblyBlock
-NumberLiteral = HexNumber | DecimalNumber
-HexLiteral = 'hex' ('"' ([0-9a-fA-F]{2})* '"' | '\'' ([0-9a-fA-F]{2})* '\'')
-StringLiteral = '"' ([^"\r\n\\] | '\\' .)* '"'
-HexNumber = '0x' [0-9a-fA-F]+
-DecimalNumber = [0-9]+
-
-*)
+(** Printer for extracted Evm code *)
 
 open Compile
 open Ident
@@ -1046,7 +995,7 @@ let print_human fmt = function
     let buf = Buffer.create 100 in
     List.iter (pp_ascii buf) l;
     Format.pp_print_string fmt (Buffer.contents buf);
-    Format.pp_flush_formatter fmt
+    Format.pp_print_flush fmt ()
 
 
 end
@@ -2896,17 +2845,17 @@ let ng suffix ?fname m =
   let path     = m.mod_theory.th_path in
   (module_name ?fname path mod_name) ^ suffix
 
-let file_gen = ng ".yul"
+let file_gen = ng ".evm"
 
 open Pdriver
 
 let yul_printer =
-  { desc_only_flat      = "printer for YUL code";
+  { desc_only_flat      = "printer for EVM code";
     file_gen_only_flat  = file_gen;
     decls_printer_only_flat = print_decls;
   }
 
-let () = Pdriver.register_printer_only_flat "yul" yul_printer
+let () = Pdriver.register_printer_only_flat "evm" yul_printer
 
 
 (**

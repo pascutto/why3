@@ -4,7 +4,7 @@
      (modules
         ity expr pdecl eval_match typeinv vc pmodule dexpr
         pinterp mltree compile mlinterp pdriver cprinter ml_printer
-        ocaml_printer cakeml_printer yul_printer
+        ocaml_printer cakeml_printer evm_printer
      )
      (flags -open Why3_util -open Why3_core -open Why3_driver -w A-4-9-41-44-45-50-52@5@8@48)
      (libraries why3.util why3.core why3.driver num unix cryptokit)
