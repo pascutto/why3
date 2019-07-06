@@ -22,3 +22,102 @@ module Gas
                 gas + 3 * alloc + div (alloc*2) 512
 
 end
+
+module ArrayUInt32
+
+  use int.Int
+  use mach.int.UInt32
+  use seq.Seq
+  use ref.Ref
+  use Gas as Gas
+
+  type array 'a = private {
+    mutable ghost elts : seq 'a;
+                length : uint32;
+  } invariant { 0 <= length = Seq.length elts }
+
+  meta coercion function elts
+
+  val ([]) (a: array 'a) (i: uint32) : 'a
+    requires { [@expl:index in array bounds] 0 <= i < a.length }
+    ensures  { result = a[i] }
+
+  val ([]<-) (a: array 'a) (i: uint32) (v: 'a) : unit writes {a}
+    requires { [@expl:index in array bounds] 0 <= i < a.length }
+    ensures  { a.elts = (old a.elts)[i <- v] }
+
+  (** unsafe get/set operations with no precondition *)
+
+  exception OutOfBounds
+
+  let defensive_get (a: array 'a) (i: uint32)
+    ensures { 0 <= i < a.length }
+    ensures { result = a[i] }
+    raises  { OutOfBounds -> i < 0 \/ i >= a.length }
+  = if i < 0 || i >= length a then raise OutOfBounds;
+    a[i]
+
+  let defensive_set (a: array 'a) (i: uint32) (v: 'a)
+    ensures { 0 <= i < a.length }
+    ensures { a.elts = (old a.elts)[i <- v] }
+    raises  { OutOfBounds -> (i < 0 \/ i >= a.length) /\ a = old a }
+  = if i < 0 || i >= length a then raise OutOfBounds;
+    a[i] <- v
+
+  val make (n: uint32) : array 'a
+    requires { [@expl:array creation size] n >= 0 }
+    ensures  { result.length = n }
+    ensures { !Gas.alloc = old !Gas.alloc + n }
+    writes { Gas.alloc }
+
+end
+
+
+module ArrayUInt64
+
+  use int.Int
+  use mach.int.UInt64
+  use seq.Seq
+  use ref.Ref
+  use Gas as Gas
+
+  type array 'a = private {
+    mutable ghost elts : seq 'a;
+                length : uint64;
+  } invariant { 0 <= length = Seq.length elts }
+
+  meta coercion function elts
+
+  val ([]) (a: array 'a) (i: uint64) : 'a
+    requires { [@expl:index in array bounds] 0 <= i < a.length }
+    ensures  { result = a[i] }
+
+  val ([]<-) (a: array 'a) (i: uint64) (v: 'a) : unit writes {a}
+    requires { [@expl:index in array bounds] 0 <= i < a.length }
+    ensures  { a.elts = (old a.elts)[i <- v] }
+
+  (** unsafe get/set operations with no precondition *)
+
+  exception OutOfBounds
+
+  let defensive_get (a: array 'a) (i: uint64)
+    ensures { 0 <= i < a.length }
+    ensures { result = a[i] }
+    raises  { OutOfBounds -> i < 0 \/ i >= a.length }
+  = if i < 0 || i >= length a then raise OutOfBounds;
+    a[i]
+
+  let defensive_set (a: array 'a) (i: uint64) (v: 'a)
+    ensures { 0 <= i < a.length }
+    ensures { a.elts = (old a.elts)[i <- v] }
+    raises  { OutOfBounds -> (i < 0 \/ i >= a.length) /\ a = old a }
+  = if i < 0 || i >= length a then raise OutOfBounds;
+    a[i] <- v
+
+  val make (n: uint64) : array 'a
+    requires { [@expl:array creation size] n >= 0 }
+    ensures  { result.length = n }
+    ensures { !Gas.alloc = old !Gas.alloc + n }
+    writes { Gas.alloc }
+
+end

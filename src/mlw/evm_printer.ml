@@ -1160,7 +1160,7 @@ module EVMSimple = struct
    | REVERT
    | INVALID
    | SELFDESTRUCT
-   | ALLOCATE of label * label * BigInt.t
+   | ALLOCATE of label * label * BigInt.t option (** None dynamic size *)
 
   let get_args_ret instr =
     let get_args_ret asm =
@@ -1311,7 +1311,8 @@ module EVMSimple = struct
     | INVALID -> get_args_ret EVM.INVALID
     | SELFDESTRUCT -> get_args_ret EVM.SELFDESTRUCT
     | ADDGAS _ -> 0,0
-    | ALLOCATE (_,_,_) -> 0,1
+    | ALLOCATE (_,_,Some _) -> 0,1
+    | ALLOCATE (_,_,None) -> 1,1
 
   let get_name instr =
     let aux asm =
@@ -1593,7 +1594,7 @@ module EVMSimple = struct
     let allocate_code label_ret label_call size  =
       [
         PUSHLABEL label_ret;
-        num_to_push size;
+        (match size with | Some size -> num_to_push size | None -> SWAP1);
         JUMP label_call;
         JUMPDEST label_ret]
 
@@ -1746,115 +1747,6 @@ module EVMSimple = struct
    | ALLOCATE(label_ret,label_call,size) ->
       List.concat (List.map to_evm (allocate_code label_ret label_call size))
 
-  let of_json = function
-   | Json_base.String "STOP" -> STOP
-   | Json_base.String "ADD" -> ADD
-   | Json_base.String "SUB" -> SUB
-   | Json_base.String "MUL" -> MUL
-   | Json_base.String "DIV" -> DIV
-   | Json_base.String "SDIV" -> SDIV
-   | Json_base.String "MOD" -> MOD
-   | Json_base.String "SMOD" -> SMOD
-   | Json_base.String "EXP" -> EXP
-   | Json_base.String "NOT" -> NOT
-   | Json_base.String "LT" -> LT
-   | Json_base.String "GT" -> GT
-   | Json_base.String "SLT" -> SLT
-   | Json_base.String "SGT" -> SGT
-   | Json_base.String "EQ" -> EQ
-   | Json_base.String "ISZERO" -> ISZERO
-   | Json_base.String "AND" -> AND
-   | Json_base.String "OR" -> OR
-   | Json_base.String "XOR" -> XOR
-   | Json_base.String "BYTE" -> BYTE
-   | Json_base.String "SHL" -> SHL
-   | Json_base.String "SHR" -> SHR
-   | Json_base.String "SAR" -> SAR
-   | Json_base.String "ADDMOD" -> ADDMOD
-   | Json_base.String "MULMOD" -> MULMOD
-   | Json_base.String "SIGNEXTEND" -> SIGNEXTEND
-   | Json_base.String "KECCAK256" -> KECCAK256
-   | Json_base.String "ADDRESS" -> ADDRESS
-   | Json_base.String "BALANCE" -> BALANCE
-   | Json_base.String "ORIGIN" -> ORIGIN
-   | Json_base.String "CALLER" -> CALLER
-   | Json_base.String "CALLVALUE" -> CALLVALUE
-   | Json_base.String "CALLDATALOAD" -> CALLDATALOAD
-   | Json_base.String "CALLDATASIZE" -> CALLDATASIZE
-   | Json_base.String "CALLDATACOPY" -> CALLDATACOPY
-   | Json_base.String "CODESIZE" -> CODESIZE
-   | Json_base.String "CODECOPY" -> CODECOPY
-   | Json_base.String "GASPRICE" -> GASPRICE
-   | Json_base.String "EXTCODESIZE" -> EXTCODESIZE
-   | Json_base.String "EXTCODECOPY" -> EXTCODECOPY
-   | Json_base.String "RETURNDATASIZE" -> RETURNDATASIZE
-   | Json_base.String "RETURNDATACOPY" -> RETURNDATACOPY
-   | Json_base.String "EXTCODEHASH" -> EXTCODEHASH
-   | Json_base.String "BLOCKHASH" -> BLOCKHASH
-   | Json_base.String "COINBASE" -> COINBASE
-   | Json_base.String "TIMESTAMP" -> TIMESTAMP
-   | Json_base.String "NUMBER" -> NUMBER
-   | Json_base.String "DIFFICULTY" -> DIFFICULTY
-   | Json_base.String "GASLIMIT" -> GASLIMIT
-   | Json_base.String "POP" -> POP
-   | Json_base.String "MLOAD" -> MLOAD
-   | Json_base.String "MSTORE" -> MSTORE
-   | Json_base.String "MSTORE8" -> MSTORE8
-   | Json_base.String "SLOAD" -> SLOAD
-   | Json_base.String "SSTORE" -> SSTORE
-   | Json_base.String "PC" -> PC
-   | Json_base.String "MSIZE" -> MSIZE
-   | Json_base.String "GAS" -> GAS
-   | Json_base.List [Json_base.String "PUSH1"; Json_base.Int x] -> (PUSH1 (BigInt.of_int x))
-   | Json_base.String "DUP1" -> DUP1
-   | Json_base.String "DUP2" -> DUP2
-   | Json_base.String "DUP3" -> DUP3
-   | Json_base.String "DUP4" -> DUP4
-   | Json_base.String "DUP5" -> DUP5
-   | Json_base.String "DUP6" -> DUP6
-   | Json_base.String "DUP7" -> DUP7
-   | Json_base.String "DUP8" -> DUP8
-   | Json_base.String "DUP9" -> DUP9
-   | Json_base.String "DUP10" -> DUP10
-   | Json_base.String "DUP11" -> DUP11
-   | Json_base.String "DUP12" -> DUP12
-   | Json_base.String "DUP13" -> DUP13
-   | Json_base.String "DUP14" -> DUP14
-   | Json_base.String "DUP15" -> DUP15
-   | Json_base.String "DUP16" -> DUP16
-   | Json_base.String "SWAP1" -> SWAP1
-   | Json_base.String "SWAP2" -> SWAP2
-   | Json_base.String "SWAP3" -> SWAP3
-   | Json_base.String "SWAP4" -> SWAP4
-   | Json_base.String "SWAP5" -> SWAP5
-   | Json_base.String "SWAP6" -> SWAP6
-   | Json_base.String "SWAP7" -> SWAP7
-   | Json_base.String "SWAP8" -> SWAP8
-   | Json_base.String "SWAP9" -> SWAP9
-   | Json_base.String "SWAP10" -> SWAP10
-   | Json_base.String "SWAP11" -> SWAP11
-   | Json_base.String "SWAP12" -> SWAP12
-   | Json_base.String "SWAP13" -> SWAP13
-   | Json_base.String "SWAP14" -> SWAP14
-   | Json_base.String "SWAP15" -> SWAP15
-   | Json_base.String "SWAP16" -> SWAP16
-   | Json_base.String "LOG0" -> LOG0
-   | Json_base.String "LOG1" -> LOG1
-   | Json_base.String "LOG2" -> LOG2
-   | Json_base.String "LOG3" -> LOG3
-   | Json_base.String "LOG4" -> LOG4
-   | Json_base.String "CREATE" -> CREATE
-   | Json_base.String "CALL" -> CALL
-   | Json_base.String "CALLCODE" -> CALLCODE
-   | Json_base.String "RETURN" -> RETURN
-   | Json_base.String "DELEGATECALL" -> DELEGATECALL
-   | Json_base.String "STATICCALL" -> STATICCALL
-   | Json_base.String "CREATE2" -> CREATE2
-   | Json_base.String "REVERT" -> REVERT
-   | Json_base.String "INVALID" -> INVALID
-   | Json_base.String "SELFDESTRUCT" -> SELFDESTRUCT
-   | _ -> invalid_arg "incorrect json"
-
   type asm = {
     mutable codes: instruction list;
   }
@@ -1977,9 +1869,130 @@ module EVMSimple = struct
     let allocate stack size =
       let return = new_label ~follow:false "allocate_call" in
       auto stack [
-        ALLOCATE(return,label,BigInt.of_int size)
+        ALLOCATE(return,label,Some (BigInt.of_int size))
       ]
+
+    let allocate_dyn stack =
+      let return = new_label ~follow:false "allocate_call" in
+      auto stack [
+        ALLOCATE(return,label,None)
+      ]
+
   end
+
+
+  let add_auto_json fmt = function
+   | Json_base.String "STOP" -> add_auto fmt STOP
+   | Json_base.String "ADD" -> add_auto fmt ADD
+   | Json_base.String "SUB" -> add_auto fmt SUB
+   | Json_base.String "MUL" -> add_auto fmt MUL
+   | Json_base.String "DIV" -> add_auto fmt DIV
+   | Json_base.String "SDIV" -> add_auto fmt SDIV
+   | Json_base.String "MOD" -> add_auto fmt MOD
+   | Json_base.String "SMOD" -> add_auto fmt SMOD
+   | Json_base.String "EXP" -> add_auto fmt EXP
+   | Json_base.String "NOT" -> add_auto fmt NOT
+   | Json_base.String "LT" -> add_auto fmt LT
+   | Json_base.String "GT" -> add_auto fmt GT
+   | Json_base.String "SLT" -> add_auto fmt SLT
+   | Json_base.String "SGT" -> add_auto fmt SGT
+   | Json_base.String "EQ" -> add_auto fmt EQ
+   | Json_base.String "ISZERO" -> add_auto fmt ISZERO
+   | Json_base.String "AND" -> add_auto fmt AND
+   | Json_base.String "OR" -> add_auto fmt OR
+   | Json_base.String "XOR" -> add_auto fmt XOR
+   | Json_base.String "BYTE" -> add_auto fmt BYTE
+   | Json_base.String "SHL" -> add_auto fmt SHL
+   | Json_base.String "SHR" -> add_auto fmt SHR
+   | Json_base.String "SAR" -> add_auto fmt SAR
+   | Json_base.String "ADDMOD" -> add_auto fmt ADDMOD
+   | Json_base.String "MULMOD" -> add_auto fmt MULMOD
+   | Json_base.String "SIGNEXTEND" -> add_auto fmt SIGNEXTEND
+   | Json_base.String "KECCAK256" -> add_auto fmt KECCAK256
+   | Json_base.String "ADDRESS" -> add_auto fmt ADDRESS
+   | Json_base.String "BALANCE" -> add_auto fmt BALANCE
+   | Json_base.String "ORIGIN" -> add_auto fmt ORIGIN
+   | Json_base.String "CALLER" -> add_auto fmt CALLER
+   | Json_base.String "CALLVALUE" -> add_auto fmt CALLVALUE
+   | Json_base.String "CALLDATALOAD" -> add_auto fmt CALLDATALOAD
+   | Json_base.String "CALLDATASIZE" -> add_auto fmt CALLDATASIZE
+   | Json_base.String "CALLDATACOPY" -> add_auto fmt CALLDATACOPY
+   | Json_base.String "CODESIZE" -> add_auto fmt CODESIZE
+   | Json_base.String "CODECOPY" -> add_auto fmt CODECOPY
+   | Json_base.String "GASPRICE" -> add_auto fmt GASPRICE
+   | Json_base.String "EXTCODESIZE" -> add_auto fmt EXTCODESIZE
+   | Json_base.String "EXTCODECOPY" -> add_auto fmt EXTCODECOPY
+   | Json_base.String "RETURNDATASIZE" -> add_auto fmt RETURNDATASIZE
+   | Json_base.String "RETURNDATACOPY" -> add_auto fmt RETURNDATACOPY
+   | Json_base.String "EXTCODEHASH" -> add_auto fmt EXTCODEHASH
+   | Json_base.String "BLOCKHASH" -> add_auto fmt BLOCKHASH
+   | Json_base.String "COINBASE" -> add_auto fmt COINBASE
+   | Json_base.String "TIMESTAMP" -> add_auto fmt TIMESTAMP
+   | Json_base.String "NUMBER" -> add_auto fmt NUMBER
+   | Json_base.String "DIFFICULTY" -> add_auto fmt DIFFICULTY
+   | Json_base.String "GASLIMIT" -> add_auto fmt GASLIMIT
+   | Json_base.String "POP" -> add_auto fmt POP
+   | Json_base.String "MLOAD" -> add_auto fmt MLOAD
+   | Json_base.String "MSTORE" -> add_auto fmt MSTORE
+   | Json_base.String "MSTORE8" -> add_auto fmt MSTORE8
+   | Json_base.String "SLOAD" -> add_auto fmt SLOAD
+   | Json_base.String "SSTORE" -> add_auto fmt SSTORE
+   | Json_base.String "PC" -> add_auto fmt PC
+   | Json_base.String "MSIZE" -> add_auto fmt MSIZE
+   | Json_base.String "GAS" -> add_auto fmt GAS
+   | Json_base.List [Json_base.String "PUSH1"; Json_base.Int x] -> add_auto fmt (PUSH1 (BigInt.of_int x))
+   | Json_base.String "DUP1" -> add_auto fmt DUP1
+   | Json_base.String "DUP2" -> add_auto fmt DUP2
+   | Json_base.String "DUP3" -> add_auto fmt DUP3
+   | Json_base.String "DUP4" -> add_auto fmt DUP4
+   | Json_base.String "DUP5" -> add_auto fmt DUP5
+   | Json_base.String "DUP6" -> add_auto fmt DUP6
+   | Json_base.String "DUP7" -> add_auto fmt DUP7
+   | Json_base.String "DUP8" -> add_auto fmt DUP8
+   | Json_base.String "DUP9" -> add_auto fmt DUP9
+   | Json_base.String "DUP10" -> add_auto fmt DUP10
+   | Json_base.String "DUP11" -> add_auto fmt DUP11
+   | Json_base.String "DUP12" -> add_auto fmt DUP12
+   | Json_base.String "DUP13" -> add_auto fmt DUP13
+   | Json_base.String "DUP14" -> add_auto fmt DUP14
+   | Json_base.String "DUP15" -> add_auto fmt DUP15
+   | Json_base.String "DUP16" -> add_auto fmt DUP16
+   | Json_base.String "SWAP1" -> add_auto fmt SWAP1
+   | Json_base.String "SWAP2" -> add_auto fmt SWAP2
+   | Json_base.String "SWAP3" -> add_auto fmt SWAP3
+   | Json_base.String "SWAP4" -> add_auto fmt SWAP4
+   | Json_base.String "SWAP5" -> add_auto fmt SWAP5
+   | Json_base.String "SWAP6" -> add_auto fmt SWAP6
+   | Json_base.String "SWAP7" -> add_auto fmt SWAP7
+   | Json_base.String "SWAP8" -> add_auto fmt SWAP8
+   | Json_base.String "SWAP9" -> add_auto fmt SWAP9
+   | Json_base.String "SWAP10" -> add_auto fmt SWAP10
+   | Json_base.String "SWAP11" -> add_auto fmt SWAP11
+   | Json_base.String "SWAP12" -> add_auto fmt SWAP12
+   | Json_base.String "SWAP13" -> add_auto fmt SWAP13
+   | Json_base.String "SWAP14" -> add_auto fmt SWAP14
+   | Json_base.String "SWAP15" -> add_auto fmt SWAP15
+   | Json_base.String "SWAP16" -> add_auto fmt SWAP16
+   | Json_base.String "LOG0" -> add_auto fmt LOG0
+   | Json_base.String "LOG1" -> add_auto fmt LOG1
+   | Json_base.String "LOG2" -> add_auto fmt LOG2
+   | Json_base.String "LOG3" -> add_auto fmt LOG3
+   | Json_base.String "LOG4" -> add_auto fmt LOG4
+   | Json_base.String "CREATE" -> add_auto fmt CREATE
+   | Json_base.String "CALL" -> add_auto fmt CALL
+   | Json_base.String "CALLCODE" -> add_auto fmt CALLCODE
+   | Json_base.String "RETURN" -> add_auto fmt RETURN
+   | Json_base.String "DELEGATECALL" -> add_auto fmt DELEGATECALL
+   | Json_base.String "STATICCALL" -> add_auto fmt STATICCALL
+   | Json_base.String "CREATE2" -> add_auto fmt CREATE2
+   | Json_base.String "REVERT" -> add_auto fmt REVERT
+   | Json_base.String "INVALID" -> add_auto fmt INVALID
+   | Json_base.String "SELFDESTRUCT" -> add_auto fmt SELFDESTRUCT
+   | Json_base.List [Json_base.String "ALLOCATE"; Json_base.Int x] ->
+       Allocate.allocate fmt x
+   | Json_base.String "ALLOCATE_DYN" ->
+       Allocate.allocate_dyn fmt
+   | _ -> invalid_arg "incorrect json"
 
   let copy_stack stack = { stack with bottom = stack.bottom }
 
@@ -2032,9 +2045,12 @@ module EVMSimple = struct
           report "alloc" i alloc
       | ADDGAS(Addgas(g,a)) ->
           count i (BigInt.sub gas g) (BigInt.sub alloc a) (pc+1)
-      | (ALLOCATE(_,_,s) as instr) ->
+      | (ALLOCATE(_,_,Some s) as instr) ->
           let cost = (EVM.costl (to_evm instr)) in
           count i (BigInt.add (BigInt.add gas Allocate.cost) cost) (BigInt.add alloc s) (pc+1)
+      | (ALLOCATE(_,_,None) as instr) ->
+          let cost = (EVM.costl (to_evm instr)) in
+          count i (BigInt.add (BigInt.add gas Allocate.cost) cost) alloc (pc+1)
       | (REVERT | STOP as instr) ->
           let cost = (EVM.costl (to_evm instr)) in
           let gas = (BigInt.add gas cost) in
@@ -2159,8 +2175,8 @@ module Print = struct
     match query_syntax info.info_syn rs.rs_name, pvl with
     | Some "add_gas", [{e_node=Econst g};{e_node=Econst a}] ->
         EVMSimple.add_gas fmt
-          (Number.compute_int_constant g)
-          (Number.compute_int_constant a)
+          g.Number.il_int
+          a.Number.il_int
     | Some "add_gas", _ ->
         invalid_arg "add_gas must have two constants as parameter"
     | Some "get_gas", [_] ->
@@ -2169,9 +2185,8 @@ module Print = struct
         invalid_arg "get_gas must have unit as parameter"
     | Some s, _ (* when is_local_id info rs.rs_name  *) ->
         let json = Json_base.get_list (Json_lexer.parse_json_object s) in
-        let l = List.map EVMSimple.of_json json in
         print_apply_args info fmt pvl;
-        List.iter (EVMSimple.add_auto fmt) l
+        List.iter (EVMSimple.add_auto_json fmt) json
     (* | None, [t] when is_rs_tuple rs -> *)
     (*     fprintf fmt "@[%a@]" (print_expr info) t *)
     (* | None, tl when is_rs_tuple rs -> *)
@@ -2248,8 +2263,14 @@ module Print = struct
         let tl = List.filter (fun e -> not (Mltree.is_unit e.e_ity)) tl in
         print_apply_args info fmt tl;
         Debug.dprintf debug "CALL %s@." rs.rs_name.Ident.id_string;
+        let call =
+          match Expr.Mrs.find_opt rs fmt.EVMSimple.call_labels with
+          | None -> invalid_arg (Format.sprintf "Unknown function: %s"
+                                   rs.rs_name.Ident.id_string)
+          | Some call -> call
+        in
         EVMSimple.call fmt
-          ~call:(Expr.Mrs.find rs fmt.EVMSimple.call_labels)
+          ~call
           ~return
           ~args:(List.length tl)
           ~ret:1 (*todo unit *)
@@ -2333,10 +2354,14 @@ module Print = struct
             | Some "s64" | Some "u64"
             | Some "s128" | Some "u128"
             | Some "s256" | Some "u256" ->
-                let i = Number.compute_int_constant c in
+                let i = c.Number.il_int in
                 EVMSimple.add_auto fmt (EVMSimple.num_to_push i)
-            | None | Some _  ->
-                invalid_arg "Unknown type"
+            | None ->
+                invalid_arg (Format.sprintf "Unknown type: %s"
+                               (BigInt.to_string c.Number.il_int))
+            | Some s  ->
+                invalid_arg (Format.sprintf "Unknown type: %s (%s)"
+                               (BigInt.to_string c.Number.il_int) s)
           end
       | Evar pvs when Ity.ity_equal pvs.pv_ity Ity.ity_unit ->
           ()
@@ -2749,6 +2774,8 @@ let print_decls pargs fmt l =
       List.fold_left BigInt.add BigInt.zero
         [f 0;f 1;f 2 ;f 3]
     in
+    Format.eprintf "For function %s hashname %x@."
+      rs.rs_name.Ident.id_string (BigInt.to_int hashname);
     EVMSimple.auto stack
       EVMSimple.[DUP1;
                  PUSH4 hashname;

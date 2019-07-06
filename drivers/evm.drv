@@ -27,14 +27,14 @@ theory bool.Bool
 end
 
 module Ref
-  syntax type     ref      "[]"
+  syntax type     ref      ""
   syntax function contents "[]"
-  syntax val      ref      "[]"
+  syntax val      ref      "[[\"ALLOCATE\",1],\"SWAP1\",\"DUP2\",\"MSTORE\"]"
 end
 
 module ref.Ref
-  syntax val      (!_)     "[]"
-  syntax val      (:=)     "[]"
+  syntax val      (!_)     "[\"MLOAD\"]"
+  syntax val      (:=)     "[\"MSTORE\"]"
 end
 
 module ref.Refint
@@ -181,4 +181,21 @@ module mach.evm.Gas
 
   syntax val add_gas  "add_gas"
   syntax val get_remaining_gas  "get_gas"
+end
+
+
+module mach.evm.ArrayUInt32
+
+  syntax val ([])          "[\"SWAP1\",[\"PUSH1\",32],\"MUL\",\"ADD\",\"MLOAD\"]"
+  syntax val ([]<-)        "[\"SWAP1\",[\"PUSH1\",32],\"MUL\",\"ADD\",\"MSTORE\"]"
+
+  syntax val make          "[\"ALLOCATE_DYN\"]"
+end
+
+module mach.evm.ArrayUInt64
+
+  syntax val ([])          "[\"SWAP1\",[\"PUSH1\",32],\"MUL\",\"ADD\",\"MLOAD\"]"
+  syntax val ([]<-)        "[\"SWAP1\",[\"PUSH1\",32],\"MUL\",\"ADD\",\"MSTORE\"]"
+
+  syntax val make          "[\"ALLOCATE_DYN\"]"
 end

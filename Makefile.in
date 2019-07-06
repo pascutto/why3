@@ -1382,7 +1382,7 @@ endif
 
 install-isabelle: $(GENERATED_PREFIX_ISABELLE)/last_build
 
-install_local:: install-isabelle
+####TODO install_local:: install-isabelle
 install:: install-isabelle
 
 clean::
@@ -1390,7 +1390,7 @@ clean::
 
 endif
 
-all: drivers/isabelle-realizations.aux
+####TODO all: drivers/isabelle-realizations.aux
 
 install-data::
 	$(INSTALL_DATA) drivers/isabelle-realizations.aux $(DATADIR)/why3/drivers/
