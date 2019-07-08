@@ -185,11 +185,13 @@ end
 
 
 module mach.evm.ArrayUInt32
+(** the pointer is after the stored length *)
 
   syntax val ([])          "[\"SWAP1\",[\"PUSH1\",32],\"MUL\",\"ADD\",\"MLOAD\"]"
   syntax val ([]<-)        "[\"SWAP1\",[\"PUSH1\",32],\"MUL\",\"ADD\",\"MSTORE\"]"
 
-  syntax val make          "[\"ALLOCATE_DYN\"]"
+  syntax val length        "[[\"PUSH1\",32],\"SWAP1\",\"SUB\",\"MLOAD\"]"
+  syntax val make          "[\"DUP1\",[\"PUSH1\",1],\"ADD\",[\"PUSH1\",32],\"MUL\",\"ALLOCATE_DYN\",\"SWAP1\",\"DUP2\",\"MSTORE\",[\"PUSH1\",32],\"ADD\"]"
 end
 
 module mach.evm.ArrayUInt64
@@ -197,5 +199,6 @@ module mach.evm.ArrayUInt64
   syntax val ([])          "[\"SWAP1\",[\"PUSH1\",32],\"MUL\",\"ADD\",\"MLOAD\"]"
   syntax val ([]<-)        "[\"SWAP1\",[\"PUSH1\",32],\"MUL\",\"ADD\",\"MSTORE\"]"
 
-  syntax val make          "[\"ALLOCATE_DYN\"]"
+  syntax val length        "[[\"PUSH1\",1],\"SWAP1\",\"SUB\",\"MLOAD\"]"
+  syntax val make          "[\"DUP1\",[\"PUSH1\",1],\"ADD\",\"ALLOCATE_DYN\",\"DUP1\",\"MSTORE\",[\"PUSH1\",1],\"ADD\"]"
 end

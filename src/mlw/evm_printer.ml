@@ -2035,7 +2035,7 @@ module EVMSimple = struct
         i (BigInt.to_string (BigInt.sub BigInt.zero gas))
 
   let gaz_checking l =
-    (* TODO loop handling, let rec naturally handled *)
+    (* TODO let rec naturally handled *)
     let asmmap = Array.of_list l in
     let rec count i gas alloc pc (** in fact index *) =
       Debug.dprintf debug "%i %i: %s %s@." i pc (BigInt.to_string gas) (get_name asmmap.(pc));
@@ -2439,12 +2439,14 @@ module Print = struct
       | Efun (_varl, _e) ->
           invalid_arg "unsupported Efun"
       | Ewhile (e1, e2) ->
-          (** todo addgas handling *)
+          let start, stop = EVMSimple.new_startstop_addgas () in
           let labstart = EVMSimple.new_label ~follow:false "whilestart" in
           let labtest = EVMSimple.new_label ~follow:true  "whiletest" in
           EVMSimple.jump fmt labtest;
           EVMSimple.jumpdest fmt labstart;
+          EVMSimple.add_auto fmt start;
           print_expr info fmt e2;
+          EVMSimple.add_auto fmt stop;
           EVMSimple.jumpdest fmt labtest;
           print_expr info fmt e1;
           EVMSimple.jumpi fmt labstart;
