@@ -43,7 +43,7 @@ let make_ls_defn ls vl t =
   (* build the definition axiom *)
   let hd = t_app ls (List.map t_var vl) t.t_ty in
   let bd = TermTF.t_selecti t_equ t_iff hd t in
-  let fd = check_fvs (t_forall_close vl [] bd) in
+  let fd = check_fvs (t_forall_close vl [[hd]] bd) in
   (* check for unbound type variables *)
   let htv = t_ty_freevars Stv.empty hd in
   let ttv = t_ty_freevars Stv.empty t in

@@ -468,14 +468,15 @@ let create_let_decl ld =
                 t_subst_fmla v t f in
     List.map conv ql in
   let attrs = sattr_w_nce_no in
-  let cty_axiom id cty f axms =
+  let cty_axiom ?trg id cty f axms =
     if t_equal f t_true then axms else
     (* we do not care about aliases for pure symbols *)
     let add_old o v m = Mvs.add o.pv_vs (t_var v.pv_vs) m in
     let sbs = Mpv.fold add_old cty.cty_oldies Mvs.empty in
     let f = List.fold_right t_implies cty.cty_pre (t_subst sbs f) in
     let args = List.map (fun v -> v.pv_vs) cty.cty_args in
-    let f = t_forall_close_simp args [] f in
+    let trg = match trg with None -> [] | Some trg -> [[trg]] in
+    let f = t_forall_close_simp args trg f in
     let f = t_forall_close (Mvs.keys (t_vars f)) [] f in
     create_prop_decl Paxiom (create_prsymbol id) f :: axms in
   let add_rs sm s ({c_cty = cty} as c) (abst,defn,axms) =
@@ -513,14 +514,14 @@ let create_let_decl ld =
             | Some f when cty.cty_pre = [] ->
                 abst, (ls, vl, f) :: defn, axms
             | Some f ->
-                let f = t_insert hd f and nm = id.id_string ^ "_def" in
-                let axms = cty_axiom (id_derive ~attrs nm id) cty f axms in
+                let f = t_insert hd f and nm = id.id_string ^ "_defa" in
+                let axms = cty_axiom ~trg:hd (id_derive ~attrs nm id) cty f axms in
                 create_param_decl ls :: abst, defn, axms
             | None when cty.cty_post = [] ->
                 let axms = match post_of_expr hd e with
                   | Some f ->
-                      let nm = id.id_string ^ "_def" in
-                      cty_axiom (id_derive ~attrs nm id) cty f axms
+                      let nm = id.id_string ^ "_defb" in
+                      cty_axiom ~trg:hd (id_derive ~attrs nm id) cty f axms
                   | None -> axms in
                 create_param_decl ls :: abst, defn, axms
             | None ->
@@ -544,10 +545,10 @@ let create_let_decl ld =
     try [create_logic_decl dl] with Decl.NoTerminationProof _ ->
     let abst = List.map (fun (s,_) -> create_param_decl s) dl in
     let mk_ax ({ls_name = id} as s, vl, t) =
-      let nm = id.id_string ^ "_def" in
+      let nm = id.id_string ^ "_defc" in
       let pr = create_prsymbol (id_derive ~attrs nm id) in
       let hd = t_app s (List.map t_var vl) t.t_ty in
-      let ax = t_forall_close vl [] (t_insert hd t) in
+      let ax = t_forall_close vl [[hd]] (t_insert hd t) in
       create_prop_decl Paxiom pr ax in
     abst @ List.map mk_ax defn in
   mk_decl (PDlet ld) (abst @ defn @ axms)
