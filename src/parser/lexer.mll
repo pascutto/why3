@@ -131,7 +131,7 @@ let op_char_34 = op_char_3 | op_char_4
 let op_char_234 = op_char_2 | op_char_34
 let op_char_1234 = op_char_1 | op_char_234
 
-let op_char_pref = ['!' '?']
+let op_char_pref = ['!' '?' '#']
 
 rule token = parse
   | "[##" space* ("\"" ([^ '\010' '\013' '"' ]* as file) "\"")?
