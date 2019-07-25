@@ -54,8 +54,8 @@ module String
   val create (len:int) : string
     requires { len >= 0 } ensures { length result = len }
 
-  function ([]) (s: string) (i: int) : char = M.([]) s.chars i
-  function get  (s: string) (i: int) : char = M.([]) s.chars i
+  function ([]) (s: string) (i: int) : char = M.get s.chars i
+  function get  (s: string) (i: int) : char = M.get s.chars i
 
   val make (len:int) (c:char) : string
     requires { len >= 0 }
@@ -70,10 +70,10 @@ module String
 
   val set (s:string) (i:int) (v:char) : unit writes {s}
     requires { 0 <= i < length s }
-    ensures  { s.chars = old M.(s.chars[i <- v]) }
+    ensures  { s.chars = old M.(set s.chars i v) }
 
   val unsafe_set (s:string) (i:int) (v:char) : unit writes {s}
-    ensures { s.chars = old M.(s.chars[i <- v]) }
+    ensures { s.chars = old M.(set s.chars i v) }
 
   val copy (s:string) : string
     ensures { length result = length s }
@@ -126,15 +126,15 @@ module Buffer
   val add_char (b:t) (c:char) : unit writes {b}
     ensures { length b = old (length b) + 1 }
     ensures { forall i: int.
-      0 <= i < length b -> b.chars[i] = old b.chars[i] }
-    ensures { b.chars[length b - 1] = c }
+      0 <= i < length b -> b.chars i = old b.chars i }
+    ensures { b.chars (length b - 1) = c }
 
   val add_string (b:t) (s:string) : unit writes {b}
     ensures { length b = old (length b) + S.length s }
     ensures { forall i: int.
-      0 <= i < old (length b) -> b.chars[i] = old b.chars[i] }
+      0 <= i < old (length b) -> b.chars i = old b.chars i }
     ensures { forall i: int.
-      0 <= i < S.length s -> b.chars[old (length b) + i] = S.get s i }
+      0 <= i < S.length s -> b.chars (old (length b) + i) = S.get s i }
 
   (*** TODO
      - add_substring

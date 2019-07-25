@@ -137,8 +137,11 @@ end
 
 theory map.Map
   syntax function get "<app>%1%2</app>"
-  syntax function ([]) "<app>%1%2</app>"
   syntax function set "<app><const name=\"Fun.fun_upd\"/>%1%2%3</app>"
+end
+
+theory map.MapBrackets
+  syntax function ([])   "<app>%1%2</app>"
   syntax function ([<-]) "<app><const name=\"Fun.fun_upd\"/>%1%2%3</app>"
 end
 

@@ -163,4 +163,12 @@ theory map.Map
   meta "encoding:lskept" function set
 end
 
+theory map.MapBrackets
+  syntax function ([])   "(%1[%2])"
+  syntax function ([<-]) "(%1 WITH [%2] := %3)"
+
+  meta "encoding:lskept" function ([])
+  meta "encoding:lskept" function ([<-])
+end
+
 import "discrimination.gen"

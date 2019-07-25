@@ -30,7 +30,7 @@ module Set
   meta "material_type_arg" type set, 0
 
   (** membership *)
-  predicate mem (x: 'a) (s: set 'a) = s[x]
+  predicate mem (x: 'a) (s: set 'a) = s x
 
   (** equality *)
   predicate (==) (s1 s2: set 'a) = forall x: 'a. mem x s1 <-> mem x s2
@@ -61,7 +61,7 @@ module Set
   let constant all: set 'a = const true
 
   (** addition *)
-  function add (x: 'a) (s: set 'a): set 'a = s[x <- true]
+  function add (x: 'a) (s: set 'a): set 'a = set s x true
 
   function singleton (x: 'a): set 'a = add x empty
 
@@ -69,7 +69,7 @@ module Set
     forall x, y: 'a. mem y (singleton x) -> y = x
 
   (** removal *)
-  function remove (x: 'a) (s: set 'a): set 'a = s[x <- false]
+  function remove (x: 'a) (s: set 'a): set 'a = set s x false
 
   lemma add_remove:
     forall x: 'a, s: set 'a. mem x s -> add x (remove x s) = s

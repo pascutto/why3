@@ -33,5 +33,5 @@ theory Bug
     goal bug: forall i.
         let p = ((PTR i):(p (map t t))) in
         let q = ((PTR i):(p t)) in
-    (load p)[i] = (load q)
+    load p i = load q
 end

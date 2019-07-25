@@ -180,6 +180,14 @@ theory map.Map
   meta "encoding:lskept" function set
 end
 
+theory map.MapBrackets
+  syntax function ([])   "(select %1 %2)"
+  syntax function ([<-]) "(store %1 %2 %3)"
+
+  meta "encoding:lskept" function ([])
+  meta "encoding:lskept" function ([<-])
+end
+
 theory map.Const
   meta "encoding:lskept" function const
 (*  syntax function const "(const[%t0] %1)" *)

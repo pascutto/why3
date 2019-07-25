@@ -144,12 +144,18 @@ end
 
 theory map.Map
   syntax function get    "(%1 %2)"
-  syntax function ([])   "(%1 %2)"
   syntax function set    "(update %1 (%2) %3)"
-  syntax function ([<-]) "(update %1 (%2) %3)"
 
   meta "encoding:lskept" function get
   meta "encoding:lskept" function set
+end
+
+theory map.MapBrackets
+  syntax function ([])   "(%1 %2)"
+  syntax function ([<-]) "(update %1 (%2) %3)"
+
+  meta "encoding:lskept" function ([])
+  meta "encoding:lskept" function ([<-])
 end
 
 theory map.Const

@@ -1,6 +1,6 @@
 module M
 
-  use map.Map
+  use import map.MapBrackets as Map
   use int.Int
 
   type r = {f [@model_trace:.field_f] :int; g:bool}

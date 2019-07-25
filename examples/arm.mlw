@@ -47,9 +47,9 @@ module ARM
 
   (* memory *)
   val mem : ref (map int int)
-  val mem_ldr (a:int) : int ensures { result = !mem[a] }
+  val mem_ldr (a:int) : int ensures { result = !mem a }
   val mem_str (a:int) (v:int) : int writes { mem }
-    ensures { !mem = (old !mem)[a <- v] }
+    ensures { !mem = set (old !mem) a v }
 
   (* data segment *)
   (*
@@ -69,10 +69,10 @@ module ARM
   val pc : ref int (* pc *)
 
   val ldr (r : ref int) (a : int) : unit writes {r}
-    ensures { !r = !mem[a] }
+    ensures { !r = !mem a }
 
   val str (r : ref int) (a : int) : unit writes {mem}
-    ensures { !mem = (old !mem)[a <- !r] }
+    ensures { !mem = set (old !mem) a !r }
 
   (* condition flags *)
   val le : ref bool
@@ -113,10 +113,10 @@ module InsertionSortExample
   predicate separation (fp : int) = a+10 < fp-24
 
   predicate inv (mem: map int int) =
-    mem[a] = 0 /\ forall k:int. 1 <= k <= 10 -> 0 < mem[a + k]
+    mem a = 0 /\ forall k:int. 1 <= k <= 10 -> 0 < mem (a + k)
 
   predicate inv_l2 (mem: map int int) (fp : int) (l4 : int) =
-    2 <= mem[fp - 16] <= 11 /\ l4 = mem[fp-16] - 2 /\ inv mem
+    2 <= mem (fp - 16) <= 11 /\ l4 = mem (fp-16) - 2 /\ inv mem
 
   let path_init_l2 ()
     requires { separation !fp /\ inv !mem }

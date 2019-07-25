@@ -48,8 +48,13 @@ theory map.Map
   meta "encoding:lskept" function get
   meta "encoding:lskept" function set
   meta "encoding:ignore_polymorphism_ls" function get
-  meta "encoding:ignore_polymorphism_ls" function ([])
   meta "encoding:ignore_polymorphism_ls" function set
+end
+
+theory map.MapBrackets
+  meta "encoding:lskept" function ([])
+  meta "encoding:lskept" function ([<-])
+  meta "encoding:ignore_polymorphism_ls" function ([])
   meta "encoding:ignore_polymorphism_ls" function ([<-])
 end
 

@@ -2,7 +2,7 @@ module M
 
   use int.Int
   use ref.Ref
-  use map.Map
+  use import map.MapBrackets as Map
 
   let ghost test_map (ghost x : ref (map int int)) : unit
     ensures { !x[0] <> !x[1] }

@@ -63,6 +63,10 @@ theory map.Map
   syntax function get "(%1 %2)"
 end
 
+theory map.MapBrackets
+  syntax function ([]) "(%1 %2)"
+end
+
 theory int.Int
 
   prelude "

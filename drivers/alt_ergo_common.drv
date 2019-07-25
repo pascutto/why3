@@ -195,3 +195,8 @@ theory map.Map
   syntax function get  "(%1[%2])"
   syntax function set  "(%1[%2 <- %3])"
 end
+
+theory map.MapBrackets
+  syntax function ([])   "(%1[%2])"
+  syntax function ([<-]) "(%1[%2 <- %3])"
+end

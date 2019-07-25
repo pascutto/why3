@@ -24,12 +24,12 @@ module Matrix
   val ghost function update (a: matrix 'a) (r c: int) (v: 'a) : matrix 'a
     ensures  { result.rows = a.rows }
     ensures  { result.columns = a.columns }
-    ensures  { result.elts = a.elts[r <- (a.elts r)[c <- v]] }
+    ensures  { result.elts = Map.set a.elts r (Map.set (a.elts r) c v) }
 
   val set (a: matrix 'a) (r c: int) (v: 'a) : unit
     requires { [@expl:index in matrix bounds] valid_index a r c }
     writes   { a }
-    ensures  { a.elts = (old a.elts)[r <- (old a.elts r)[c <- v]] }
+    ensures  { a.elts = Map.set (old a.elts) r (Map.set (old a.elts r) c v) }
 
   (** unsafe get/set operations with no precondition *)
 
@@ -44,7 +44,7 @@ module Matrix
 
   let defensive_set (a: matrix 'a) (r c: int) (v: 'a) : unit
     ensures { [@expl:index in matrix bounds] valid_index a r c }
-    ensures { a.elts = (old a.elts)[r <- (old a.elts r)[c <- v]] }
+    ensures { a.elts = Map.set (old a.elts) r (Map.set (old a.elts r) c v) }
     raises  { OutOfBounds -> not (valid_index a r c) /\ a = old a }
   = if r < 0 || r >= a.rows || c < 0 || c >= a.columns then raise OutOfBounds;
     set a r c v
