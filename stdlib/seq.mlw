@@ -8,6 +8,7 @@
 
 module Seq
 
+  use map.Map
   use int.Int
 
   (** the polymorphic type of sequences *)
@@ -16,12 +17,10 @@ module Seq
   (** `seq 'a` is an infinite type *)
   meta "infinite_type" type seq
 
-  function length (seq 'a) : int
-
-  function (#_) (s: seq 'a) : int = length s
+  function (#_) (seq 'a) : int
 
   axiom length_nonnegative:
-    forall s: seq 'a. 0 <= length s
+    forall s: seq 'a. 0 <= #s
 
   function get (seq 'a) : int -> 'a
   (** `get s i` is the `i+1`-th element of sequence `s`
@@ -65,15 +64,18 @@ module Seq
       `u[i] = v` and `u[j] = s[j]` otherwise *)
   function set (s: seq 'a) (i: int) (v: 'a) : seq 'a
 
-  axiom set_length:
-    forall s: seq 'a, i, v. #(set s i v) = #s
-  axiom set_value:
-    forall s: seq 'a, i, v. 0 <= i < #s -> (set s i v)[i] = v
-  axiom set_other:
-    forall s: seq 'a, i, v, j. 0 <= j < #s -> j <> i -> (set s i v)[j] = s[j]
-
   function ([<-]) (s: seq 'a) (i: int) (v: 'a) : seq 'a
   = set s i v
+
+  axiom set_length:
+    forall s: seq 'a, i, v. #(set s i v) = #s
+  axiom set_contents:
+    forall s: seq 'a, i, v. 0 <= i < #s ->
+    get (set s i v) = Map.set (get s) i v
+  lemma set_value:
+    forall s: seq 'a, i, v. 0 <= i < #s -> (set s i v)[i] = v
+  lemma set_other:
+    forall s: seq 'a, i, v, j. 0 <= j < #s -> j <> i -> (set s i v)[j] = s[j]
 
   (** singleton sequence *)
   function singleton (v: 'a) : seq 'a
@@ -305,6 +307,7 @@ module OfList
 
 end
 
+(* TODO could be defined as occ x s > 0 *)
 module Mem
 
   use int.Int
@@ -379,9 +382,8 @@ module Sorted
   use Seq
 
   type t
+
   predicate le t t
-  clone relations.TotalPreOrder as TO with
-    type t = t, predicate rel = le, axiom .
 
   predicate sorted_sub (s: seq t) (l u: int) =
     forall i1 i2. l <= i1 <= i2 < u -> le s[i1] s[i2]
@@ -394,25 +396,48 @@ module Sorted
 
   lemma sorted_cons:
     forall x: t, s: seq t.
-      (forall i: int. 0 <= i < #s -> le x s[i]) /\ sorted s <->
-    sorted (cons x s)
+      (forall i. 0 <= i < #s -> le x s[i]) /\ sorted s <->
+      sorted (cons x s)
+
+  lemma sorted_snoc:
+    forall x: t, s: seq t.
+      (forall i. 0 <= i < #s -> le s[i] x) /\ sorted s <->
+      sorted (snoc s x)
+
+  lemma sorted_tail:
+    forall s: seq t. #s > 0 ->
+      (forall i. 1 <= i < #s -> le s[0] s[i]) /\ sorted s[1..] <->
+      sorted s
+
+  lemma sorted_init:
+    forall s: seq t. #s > 0 ->
+      (forall i. 0 <= i < #s - 1 -> le s[i] s[#s - 1]) /\ sorted s[.. #s-1] <->
+      sorted s
 
   lemma sorted_append:
     forall s1 s2: seq t.
     (sorted s1 /\ sorted s2 /\
-      (forall i j: int. 0 <= i < #s1 /\ 0 <= j < #s2 ->
-      le s1[i] s2[i])) <-> sorted (s1 ++ s2)
+      (forall i j. 0 <= i < #s1 /\ 0 <= j < #s2 -> le s1[i] s2[j])) <->
+    sorted (s1 ++ s2)
 
-  lemma sorted_snoc:
-    forall x: t, s: seq t.
-      (forall i: int. 0 <= i < #s -> le s[i] x) /\ sorted s <->
-    sorted (snoc s x)
+  lemma sorted_equiv:
+    forall s1 s2.
+    s1 == s2 -> sorted s1 <-> sorted s2
+
+  lemma sorted_sub:
+    forall s i j.
+    sorted s[i..j] <-> sorted_sub s i j
+
+  lemma sorted_sub_sub:
+    forall s i j k l. 0 <= k <= l <= j - i ->
+    sorted_sub s[i..j] k l <-> sorted_sub s (i + k) (i + l)
 
 end
 
 module SortedInt (** sorted sequences of integers *)
 
   use int.Int
+
   clone export Sorted with type t = int, predicate le = (<=), goal .
 
 end
@@ -423,54 +448,168 @@ module Sum
   use Seq
   use int.Sum as S
 
-  function sum (s: seq int) : int = S.sum (fun i -> s[i]) 0 #s
+  function sum_sub (s: seq int) (l u: int) : int = S.sum (get s) l u
+  function sum (s: seq int) : int = sum_sub s 0 #s
+
+  lemma sum_cons:
+    forall s x. sum (cons x s) = x + sum s
 
   lemma sum_snoc:
     forall s x. sum (snoc s x) = sum s + x
+
   lemma sum_tail:
-    forall s. #s >= 1 -> sum s = s[0] + sum s[1 .. ]
-  lemma sum_tail_tail:
-    forall s. #s >= 2 -> sum s = s[0] + s[1] + sum s[2 .. ]
+    forall s. #s > 0 -> sum s = s[0] + sum s[1 .. ]
+
+  lemma sum_init:
+    forall s. #s > 0 -> sum s = sum s[.. #s - 1] + s[#s - 1]
+
+  lemma sum_append:
+    forall s1 s2.
+    sum (s1 ++ s2) = sum s1 + sum s2
+
+  lemma sum_equiv:
+    forall s1 s2.
+    s1 == s2 -> sum s1 = sum s2
+
+  lemma sum_sub:
+    forall s i j [sum s[i..j]].
+    sum s[i..j] = sum_sub s i j
+
+  lemma sum_sub_sub:
+    forall s i j k l. 0 <= k <= l <= j - i ->
+    sum_sub s[i..j] k l = sum_sub s (i + k) (i + l)
 
 end
 
-(** {2 Number of occurences in a sequence} *)
-
-module Occ
+module NumOfIndex
 
   use int.Int
   use int.NumOf as N
   use Seq
 
-  function iseq (x: 'a) (s: seq 'a) : int->bool = fun i -> s[i] = x
+  function is_true_i (p: int -> 'a -> bool) (s: seq 'a) : int -> bool =
+    fun i -> p i s[i]
 
-  function occ (x: 'a) (s: seq 'a) (l u: int) : int = N.numof (iseq x s) l u
+  function numof_sub_i (p: int -> 'a -> bool) (s: seq 'a) (l u: int) : int
+    = N.numof (is_true_i p s) l u
 
-  function occ_all (x: 'a) (s: seq 'a) : int =
-    occ x s 0 #s
+  function numof_i (p: int -> 'a -> bool) (s: seq 'a) : int
+    = numof_sub_i p s 0 #s
+
+end
+
+module NumOf
+
+  use int.Int
+  use int.NumOf as N
+  use Seq
+
+  function is_true (p: 'a -> bool) (s: seq 'a) : int -> bool =
+    fun i -> p s[i]
+
+  function numof_sub (p: 'a -> bool) (s: seq 'a) (l u: int) : int
+    = N.numof (is_true p s) l u
+
+  function numof (p: 'a -> bool) (s: seq 'a) : int
+    = numof_sub p s 0 #s
+
+  lemma numof_cons:
+    forall p, s: seq 'a, x: 'a.
+    numof p (cons x s) = if p x then 1 + numof p s else numof p s
+
+  lemma numof_snoc:
+    forall p, s: seq 'a, x: 'a.
+    numof p (snoc s x) = if p x then 1 + numof p s else numof p s
+
+  lemma numof_tail:
+    forall p, s: seq 'a.
+    #s > 0 -> numof p s[1..] = if p s[0] then numof p s - 1 else numof p s
+
+  lemma numof_init:
+    forall p, s: seq 'a.
+    #s > 0 ->
+    numof p s[.. #s-1] = if p s[#s-1] then numof p s - 1 else numof p s
+
+  lemma numof_append:
+    forall p, s1 s2: seq 'a.
+    numof p (s1 ++ s2) = numof p s1 + numof p s2
+
+  lemma numof_equiv:
+    forall p, s1 s2: seq 'a.
+    s1 == s2 -> numof p s1 = numof p s2
+
+  lemma numof_sub:
+    forall p, s: seq 'a, i j.
+    numof p s[i..j] = numof_sub p s i j
+
+  lemma numof_sub_sub:
+    forall p, s: seq 'a, i j k l. 0 <= k <= l <= j - i ->
+    numof_sub p s[i..j] k l = numof_sub p s (i + k) (i + l)
+
+  lemma numof_exchange :
+    forall s: seq 'a, l u i j: int, x y: 'a, p.
+    0 <= l <= i < u <= #s -> l <= j < u -> i <> j ->
+    numof_sub p s[i <- x][j <- y] l u =
+    numof_sub p s[i <- y][j <- x] l u
+
+end
+
+(** {2 Number of occurences in a sequence} *)
+
+(* TODO define occ using numof? (drawback: two lambdas) *)
+module Occ
+
+  use int.Int
+  use int.NumOf
+  use Seq
+
+  function is_eq (x: 'a) (s: seq 'a) : int->bool = fun i -> s[i] = x
+
+  function occ_sub (x: 'a) (s: seq 'a) (l u: int) : int = numof (is_eq x s) l u
+
+  function occ (x: 'a) (s: seq 'a) : int = occ_sub x s 0 #s
 
   lemma occ_cons:
     forall k: 'a, s: seq 'a, x: 'a.
-    (occ_all k (cons x s) =
-    if k = x then 1 + occ_all k s else occ_all k s
-    ) by (cons x s == (cons x empty) ++ s)
+    occ k (cons x s) = if k = x then 1 + occ k s else occ k s
 
   lemma occ_snoc:
     forall k: 'a, s: seq 'a, x: 'a.
-    occ_all k (snoc s x) =
-    if k = x then 1 + occ_all k s else occ_all k s
+    occ k (snoc s x) = if k = x then 1 + occ k s else occ k s
 
   lemma occ_tail:
     forall k: 'a, s: seq 'a.
-    #s > 0 ->
-    (occ_all k s[1..] =
-    if k = s[0] then (occ_all k s) - 1 else occ_all k s
-    ) by (s == cons s[0] s[1..])
+    #s > 0 -> occ k s[1..] = if k = s[0] then occ k s - 1 else occ k s
 
-  lemma append_num_occ:
+  lemma occ_init:
+    forall k: 'a, s: seq 'a.
+    #s > 0 -> occ k s[.. #s-1] = if k = s[#s-1] then occ k s - 1 else occ k s
+
+  lemma occ_append:
     forall x: 'a, s1 s2: seq 'a.
-    occ_all x (s1 ++ s2) =
-    occ_all x s1 + occ_all x s2
+    occ x (s1 ++ s2) = occ x s1 + occ x s2
+
+  lemma occ_equiv:
+    forall s1 s2: seq 'a, x.
+    s1 == s2 -> occ x s1 = occ x s2
+
+  lemma occ_sub:
+    forall s: seq 'a, x i j.
+    occ x s[i..j] = occ_sub x s i j
+
+  lemma occ_sub_sub:
+    forall s: seq 'a, x i j k l. 0 <= k <= l <= j - i ->
+    occ_sub x s[i..j] k l = occ_sub x s (i + k) (i + l)
+
+  lemma occ_pos:
+    forall s: seq 'a, l u i: int.
+    0 <= l <= i < u <= #s -> occ_sub s[i] s l u > 0
+
+  lemma occ_exchange :
+    forall s: seq 'a, l u i j: int, x y z: 'a.
+    0 <= l <= i < u <= #s -> l <= j < u -> i <> j ->
+    occ_sub z s[i <- x][j <- y] l u =
+    occ_sub z s[i <- y][j <- x] l u
 
 end
 
@@ -486,6 +625,7 @@ module SeqEq
 
 end
 
+(* TODO defined using map.Exchange? *)
 module Exchange
 
   use int.Int
@@ -517,7 +657,7 @@ module Permut
   predicate permut (s1 s2: seq 'a) (l u: int) =
     #s1 = #s2 /\
     0 <= l <= #s1 /\ 0 <= u <= #s1 /\
-    forall v: 'a. occ v s1 l u = occ v s2 l u
+    forall v: 'a. occ_sub v s1 l u = occ_sub v s2 l u
   (** `permut s1 s2 l u` is true when the segment `s1[l..u-1]` is a
   permutation of the segment `s2[l..u-1]`. Values outside this range are
   ignored. *)
@@ -541,7 +681,7 @@ module Permut
     0 <= l -> u <= #s1 -> permut_sub s1 s2 l u
 
   (** enlarge the interval *)
-  lemma Permut_sub_weakening:
+  lemma permut_sub_weakening:
     forall s1 s2: seq 'a, l1 u1 l2 u2: int.
     permut_sub s1 s2 l1 u1 -> 0 <= l2 <= l1 -> u1 <= u2 <= #s1 ->
     permut_sub s1 s2 l2 u2
@@ -565,11 +705,6 @@ module Permut
     exists j: int. l <= j < u /\ s1[j] = s2[i]
 
   (** {3 Lemmas about permut_all} *)
-
-  use Mem
-
-  lemma permut_all_mem: forall s1 s2: seq 'a. permut_all s1 s2 ->
-    forall x. mem x s1 <-> mem x s2
 
   lemma exchange_permut_all:
     forall s1 s2: seq 'a, i j: int.

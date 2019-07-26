@@ -21,6 +21,7 @@ module MapBrackets
 
   (** syntactic sugar *)
   let function ([]) (f: map 'a 'b) (x: 'a) : 'b = f x
+
   let ghost function ([<-]) (f: map 'a 'b) (x: 'a) (v: 'b) : map 'a 'b =
     set f x v
 
@@ -56,7 +57,7 @@ module MapSorted
 
   predicate le elt elt
 
-  predicate sorted_sub (a : map int elt) (l u : int) =
+  predicate sorted_sub (a: map int elt) (l u: int) =
     forall i1 i2 : int. l <= i1 <= i2 < u -> le (a i1) (a i2)
   (** `sorted_sub a l u` is true whenever the array segment `a(l..u-1)`
       is sorted w.r.t order relation `le` *)
@@ -92,79 +93,58 @@ module MapExchange
 
 end
 
-(** {2 Sum of elements of a map (indexed by integers)} *)
-
-module MapSum
+module NumOfIndex
 
   use int.Int
-  use export Map
+  use int.NumOf as N
+  use Map
 
-  (** `sum m l h` is the sum of `m[i]` for `l <= i < h` *)
+  function is_true_i (p: int -> 'a -> bool) (m: map int 'a) : int -> bool =
+    fun i -> p i (m i)
 
-  type container = map int int
-  clone export sum.Sum with
-    type container = container, function f = get, axiom .
+  function numof_i (p: int -> 'a -> bool) (m: map int 'a) (l u: int) : int
+    = N.numof (is_true_i p m) l u
+
+end
+
+module NumOf
+
+  use int.Int
+  use int.NumOf as N
+  use Map
+
+  function is_true (p: 'a -> bool) (m: map int 'a) : int -> bool =
+    fun i -> p (m i)
+
+  function numof (p: 'a -> bool) (m: map int 'a) (l u: int) : int
+    = N.numof (is_true p m) l u
+
+  lemma numof_exchange :
+    forall m: map int 'a, l u i j: int, x y: 'a, p.
+    l <= i < u -> l <= j < u -> i <> j ->
+    numof p (set (set m i x) j y) l u =
+    numof p (set (set m i y) j x) l u
 
 end
 
 (** {2 Number of occurrences} *)
 
-(* TODO: we could define Occ using theory int.NumOf *)
 module Occ
 
   use int.Int
+  use int.NumOf
   use Map
 
-  function occ (v: 'a) (m: map int 'a) (l u: int) : int
-    (** number of occurrences of `v` in `m` between `l` included and `u` excluded *)
+  function is_eq (x: 'a) (m: map int 'a) : int->bool = fun i -> m i = x
 
-  axiom occ_empty:
-    forall v: 'a, m: map int 'a, l u: int.
-    u <= l -> occ v m l u = 0
-
-  axiom occ_right_no_add:
-    forall v: 'a, m: map int 'a, l u: int.
-    l < u -> m (u-1) <> v -> occ v m l u = occ v m l (u-1)
-
-  axiom occ_right_add:
-    forall v: 'a, m: map int 'a, l u: int.
-    l < u -> m (u-1) = v -> occ v m l u = 1 + occ v m l (u-1)
-
-  lemma occ_left_no_add:
-    forall v: 'a, m: map int 'a, l u: int.
-    l < u -> m l <> v -> occ v m l u = occ v m (l+1) u
-
-  lemma occ_left_add:
-    forall v: 'a, m: map int 'a, l u: int.
-    l < u -> m l = v -> occ v m l u = 1 + occ v m (l+1) u
-
-  lemma occ_bounds:
-    forall v: 'a, m: map int 'a, l u: int.
-    l <= u -> 0 <= occ v m l u <= u - l
-    (* direct when l>=u, by induction on u when l <= u *)
-
-  lemma occ_append:
-    forall v: 'a, m: map int 'a, l mid u: int.
-    l <= mid <= u -> occ v m l u = occ v m l mid + occ v m mid u
-    (* by induction on u *)
-
-  lemma occ_neq:
-    forall v: 'a, m: map int 'a, l u: int.
-    (forall i: int. l <= i < u -> m i <> v) -> occ v m l u = 0
-    (* by induction on u *)
-
-  lemma occ_exists:
-    forall v: 'a, m: map int 'a, l u: int.
-    occ v m l u > 0 -> exists i: int. l <= i < u /\ m i = v
+  (** number of occurrences of `v` in `m`
+      between `l` included and `u` excluded *)
+  function occ (v: 'a) (m: map int 'a) (l u: int) : int =
+    numof (is_eq v m) l u
 
   lemma occ_pos:
     forall m: map int 'a, l u i: int.
     l <= i < u -> occ (m i) m l u > 0
-
-  lemma occ_eq:
-    forall v: 'a, m1 m2: map int 'a, l u: int.
-    (forall i: int. l <= i < u -> m1 i = m2 i) -> occ v m1 l u = occ v m2 l u
-    (* by induction on u *)
 
   lemma occ_exchange :
     forall m: map int 'a, l u i j: int, x y z: 'a.
