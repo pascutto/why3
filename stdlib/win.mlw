@@ -1,0 +1,582 @@
+
+(** {1 Windows}
+
+    This file provides a basic theory of windows.
+*)
+
+(** {2 Windows and basic operations} *)
+
+module Win
+
+  use int.Int
+  use map.Map
+
+  type win 'a
+
+  meta "infinite_type" type win
+
+  function sub  (w: win 'a) : int -> 'a (** carrier mapping *)
+  function base (w: win 'a) : int       (** origin index *)
+  function (#_) (w: win 'a) : int       (** length *)
+
+  axiom length_nonnegative:
+    forall w: win 'a. 0 <= #w
+
+  (** Index check / access function / window equivalence *)
+
+  predicate (-<) [@inline:trivial] (i: int) (w: win 'a) =
+    0 <= i < #w
+
+  function ([]) [@inline:trivial] (w: win 'a) (i: int) : 'a =
+    w.sub (w.base + i)
+
+  predicate (==) (w1 w2: win 'a) =
+    #w1 = #w2 /\ forall i. i -< w1 -> w1[i] = w2[i]
+
+  (** Window constructor *)
+
+  function create (sub: int -> 'a) (base len: int) : win 'a
+
+  axiom create_sub: forall f: int -> 'a, o, l.
+    (create f o l).sub = f
+
+  axiom create_base: forall f: int -> 'a, o, l.
+    (create f o l).base = o
+
+  axiom create_length: forall f: int -> 'a, o, l.
+    if 0 <= l then #(create f o l) = l else #(create f o l) = 0
+
+  axiom create_ext: forall w: win 'a.
+    create w.sub w.base #w = w
+
+  (** Empty window / singleton *)
+
+  constant empty : win 'a
+
+  axiom empty_length:
+    (empty: win 'a).base = 0 /\ #(empty: win 'a) = 0
+
+  function singleton [@inline:trivial] (v: 'a) : win 'a =
+    create (Map.set empty.sub 0 v) 0 1
+
+  (** Cons / snoc / update *)
+
+  function ([<-]) [@inline:trivial] (w: win 'a) (i: int) (v: 'a) : win 'a =
+    create (Map.set w.sub (w.base + i) v) w.base #w
+
+  function cons [@inline:trivial] (x: 'a) (w: win 'a) : win 'a =
+    create (Map.set w.sub (w.base - 1) x) (w.base - 1) (#w + 1)
+
+  function snoc [@inline:trivial] (w: win 'a) (x: 'a) : win 'a =
+    create (Map.set w.sub (w.base + #w) x) w.base (#w + 1)
+
+  let lemma map_set_ext (m: int -> 'a) (i: int)
+    ensures { Map.set m i (m i) = m }
+  = assert { let w j = m j in Map.set m i (m i) = w = m }
+
+  (** Slices *)
+
+  function ([..]) [@inline:trivial] (w: win 'a) (i: int) (j: int) : win 'a =
+    create w.sub (w.base + i) (j - i)
+
+  function ([_..]) [@inline:trivial] (w: win 'a) (i: int) : win 'a =
+    create w.sub (w.base + i) (#w - i)
+
+  function ([.._]) [@inline:trivial] (w: win 'a) (j: int) : win 'a =
+    create w.sub w.base j
+
+  lemma double_slice: forall w:win 'a, i j k l.
+    0 <= i <= j <= #w ->
+    0 <= k <= l <= j - i ->
+    w[i..j][k..l] = w[k+i..l+i]
+
+  (** Concatenation *)
+
+  function map_sew (m1: int -> 'a) (r l: int) (m2: int -> 'a) : int -> 'a =
+    fun i -> if i < r then m1 i else m2 (i - r + l)
+
+  let lemma map_sew_ext (m: int -> 'a) (i: int)
+    ensures { map_sew m i i m = m }
+  = assert { let w j = m j in map_sew m i i m = w = m }
+
+  function (++) [@inline:trivial] (w1: win 'a) (w2: win 'a) : win 'a =
+    create (map_sew w1.sub (w1.base + #w1) w2.base w2.sub) w1.base (#w1 + #w2)
+
+  lemma append_left: forall w1 w2: win 'a, i.
+    i -< w1 -> (w1 ++ w2)[i] = w1[i]
+
+  lemma append_right1: forall w1 w2: win 'a, i.
+    #w1 <= i < #w1 + #w2 -> (w1 ++ w2)[i] = w2[i - #w1]
+
+  lemma append_right2: forall w1 w2: win 'a, i.
+    i -< w2 -> (w1 ++ w2)[#w1 + i] = w2[i]
+
+  let lemma append_assoc (w1 w2 w3: win 'a)
+    ensures { w1 ++ (w2 ++ w3) = (w1 ++ w2) ++ w3 }
+  = assert {
+      (w1 ++ (w2 ++ w3)).sub = ((w1 ++ w2) ++ w3).sub
+      by let m i = if i < w1.base + #w1 then w1.sub i
+              else if i < w1.base + #w1 + #w2 then w2.sub i
+              else w3.sub i in
+        (w1 ++ (w2 ++ w3)).sub = m = ((w1 ++ w2) ++ w3).sub }
+  meta rewrite axiom append_assoc
+
+  (* Decomposing windows as cons/snoc/catenation *)
+
+  lemma cons_dec: forall w: win 'a.
+    #w >= 1 -> w = cons w[0] w[1..]
+
+  lemma snoc_dec: forall w: win 'a.
+    #w >= 1 -> w = snoc w[.. #w - 1] w[#w - 1]
+
+  lemma cat_dec: forall w:win 'a, i.
+    i -< w -> w = w[..i] ++ w[i..]
+
+end
+
+module ToList
+  use int.Int
+  use Win
+  use list.List
+
+  function to_list (a: win 'a) : list 'a
+
+  axiom to_list_nil:
+    forall w: win 'a. #w = 0 ->
+      to_list w = (Nil: list 'a)
+
+  axiom to_list_cons:
+    forall w: win 'a. #w > 0 ->
+      to_list w = Cons w[0] (to_list w[1..])
+
+  use list.Length as ListLength
+
+  lemma to_list_length:
+    forall w: win 'a.
+      ListLength.length (to_list w) = #w
+
+  use list.Nth as ListNth
+  use option.Option
+
+  lemma to_list_nth:
+    forall w: win 'a, i: int. i -< w ->
+      ListNth.nth i (to_list w) = Some w[i]
+
+  let rec lemma to_list_eq (w1 w2: win 'a)
+    requires { w1 == w2 }
+    variant  { #w1 }
+    ensures  { to_list w1 = to_list w2 }
+  = if #w1 > 0 then to_list_eq w1[1..] w2[1..]
+
+  lemma to_list_def_cons:
+    forall w: win 'a, x: 'a.
+      to_list (cons x w) = Cons x (to_list w)
+
+end
+
+module OfList
+  use int.Int
+  use option.Option
+  use list.List
+  use list.Length as L
+  use list.Nth
+  use Win
+  use list.Append
+
+  function of_list (l: list 'a) : win 'a = match l with
+    | Nil -> empty
+    | Cons x r -> cons x (of_list r)
+    end
+
+  lemma length_of_list:
+    forall l: list 'a. #(of_list l) = L.length l
+
+  predicate point_wise (w: win 'a) (l: list 'a) =
+    #w = L.length l /\ forall i. i -< w -> Some w[i] = nth i l
+
+  lemma elts_win_of_list:
+    forall l: list 'a. point_wise (of_list l) l
+
+  lemma is_of_list: forall l: list 'a, w: win 'a.
+    point_wise w l -> w == of_list l
+
+  let rec lemma of_list_app (l1 l2: list 'a)
+    ensures { of_list (l1 ++ l2) == Win.(++) (of_list l1) (of_list l2) }
+    variant { l1 }
+  = match l1 with
+    | Nil -> ()
+    | Cons _ r -> of_list_app r l2
+    end
+
+  lemma of_list_app_length: forall l1 [@induction] l2: list 'a.
+    #(of_list (l1 ++ l2)) = L.length l1 + L.length l2
+
+  let rec lemma of_list_snoc (l: list 'a) (x: 'a)
+    variant { l }
+    ensures { of_list (l ++ Cons x Nil) == snoc (of_list l) x }
+  = match l with
+    | Nil -> assert { snoc empty x == cons x empty }
+    | Cons _ r -> of_list_snoc r x;
+    end
+
+  meta coercion function of_list
+
+  use ToList
+
+  lemma convolution_to_of_list: forall l: list 'a.
+    to_list (of_list l) = l
+
+end
+
+(* TODO could be defined as occ x w > 0 *)
+module Mem
+
+  use int.Int
+  use Win
+
+  predicate mem (x: 'a) (w: win 'a) =
+    exists i: int. i -< w && w[i] = x
+
+  lemma mem_append : forall x: 'a, w1 w2.
+    mem x (w1 ++ w2) <-> mem x w1 \/ mem x w2
+
+  lemma mem_tail: forall x: 'a, w. #w > 0 ->
+    mem x w <-> (x = w[0] \/ mem x w[1..])
+
+end
+
+module Distinct
+  use int.Int
+  use Win
+
+  predicate distinct (w : win 'a) =
+    forall i j. i -< w -> j -< w -> i <> j -> w[i] <> w[j]
+
+end
+
+module Reverse
+
+  use int.Int
+  use Win
+
+  function reverse (w: win 'a) : win 'a =
+    create (fun i -> w[#w - 1 - i]) 0 #w
+
+end
+
+module ToFset
+  use int.Int
+  use set.Fset
+  use Mem
+  use Win
+
+  function to_set (w: win 'a) : fset 'a
+
+  axiom to_set_empty: forall w: win 'a.
+    #w = 0 -> to_set w = (Fset.empty: fset 'a)
+
+  axiom to_set_add: forall w: win 'a.
+    #w > 0 -> to_set w = add w[0] (to_set w[1..])
+
+  lemma to_set_cardinal: forall w: win 'a.
+    cardinal (to_set w) <= #w
+
+  lemma to_set_mem: forall w: win 'a, e: 'a.
+    mem e w <-> Fset.mem e (to_set w)
+
+  lemma to_set_snoc: forall w: win 'a, x: 'a.
+    to_set (snoc w x) = add x (to_set w)
+
+  use Distinct
+
+  lemma to_set_cardinal_distinct: forall w: win 'a.
+    distinct w -> cardinal (to_set w) = #w
+
+end
+
+(** {2 Sorted Windows} *)
+
+module Sorted
+
+  use int.Int
+  use Win
+
+  type t
+
+  predicate le t t
+
+  predicate sorted (w: win t) = forall i1 i2.
+    0 <= i1 < i2 < #w -> le w[i1] w[i2]
+  (** `sorted w` is true whenever the window `w` is sorted w.r.t `le`  *)
+
+  lemma sorted_cons: forall x: t, w: win t.
+    (forall i. i -< w -> le x w[i]) /\ sorted w <-> sorted (cons x w)
+
+  lemma sorted_snoc: forall x: t, w: win t.
+    (forall i. i -< w -> le w[i] x) /\ sorted w <-> sorted (snoc w x)
+
+  lemma sorted_tail: forall w: win t. #w > 0 ->
+    (forall i. 1 <= i < #w -> le w[0] w[i]) /\ sorted w[1..] <->
+    sorted w
+
+  lemma sorted_init: forall w: win t. #w > 0 ->
+    (forall i. 0 <= i < #w - 1 -> le w[i] w[#w - 1]) /\ sorted w[.. #w-1] <->
+    sorted w
+
+  lemma sorted_append: forall w1 w2: win t.
+    (sorted w1 /\ sorted w2 /\
+      (forall i j. i -< w1 /\ j -< w2 -> le w1[i] w2[j])) <->
+    sorted (w1 ++ w2)
+
+  lemma sorted_equiv: forall w1 w2. w1 == w2 ->
+    sorted w1 <-> sorted w2
+
+end
+
+module SortedInt (** sorted windows of integers *)
+
+  use int.Int
+
+  clone export Sorted with type t = int, predicate le = (<=), goal .
+
+end
+
+module Sum
+
+  use int.Int
+  use Win
+  use int.Sum as S
+
+  function sum (w: win int) : int = S.sum (sub w) w.base (w.base + #w)
+
+  lemma sum_cons: forall w x.
+    sum (cons x w) = x + sum w
+
+  lemma sum_snoc: forall w x.
+    sum (snoc w x) = sum w + x
+
+  lemma sum_tail: forall w. #w > 0 ->
+    sum w = w[0] + sum w[1 .. ]
+
+  lemma sum_init: forall w. #w > 0 ->
+    sum w = sum w[.. #w - 1] + w[#w - 1]
+
+  lemma sum_append: forall w1 w2.
+    sum (w1 ++ w2) = sum w1 + sum w2
+
+  lemma sum_equiv: forall w1 w2.
+    w1 == w2 -> sum w1 = sum w2
+
+end
+
+module NumOfIndex
+
+  use int.Int
+  use int.NumOf as N
+  use Win
+
+  function is_true_i (p: int -> 'a -> bool) (w: win 'a) : int -> bool =
+    fun i -> p i w[i]
+
+  function numof_i (p: int -> 'a -> bool) (w: win 'a) : int =
+    N.numof (is_true_i p w) 0 #w
+
+end
+
+module NumOf
+
+  use int.Int
+  use int.NumOf as N
+  use Win
+
+  function is_true (p: 'a -> bool) (w: win 'a) : int -> bool =
+    fun i -> p w[i]
+
+  function numof (p: 'a -> bool) (w: win 'a) : int =
+    N.numof (is_true p w) 0 #w
+
+  lemma numof_cons: forall p, w: win 'a, x: 'a.
+    numof p (cons x w) = if p x then 1 + numof p w else numof p w
+
+  lemma numof_snoc: forall p, w: win 'a, x: 'a.
+    numof p (snoc w x) = if p x then numof p w + 1 else numof p w
+
+  lemma numof_tail: forall p, w: win 'a. #w > 0 ->
+    numof p w[1..] = if p w[0] then numof p w - 1 else numof p w
+
+  lemma numof_init: forall p, w: win 'a. #w > 0 ->
+    numof p w[.. #w-1] = if p w[#w-1] then numof p w - 1 else numof p w
+
+  lemma numof_append: forall p, w1 w2: win 'a.
+    numof p (w1 ++ w2) = numof p w1 + numof p w2
+
+  lemma numof_equiv: forall p, w1 w2: win 'a.
+    w1 == w2 -> numof p w1 = numof p w2
+
+  lemma numof_exchange: forall p, w: win 'a, i j: int, x y: 'a.
+    i -< w -> j -< w -> i <> j ->
+    numof p w[i <- x][j <- y] =
+    numof p w[i <- y][j <- x]
+
+end
+
+(** {2 Number of occurences in a window} *)
+
+(* TODO define occ using numof? (drawback: two lambdas) *)
+module Occ
+
+  use int.Int
+  use int.NumOf
+  use Win
+
+  function is_eq (k: 'a) (w: win 'a) : int -> bool =
+    fun i -> w[i] = k
+
+  function occ (k: 'a) (w: win 'a) : int =
+    NumOf.numof (is_eq k w) 0 #w
+
+  lemma occ_cons: forall k: 'a, w: win 'a, x: 'a.
+    occ k (cons x w) = if k = x then 1 + occ k w else occ k w
+
+  lemma occ_snoc: forall k: 'a, w: win 'a, x: 'a.
+    occ k (snoc w x) = if k = x then occ k w + 1 else occ k w
+
+  lemma occ_tail: forall k: 'a, w: win 'a. #w > 0 ->
+    occ k w[1..] = if k = w[0] then occ k w - 1 else occ k w
+
+  lemma occ_init: forall k: 'a, w: win 'a. #w > 0 ->
+    occ k w[.. #w-1] = if k = w[#w-1] then occ k w - 1 else occ k w
+
+  lemma occ_append: forall k: 'a, w1 w2: win 'a.
+    occ k (w1 ++ w2) = occ k w1 + occ k w2
+
+  lemma occ_equiv: forall w1 w2: win 'a, k.
+    w1 == w2 -> occ k w1 = occ k w2
+
+  lemma occ_pos: forall w: win 'a, i: int.
+    i -< w -> occ w[i] w > 0
+
+  lemma occ_exchange: forall w: win 'a, i j: int, x y z: 'a.
+    i -< w -> j -< w -> i <> j ->
+    occ z w[i <- x][j <- y] =
+    occ z w[i <- y][j <- x]
+
+end
+
+(* TODO defined using map.Exchange? *)
+module Exchange
+
+  use int.Int
+  use Win
+
+  predicate exchange (w1 w2: win 'a) (i j: int) =
+    #w1 = #w2 /\ i -< w1 /\ j -< w1 /\
+    w1[i] = w2[j] /\ w1[j] = w2[i] /\
+    (forall k:int. k -< w1 -> k <> i -> k <> j -> w1[k] = w2[k])
+
+  lemma exchange_set: forall w: win 'a, i j: int.
+    i -< w -> j -< w ->
+    exchange w w[i <- w[j]][j <- w[i]] i j
+
+end
+
+(** {2 Permutation of windows} *)
+
+module Permut
+
+  use int.Int
+  use Win
+  use Occ
+  use export Exchange
+
+  predicate permut (w1 w2: win 'a) =
+    #w1 = #w2 /\ forall v: 'a. occ v w1 = occ v w2
+  (** `permut_all w1 w2` is true when
+      window `w1` is a permutation of window `w2` *)
+
+  predicate permut_sub (w1 w2: win 'a) (l u: int) =
+    0 <= l <= u <= #w1 = #w2 /\
+    w1[..l] == w2[..l] /\
+    permut w1[l..u] w2[l..u] /\
+    w1[u..] == w2[u..]
+  (** `permut_sub w1 w2 l u` is true when the segment
+      `w1[l..u-1]` is a permutation of the segment `w2[l..u-1]`
+      and values outside of this range are equal. *)
+
+  lemma exchange_permut_sub: forall w1 w2: win 'a, i j l u: int.
+    exchange w1 w2 i j -> l <= i < u -> l <= j < u -> 0 <= l -> u <= #w1 ->
+    permut_sub w1 w2 l u
+
+  (** enlarge the interval *)
+  lemma permut_sub_weakening: forall w1 w2: win 'a, l1 u1 l2 u2: int.
+    permut_sub w1 w2 l1 u1 -> 0 <= l2 <= l1 -> u1 <= u2 <= #w1 ->
+    permut_sub w1 w2 l2 u2
+
+  (** {3 Lemmas about permut} *)
+
+  lemma permut_refl: forall w: win 'a.
+    permut w w
+
+  lemma permut_sym: forall w1 w2: win 'a.
+    permut w1 w2 -> permut w2 w1
+
+  lemma permut_trans: forall w1 w2 w3: win 'a.
+    permut w1 w2 -> permut w2 w3 -> permut w1 w3
+
+  lemma permut_exists: forall w1 w2: win 'a, i: int.
+    permut w1 w2 -> i -< w1 ->
+    exists j: int. j -< w1 /\ w1[j] = w2[i]
+
+  lemma permut_sub_permut: forall w1 w2: win 'a, l u: int.
+    permut_sub w1 w2 l u -> permut w1 w2
+
+  lemma exchange_permut: forall w1 w2: win 'a, i j: int.
+    exchange w1 w2 i j -> permut w1 w2
+
+end
+
+module FoldLeft
+
+  use Win
+  use int.Int
+
+  (** `fold_left f a [b1; ...; bn]` is `f (... (f (f a b1) b2) ...) bn` *)
+  let rec ghost function fold_left (f: 'a -> 'b -> 'a) (acc: 'a) (w: win 'b) : 'a
+    variant { #w }
+  = if #w = 0 then acc else fold_left f (f acc w[0]) w[1..]
+
+  lemma fold_left_ext: forall f: 'b -> 'a -> 'b, acc: 'b, w1 w2: win 'a.
+    w1 == w2 -> fold_left f acc w1 = fold_left f acc w2
+
+  lemma fold_left_cons: forall w: win 'a, x: 'a, f: 'b -> 'a -> 'b, acc: 'b.
+    fold_left f acc (cons x w) = fold_left f (f acc x) w
+
+  let rec lemma fold_left_app (w1 w2: win 'a) (f: 'b -> 'a -> 'b) (acc: 'b)
+    ensures { fold_left f acc (w1 ++ w2) = fold_left f (fold_left f acc w1) w2 }
+    variant { #w1 }
+  = if #w1 > 0 then fold_left_app w1[1..] w2 f (f acc w1[0])
+
+end
+
+module FoldRight
+
+  use Win
+  use int.Int
+
+  (** `fold_right f [a1; ...; an] b` is `f a1 (f a2 (... (f an b) ...))` *)
+  let rec ghost function fold_right (f: 'b -> 'a -> 'a) (w: win 'b) (acc: 'a) : 'a
+    variant { #w }
+  = if #w = 0 then acc else fold_right f w[.. #w - 1] (f w[#w - 1] acc)
+
+  lemma fold_right_ext: forall f: 'a -> 'b -> 'b, acc: 'b, w1 w2: win 'a.
+    w1 == w2 -> fold_right f w1 acc = fold_right f w2 acc
+
+  lemma fold_right_snoc: forall w: win 'a, x: 'a, f: 'a -> 'b -> 'b, acc: 'b.
+    fold_right f (snoc w x) acc = fold_right f w (f x acc)
+
+  let rec lemma fold_right_app (w1 w2: win 'a) (f: 'a -> 'b -> 'b) (acc: 'b)
+    ensures { fold_right f (w1 ++ w2) acc = fold_right f w1 (fold_right f w2 acc) }
+    variant { #w2 }
+  = if #w2 > 0 then fold_right_app w1 w2[.. #w2 - 1] f (f w2[#w2 - 1] acc)
+
+end
