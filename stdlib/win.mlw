@@ -85,10 +85,14 @@ module Win
   function ([.._]) [@inline:trivial] (w: win 'a) (j: int) : win 'a =
     create w.sub w.base j
 
+  lemma slice_cons: forall w:win 'a, i j.
+    i < j -> w[i..j] = cons w[i] w[i+1..j]
+
+  lemma slice_snoc: forall w:win 'a, i j.
+    i <= j -> w[i..j+1] = snoc w[i..j] w[j]
+
   lemma double_slice: forall w:win 'a, i j k l.
-    0 <= i <= j <= #w ->
-    0 <= k <= l <= j - i ->
-    w[i..j][k..l] = w[k+i..l+i]
+    k <= l -> w[i..j][k..l] = w[i+k..i+l]
 
   (** Concatenation *)
 
@@ -103,13 +107,10 @@ module Win
     create (map_sew w1.sub (w1.base + #w1) w2.base w2.sub) w1.base (#w1 + #w2)
 
   lemma append_left: forall w1 w2: win 'a, i.
-    i -< w1 -> (w1 ++ w2)[i] = w1[i]
+    i < #w1 -> (w1 ++ w2)[i] = w1[i]
 
-  lemma append_right1: forall w1 w2: win 'a, i.
-    #w1 <= i < #w1 + #w2 -> (w1 ++ w2)[i] = w2[i - #w1]
-
-  lemma append_right2: forall w1 w2: win 'a, i.
-    i -< w2 -> (w1 ++ w2)[#w1 + i] = w2[i]
+  lemma append_right: forall w1 w2: win 'a, i.
+    #w1 <= i -> (w1 ++ w2)[i] = w2[i - #w1]
 
   let lemma append_assoc (w1 w2 w3: win 'a)
     ensures { w1 ++ (w2 ++ w3) = (w1 ++ w2) ++ w3 }
@@ -315,17 +316,25 @@ module Sorted
   lemma sorted_snoc: forall x: t, w: win t.
     (forall i. i -< w -> le w[i] x) /\ sorted w <-> sorted (snoc w x)
 
-  lemma sorted_tail: forall w: win t. #w > 0 ->
-    (forall i. 1 <= i < #w -> le w[0] w[i]) /\ sorted w[1..] <->
-    sorted w
-
   lemma sorted_init: forall w: win t. #w > 0 ->
     (forall i. 0 <= i < #w - 1 -> le w[i] w[#w - 1]) /\ sorted w[.. #w-1] <->
     sorted w
 
+  lemma sorted_tail: forall w: win t. #w > 0 ->
+    (forall i. 1 <= i < #w -> le w[0] w[i]) /\ sorted w[1..] <->
+    sorted w
+
+  lemma sorted_slice_init: forall w i j. i <= j ->
+    (forall k. i <= k < j -> le w[k] w[j]) /\ sorted w[i..j] <->
+    sorted w[i..j+1]
+
+  lemma sorted_slice_tail: forall w i j. i < j ->
+    (forall k. i+1 <= k < j -> le w[i] w[k]) /\ sorted w[i+1..j] <->
+    sorted w[i..j]
+
   lemma sorted_append: forall w1 w2: win t.
-    (sorted w1 /\ sorted w2 /\
-      (forall i j. i -< w1 /\ j -< w2 -> le w1[i] w2[j])) <->
+    (forall i j. i -< w1 /\ j -< w2 -> le w1[i] w2[j]) /\
+      sorted w1 /\ sorted w2 <->
     sorted (w1 ++ w2)
 
   lemma sorted_equiv: forall w1 w2. w1 == w2 ->
@@ -355,11 +364,17 @@ module Sum
   lemma sum_snoc: forall w x.
     sum (snoc w x) = sum w + x
 
+  lemma sum_init: forall w. #w > 0 ->
+    sum w = sum w[.. #w - 1] + w[#w - 1]
+
   lemma sum_tail: forall w. #w > 0 ->
     sum w = w[0] + sum w[1 .. ]
 
-  lemma sum_init: forall w. #w > 0 ->
-    sum w = sum w[.. #w - 1] + w[#w - 1]
+  lemma sum_slice_init: forall w i j. i <= j ->
+    sum w[i..j+1] = sum w[i..j] + w[j]
+
+  lemma sum_slice_tail: forall w i j. i < j ->
+    sum w[i..j] = w[i] + sum w[i+1..j]
 
   lemma sum_append: forall w1 w2.
     sum (w1 ++ w2) = sum w1 + sum w2
@@ -401,11 +416,19 @@ module NumOf
   lemma numof_snoc: forall p, w: win 'a, x: 'a.
     numof p (snoc w x) = if p x then numof p w + 1 else numof p w
 
+  lemma numof_init: forall p, w: win 'a. #w > 0 ->
+    numof p w[.. #w-1] = if p w[#w-1] then numof p w - 1 else numof p w
+
   lemma numof_tail: forall p, w: win 'a. #w > 0 ->
     numof p w[1..] = if p w[0] then numof p w - 1 else numof p w
 
-  lemma numof_init: forall p, w: win 'a. #w > 0 ->
-    numof p w[.. #w-1] = if p w[#w-1] then numof p w - 1 else numof p w
+  lemma numof_slice_init: forall p, w: win 'a, i j. i <= j ->
+    numof p w[i..j+1] =
+      if p w[j] then numof p w[i..j] + 1 else numof p w[i..j]
+
+  lemma numof_slice_tail: forall p, w: win 'a, i j. i < j ->
+    numof p w[i..j] =
+      if p w[i] then 1 + numof p w[i+1..j] else numof p w[i+1..j]
 
   lemma numof_append: forall p, w1 w2: win 'a.
     numof p (w1 ++ w2) = numof p w1 + numof p w2
@@ -441,11 +464,19 @@ module Occ
   lemma occ_snoc: forall k: 'a, w: win 'a, x: 'a.
     occ k (snoc w x) = if k = x then occ k w + 1 else occ k w
 
+  lemma occ_init: forall k: 'a, w: win 'a. #w > 0 ->
+    occ k w[.. #w-1] = if k = w[#w-1] then occ k w - 1 else occ k w
+
   lemma occ_tail: forall k: 'a, w: win 'a. #w > 0 ->
     occ k w[1..] = if k = w[0] then occ k w - 1 else occ k w
 
-  lemma occ_init: forall k: 'a, w: win 'a. #w > 0 ->
-    occ k w[.. #w-1] = if k = w[#w-1] then occ k w - 1 else occ k w
+  lemma occ_slice_init: forall k: 'a, w: win 'a, i j. i <= j ->
+    occ k w[i..j+1] =
+      if k = w[j] then occ k w[i..j] + 1 else occ k w[i..j]
+
+  lemma occ_slice_tail: forall k: 'a, w: win 'a, i j. i < j ->
+    occ k w[i..j] =
+      if k = w[i] then 1 + occ k w[i+1..j] else occ k w[i+1..j]
 
   lemma occ_append: forall k: 'a, w1 w2: win 'a.
     occ k (w1 ++ w2) = occ k w1 + occ k w2
@@ -524,7 +555,7 @@ module Permut
     permut w1 w2 -> permut w2 w3 -> permut w1 w3
 
   lemma permut_exists: forall w1 w2: win 'a, i: int.
-    permut w1 w2 -> i -< w1 ->
+    permut w1 w2 -> i -< w2 ->
     exists j: int. j -< w1 /\ w1[j] = w2[i]
 
   lemma permut_sub_permut: forall w1 w2: win 'a, l u: int.
