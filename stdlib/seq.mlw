@@ -386,7 +386,7 @@ module Sorted
   predicate le t t
 
   predicate sorted_sub (s: seq t) (l u: int) =
-    forall i1 i2. l <= i1 <= i2 < u -> le s[i1] s[i2]
+    forall i1 i2. l <= i1 < i2 < u -> le s[i1] s[i2]
   (** `sorted_sub s l u` is true whenever the sub-sequence `s[l .. u-1]` is
       sorted  w.r.t. order relation `le` *)
 

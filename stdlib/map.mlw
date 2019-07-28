@@ -58,7 +58,7 @@ module MapSorted
   predicate le elt elt
 
   predicate sorted_sub (a: map int elt) (l u: int) =
-    forall i1 i2 : int. l <= i1 <= i2 < u -> le (a i1) (a i2)
+    forall i1 i2 : int. l <= i1 < i2 < u -> le (a i1) (a i2)
   (** `sorted_sub a l u` is true whenever the array segment `a(l..u-1)`
       is sorted w.r.t order relation `le` *)
 
