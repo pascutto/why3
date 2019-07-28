@@ -321,30 +321,24 @@ module NumOf
   (** number of `n` such that `a <= n < b` and `p n` *)
   let rec function numof (p: int -> bool) (a b: int) : int
     variant { b - a }
-  = if b <= a then 0 else
-    if p (b - 1) then 1 + numof p a (b - 1)
-                 else     numof p a (b - 1)
+  = if a >= b then 0 else
+    if p a then 1 + numof p (a + 1) b
+           else     numof p (a + 1) b
 
   lemma numof_bounds:
     forall p : int -> bool, a b : int. a < b -> 0 <= numof p a b <= b - a
-    (* direct when a>=b, by induction on b when a <= b *)
+    (* direct when a>=b, by induction on a when a <= b *)
 
   lemma numof_append:
     forall p : int -> bool, a b c : int.
-    (* [numof p a c, numof p a b | numof p a c, numof p b c | *)
-    (*  numof p a b, numof p b c]. *)
     a <= b <= c -> numof p a c = numof p a b + numof p b c
-    (* by induction on c *)
+    (* by induction on a *)
 
-  lemma numof_left_no_add:
-    forall p : int -> bool, a b : int.
-    a < b -> not p a -> numof p a b = numof p (a+1) b
-    (* by Numof_append *)
-
-  lemma numof_left_add:
-    forall p : int -> bool, a b : int.
-    a < b -> p a -> numof p a b = 1 + numof p (a+1) b
-    (* by Numof_append *)
+  lemma numof_right:
+    forall p : int -> bool, a b : int. a <= b ->
+    if p b then numof p a (b + 1) = numof p a b + 1
+           else numof p a (b + 1) = numof p a b
+    (* by numof_append *)
 
   lemma numof_empty:
     forall p : int -> bool, a b : int.
@@ -364,22 +358,22 @@ module NumOf
   lemma numof_increasing_right:
     forall p : int -> bool, i j k : int.
     i <= j <= k -> numof p i j <= numof p i k
-    (* by Numof_append and Numof_bounds *)
+    (* by numof_append and numof_bounds *)
 
   lemma numof_increasing_left:
     forall p : int -> bool, i j k : int.
     k <= i <= j -> numof p i j <= numof p k j
-    (* by Numof_append and Numof_bounds *)
+    (* by numof_append and numof_bounds *)
 
   lemma numof_strictly_increasing_right:
     forall p: int -> bool, i j k l: int.
     i <= j <= k < l -> p k -> numof p i j < numof p i l
-    (* by Numof_append and numof_increasing *)
+    (* by numof_append and numof_increasing *)
 
   lemma numof_strictly_increasing_left:
     forall p: int -> bool, i j k l: int.
     l <= k < i <= j -> p k -> numof p i j < numof p l j
-    (* by Numof_append and numof_increasing *)
+    (* by numof_append and numof_increasing *)
 *)
 
   lemma numof_change_any:
@@ -409,11 +403,11 @@ module Sum
   (** sum of `f n` for `a <= n < b` *)
   let rec function sum (f: int -> int) (a b: int) : int
     variant { b - a }
-  = if b <= a then 0 else sum f a (b - 1) + f (b - 1)
+  = if a < b then f a + sum f (a + 1) b else 0
 
-  lemma sum_left:
+  lemma sum_right:
     forall f: int -> int, a b: int.
-    a < b -> sum f a b = f a + sum f (a + 1) b
+    a <= b -> sum f a (b + 1) = sum f a b + f b
 
   lemma sum_ext:
     forall f g: int -> int, a b: int.
