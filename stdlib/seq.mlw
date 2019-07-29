@@ -104,13 +104,13 @@ module Seq
   axiom snoc_init:
     forall s: seq 'a, x, i. 0 <= i < #s -> (snoc s x)[i] = s[i]
 
-  (** `s[i..j]` is the sub-sequence of `s` from element `i` included
+  (** `s[i..j]` is the slice of `s` from element `i` included
       to element `j` excluded *)
   function ([..]) (s: seq 'a) (i: int) (j: int) : seq 'a
 
-  axiom sub_length:
+  axiom slice_length:
     forall s: seq 'a, i, j. 0 <= i <= j <= #s -> #(s[i..j]) = j - i
-  axiom sub_contents:
+  axiom slice_contents:
     forall s: seq 'a, i, j, k. 0 <= i <= j <= #s -> 0 <= k < j - i ->
     s[i..j][k] = s[i + k]
 
@@ -119,6 +119,8 @@ module Seq
 
   function ([.._]) [@inline:trivial] (s: seq 'a) (j: int) : seq 'a
   = s[0..j]
+
+  lemma slice_full: forall s: seq 'a. s = s[0 .. #s]
 
   (** concatenation *)
   function (++) (s1: seq 'a) (s2: seq 'a) : seq 'a
@@ -545,9 +547,11 @@ module NumOf
     numof p s[i <- x][j <- y] =
     numof p s[i <- y][j <- x]
 
-  lemma numof_extend:
-    forall p, s: seq 'a, i j k l.
+  lemma numof_slice_extend: forall p, s: seq 'a, i j k l.
     0 <= k <= i <= j <= l <= #s -> numof p s[i..j] <= numof p s[k..l]
+
+  lemma numof_extend: forall p, s: seq 'a, i j. 0 <= i < j <= #s ->
+    numof p s[i..j] <= numof p s
 
 end
 
@@ -603,8 +607,11 @@ module Occ
     occ z s[i <- x][j <- y] =
     occ z s[i <- y][j <- x]
 
-  lemma occ_extend: forall v, s: seq 'a, i j k l.
+  lemma occ_slice_extend: forall v, s: seq 'a, i j k l.
     0 <= k <= i <= j <= l <= #s -> occ v s[i..j] <= occ v s[k..l]
+
+  lemma occ_extend: forall v, s: seq 'a, i j. 0 <= i < j <= #s ->
+    occ v s[i..j] <= occ v s
 
 end
 
