@@ -37,6 +37,8 @@ lemma sorted_tail:
   forall s. sorted s -> length s >= 1 -> sorted s[1 .. ]
 lemma sorted_tail_tail:
   forall s. sorted s -> length s >= 2 -> sorted s[2 .. ]
+lemma sum_tail_tail:
+  forall s. #s >= 2 -> sum s = s[0] + s[1] + sum s[2 .. ]
 
 let huffman_coding (s: seq int) : int
   requires { length s > 0 }

@@ -383,39 +383,48 @@ module Sorted
 
   type t
 
-  predicate le t t
+  predicate rel t t
+  (** the order relation to compare elements; can be strict or large *)
 
   predicate sorted (s: seq t) = forall i1 i2.
-    0 <= i1 < i2 < #s -> le s[i1] s[i2]
-  (** `sorted s` is true whenever the sequence `s` is sorted w.r.t `le`  *)
+    0 <= i1 < i2 < #s -> rel s[i1] s[i2]
+  (** `sorted s` is true whenever the sequence `s` is sorted w.r.t `rel`  *)
 
   lemma sorted_cons: forall x: t, s: seq t.
-    (forall i. 0 <= i < #s -> le x s[i]) /\ sorted s <->
+    (forall i. 0 <= i < #s -> rel x s[i]) /\ sorted s <->
     sorted (cons x s)
 
   lemma sorted_snoc: forall x: t, s: seq t.
-    (forall i. 0 <= i < #s -> le s[i] x) /\ sorted s <->
+    (forall i. 0 <= i < #s -> rel s[i] x) /\ sorted s <->
     sorted (snoc s x)
 
   lemma sorted_init: forall s: seq t. #s > 0 ->
-    (forall i. 0 <= i < #s - 1 -> le s[i] s[#s - 1]) /\ sorted s[.. #s-1] <->
+    (forall i. 0 <= i < #s - 1 -> rel s[i] s[#s - 1]) /\ sorted s[.. #s-1] <->
     sorted s
 
   lemma sorted_tail: forall s: seq t. #s > 0 ->
-    (forall i. 1 <= i < #s -> le s[0] s[i]) /\ sorted s[1..] <->
+    (forall i. 1 <= i < #s -> rel s[0] s[i]) /\ sorted s[1..] <->
     sorted s
 
+  lemma sorted_slice_empty:
+    forall s i. 0 <= i <= #s -> sorted s[i..i]
+
   lemma sorted_slice_init: forall s: seq t, i j. 0 <= i <= j < #s ->
-    (forall k. i <= k < j -> le s[k] s[j]) /\ sorted s[i..j] <->
+    (forall k. i <= k < j -> rel s[k] s[j]) /\ sorted s[i..j] <->
     sorted s[i..j+1]
 
   lemma sorted_slice_tail: forall s: seq t, i j. 0 <= i < j <= #s ->
-    (forall k. i+1 <= k < j -> le s[i] s[k]) /\ sorted s[i+1..j] <->
+    (forall k. i+1 <= k < j -> rel s[i] s[k]) /\ sorted s[i+1..j] <->
+    sorted s[i..j]
+
+  lemma sorted_slide_mid: forall s: seq t, i j k. 0 <= i <= k <= j <= #s ->
+    (sorted s[i..k] /\ sorted s[k..j] /\
+      (forall m n. i <= m < k /\ k <= n < j -> rel s[m] s[n])) <->
     sorted s[i..j]
 
   lemma sorted_append: forall s1 s2: seq t.
     (sorted s1 /\ sorted s2 /\
-      (forall i j. 0 <= i < #s1 /\ 0 <= j < #s2 -> le s1[i] s2[j])) <->
+      (forall i j. 0 <= i < #s1 /\ 0 <= j < #s2 -> rel s1[i] s2[j])) <->
     sorted (s1 ++ s2)
 
   lemma sorted_equiv: forall s1 s2.
@@ -427,7 +436,7 @@ module SortedInt (** sorted sequences of integers *)
 
   use int.Int
 
-  clone export Sorted with type t = int, predicate le = (<=), goal .
+  clone export Sorted with type t = int, predicate rel = (<=), goal .
 
 end
 
@@ -451,11 +460,17 @@ module Sum
   lemma sum_tail:
     forall s. #s > 0 -> sum s = s[0] + sum s[1..]
 
+  lemma sum_slice_empty:
+    forall s i. 0 <= i <= #s -> sum s[i..i] = 0
+
   lemma sum_slice_init: forall s i j. 0 <= i <= j < #s ->
     sum s[i..j+1] = sum s[i..j] + s[j]
 
   lemma sum_slice_tail: forall s i j. 0 <= i < j <= #s ->
     sum s[i..j] = s[i] + sum s[i+1..j]
+
+  lemma sum_slice_mid: forall s i j k. 0 <= i <= k <= j <= #s ->
+    sum s[i..j] = sum s[i..k] + sum s[k..j]
 
   lemma sum_append:
     forall s1 s2.
@@ -505,6 +520,9 @@ module NumOf
   lemma numof_tail: forall p, s: seq 'a. #s > 0 ->
     numof p s[1..] = if p s[0] then numof p s - 1 else numof p s
 
+  lemma numof_slice_empty:
+    forall p, s: seq 'a, i. 0 <= i <= #s -> numof p s[i..i] = 0
+
   lemma numof_slice_init: forall p, s: seq 'a, i j. 0 <= i <= j < #s ->
     numof p s[i..j+1] = if p s[j] then numof p s[i..j] + 1
                                   else numof p s[i..j]
@@ -512,6 +530,9 @@ module NumOf
   lemma numof_slice_tail: forall p, s: seq 'a, i j. 0 <= i < j <= #s ->
     numof p s[i..j] = if p s[i] then 1 + numof p s[i+1..j]
                                 else     numof p s[i+1..j]
+
+  lemma numof_slice_mid: forall p, s: seq 'a, i j k. 0 <= i <= k <= j <= #s ->
+    numof p s[i..j] = numof p s[i..k] + numof p s[k..j]
 
   lemma numof_append: forall p, s1 s2: seq 'a.
     numof p (s1 ++ s2) = numof p s1 + numof p s2
@@ -523,6 +544,10 @@ module NumOf
     0 <= i < #s -> 0 <= j < #s -> i <> j ->
     numof p s[i <- x][j <- y] =
     numof p s[i <- y][j <- x]
+
+  lemma numof_extend:
+    forall p, s: seq 'a, i j k l.
+    0 <= k <= i <= j <= l <= #s -> numof p s[i..j] <= numof p s[k..l]
 
 end
 
@@ -539,29 +564,35 @@ module Occ
 
   function occ (x: 'a) (s: seq 'a) : int = numof (is_eq x s) 0 #s
 
-  lemma occ_cons: forall k: 'a, s: seq 'a, x: 'a.
-    occ k (cons x s) = if k = x then 1 + occ k s else occ k s
+  lemma occ_cons: forall v: 'a, s: seq 'a, x: 'a.
+    occ v (cons x s) = if v = x then 1 + occ v s else occ v s
 
-  lemma occ_snoc: forall k: 'a, s: seq 'a, x: 'a.
-    occ k (snoc s x) = if k = x then 1 + occ k s else occ k s
+  lemma occ_snoc: forall v: 'a, s: seq 'a, x: 'a.
+    occ v (snoc s x) = if v = x then 1 + occ v s else occ v s
 
-  lemma occ_init: forall k: 'a, s: seq 'a. #s > 0 ->
-    occ k s[.. #s-1] = if k = s[#s-1] then occ k s - 1 else occ k s
+  lemma occ_init: forall v: 'a, s: seq 'a. #s > 0 ->
+    occ v s[.. #s-1] = if v = s[#s-1] then occ v s - 1 else occ v s
 
-  lemma occ_tail: forall k: 'a, s: seq 'a. #s > 0 ->
-    occ k s[1..] = if k = s[0] then occ k s - 1 else occ k s
+  lemma occ_tail: forall v: 'a, s: seq 'a. #s > 0 ->
+    occ v s[1..] = if v = s[0] then occ v s - 1 else occ v s
 
-  lemma occ_slice_init: forall k: 'a, s: seq 'a, i j. 0 <= i <= j < #s ->
-    occ k s[i..j+1] = if k = s[j] then occ k s[i..j] + 1 else occ k s[i..j]
+  lemma occ_slice_empty: forall v: 'a, s i. 0 <= i <= #s ->
+    occ v s[i..i] = 0
 
-  lemma occ_slice_tail: forall k: 'a, s: seq 'a, i j. 0 <= i < j <= #s ->
-    occ k s[i..j] = if k = s[i] then 1 + occ k s[i+1..j] else occ k s[i+1..j]
+  lemma occ_slice_init: forall v: 'a, s: seq 'a, i j. 0 <= i <= j < #s ->
+    occ v s[i..j+1] = if v = s[j] then occ v s[i..j] + 1 else occ v s[i..j]
 
-  lemma occ_append: forall k: 'a, s1 s2: seq 'a.
-    occ k (s1 ++ s2) = occ k s1 + occ k s2
+  lemma occ_slice_tail: forall v: 'a, s: seq 'a, i j. 0 <= i < j <= #s ->
+    occ v s[i..j] = if v = s[i] then 1 + occ v s[i+1..j] else occ v s[i+1..j]
 
-  lemma occ_equiv: forall s1 s2: seq 'a, k: 'a.
-    s1 == s2 -> occ k s1 = occ k s2
+  lemma occ_slice_mid: forall v: 'a, s: seq 'a, i j k. 0 <= i <= k <= j <= #s ->
+    occ v s[i..j] = occ v s[i..k] + occ v s[k..j]
+
+  lemma occ_append: forall v: 'a, s1 s2: seq 'a.
+    occ v (s1 ++ s2) = occ v s1 + occ v s2
+
+  lemma occ_equiv: forall s1 s2: seq 'a, v: 'a.
+    s1 == s2 -> occ v s1 = occ v s2
 
   lemma occ_pos: forall s: seq 'a, i: int.
     0 <= i < #s -> occ s[i] s > 0
@@ -571,6 +602,9 @@ module Occ
     0 <= i < #s -> 0 <= j < #s -> i <> j ->
     occ z s[i <- x][j <- y] =
     occ z s[i <- y][j <- x]
+
+  lemma occ_extend: forall v, s: seq 'a, i j k l.
+    0 <= k <= i <= j <= l <= #s -> occ v s[i..j] <= occ v s[k..l]
 
 end
 

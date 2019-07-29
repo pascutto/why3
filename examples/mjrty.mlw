@@ -24,7 +24,7 @@ module Mjrty
   use int.Int
   use ref.Refint
   use array.Array
-  use array.NumOfEq
+  use seq.Occ
 
   exception Not_found
 
@@ -35,15 +35,15 @@ module Mjrty
 
   let mjrty (a: array candidate) : candidate
     requires { 1 <= length a }
-    ensures  { 2 * numof a result 0 (length a) > length a }
-    raises   { Not_found -> forall c. 2 * numof a c 0 (length a) <= length a }
+    ensures  { 2 * occ result a > length a }
+    raises   { Not_found -> forall c. 2 * occ c a <= length a }
   = let n = length a in
     let cand = ref a[0] in
     let k = ref 0 in
     for i = 0 to n - 1 do (* could start at 1 with k initialized to 1 *)
-      invariant { 0 <= !k <= numof a !cand 0 i }
-      invariant { 2 * (numof a !cand 0 i - !k) <= i - !k }
-      invariant { forall c. c <> !cand -> 2 * numof a c 0 i <= i - !k }
+      invariant { 0 <= !k <= occ !cand a[..i] }
+      invariant { 2 * (occ !cand a[..i] - !k) <= i - !k }
+      invariant { forall c. c <> !cand -> 2 * occ c a[..i] <= i - !k }
       if !k = 0 then begin
         cand := a[i];
         k := 1
@@ -56,7 +56,7 @@ module Mjrty
     if 2 * !k > n then return !cand;
     k := 0;
     for i = 0 to n - 1 do
-      invariant { !k = numof a !cand 0 i /\ 2 * !k <= n }
+      invariant { !k = occ !cand a[..i] /\ 2 * !k <= n }
       if a[i] = !cand then begin
         incr k;
         if 2 * !k > n then return !cand
