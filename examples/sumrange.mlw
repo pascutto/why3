@@ -21,40 +21,6 @@ with logarithmic time operations.
 *)
 
 
-(** {2 Specification of Range Sum} *)
-
-module ArraySum
-
-  use int.Int
-  use array.Array
-
-  (** `sum a i j` denotes the sum `\sum_{i <= k < j} a[k]`.
-      It is axiomatizated by the two following axioms expressing
-      the recursive definition
-
-      if `i <= j` then `sum a i j = 0`
-
-      if `i < j` then `sum a i j = a[i] + sum a (i+1) j`
-
-  *)
-  let rec function sum (a:array int) (i j:int) : int
-   requires { 0 <= i <= j <= a.length }
-   variant { j - i }
-   = if j <= i then 0 else a[i] + sum a (i+1) j
-
-  (** lemma for summation from the right:
-
-      if `i < j` then `sum a i j = sum a i (j-1) + a[j-1]`
-
- *)
-  lemma sum_right : forall a : array int, i j : int.
-    0 <= i < j <= a.length  ->
-    sum a i j = sum a i (j-1) + a[j-1]
-
-end
-
-
-
 
 (** {2 First algorithm, a linear one} *)
 
@@ -62,60 +28,37 @@ module Simple
 
   use int.Int
   use array.Array
-  use ArraySum
-  use ref.Ref
+  use seq.Sum
 
   (** `query a i j` returns the sum of elements in `a` between
       index `i` inclusive and index `j` exclusive *)
-  let query (a:array int) (i j:int) : int
+  let query (a: array int) (i j: int) : int
     requires { 0 <= i <= j <= a.length }
-    ensures { result = sum a i j }
-  = let s = ref 0 in
-    for k=i to j-1 do
-      invariant { !s = sum a i k }
-      s := !s + a[k]
+    ensures { result = sum a[i..j] }
+  = let ref s = 0 in
+    for k = i to j-1 do
+      invariant { s = sum a[i..k] }
+      s <- s + a[k]
     done;
-    !s
+    s
 
 end
-
-
-
-
-(** {2 Additional lemmas on `sum`}
-  needed in the remaining code *)
 
 module ExtraLemmas
 
   use int.Int
-  use array.Array
-  use ArraySum
+  use seq.Seq
+  use seq.Sum
 
-  (** summation in adjacent intervals *)
-  lemma sum_concat : forall a:array int, i j k:int.
-    0 <= i <= j <= k <= a.length ->
-    sum a i k = sum a i j + sum a j k
+  lemma slice_ext: forall s1 s2: seq 'a, i j.
+    0 <= i <= j <= #s1 -> j <= #s2 ->
+    (forall k. i <= k < j -> s1[k] = s2[k]) ->
+    s1[i..j] = s2[i..j]
 
-  (** Frame lemma for `sum`, that is `sum a i j` depends only
-      of values of `a[i..j-1]` *)
-  lemma sum_frame : forall a1 a2 : array int, i j : int.
-    0 <= i <= j ->
-    j <= a1.length ->
-    j <= a2.length ->
-    (forall k : int. i <= k < j -> a1[k] = a2[k]) ->
-    sum a1 i j = sum a2 i j
-
-  (** Updated lemma for `sum`: how does `sum a i j` changes when
-      `a[k]` is changed for some `k` in `[i..j-1]` *)
-  lemma sum_update : forall a:array int, i v l h:int.
-    0 <= l <= i < h <= a.length ->
-    sum (a[i<-v]) l h = sum a l h + v - a[i]
-
+  lemma sum_set_slice : forall s i j k v. 0 <= i <= k < j <= #s ->
+    sum s[k <- v][i..j] = sum s[i..j] + v - s[k]
 
 end
-
-
-
 
 (** {2 Algorithm 2: using a cumulative array}
 
@@ -132,20 +75,20 @@ module CumulativeArray
 
   use int.Int
   use array.Array
-  use ArraySum
+  use seq.Sum
   use ExtraLemmas
 
-  predicate is_cumulative_array_for (c:array int) (a:array int) =
-    c.length = a.length + 1 /\
-    forall i. 0 <= i < c.length -> c[i] = sum a 0 i
+  predicate is_cumulative_array_for (c: seq int) (a: seq int) =
+    #c = #a + 1 /\
+    forall i. 0 <= i < #c -> c[i] = sum a[..i]
 
   (** `create a` builds the cumulative array associated with `a`. *)
   let create (a:array int) : array int
     ensures { is_cumulative_array_for result a }
   = let l = a.length in
     let s = Array.make (l+1) 0 in
-    for i=1 to l do
-      invariant { forall k. 0 <= k < i -> s[k] = sum a 0 k }
+    for i = 1 to l do
+      invariant { forall k. 0 <= k < i -> s[k] = sum a[..k] }
       s[i] <- s[i-1] + a[i-1]
     done;
     s
@@ -155,7 +98,7 @@ module CumulativeArray
   let query (c:array int) (i j:int) (ghost a:array int): int
     requires { is_cumulative_array_for c a }
     requires { 0 <= i <= j < c.length }
-    ensures { result = sum a i j }
+    ensures { result = sum a[i..j] }
   = c[j] - c[i]
 
 
@@ -172,8 +115,8 @@ module CumulativeArray
   = let incr = v - c[i+1] + c[i] in
     a[i] <- v;
     for j=i+1 to c.length-1 do
-      invariant { forall k. j <= k < c.length -> c[k] = sum a 0 k - incr }
-      invariant { forall k. 0 <= k < j -> c[k] = sum a 0 k }
+      invariant { forall k. j <= k < c.length -> c[k] = sum a[..k] - incr }
+      invariant { forall k. 0 <= k < j -> c[k] = sum a[..k] }
       c[j] <- c[j] + incr
     done
 
@@ -201,9 +144,9 @@ module CumulativeTree
 
   use int.Int
   use array.Array
-  use ArraySum
-  use ExtraLemmas
+  use seq.Sum
   use int.ComputerDivision
+  use ExtraLemmas
 
   type indexes =
     { low : int;
@@ -219,12 +162,12 @@ module CumulativeTree
     | Node ind _ _ -> ind
     end
 
-  predicate is_indexes_for (ind:indexes) (a:array int) (i j:int) =
+  predicate is_indexes_for (ind:indexes) (a: seq int) (i j:int) =
     ind.low = i /\ ind.high = j /\
-    0 <= i < j <= a.length /\
-    ind.isum = sum a i j
+    0 <= i < j <= #a /\
+    ind.isum = sum a[i..j]
 
-  predicate is_tree_for (t:tree) (a:array int) (i j:int) =
+  predicate is_tree_for (t:tree) (a: seq int) (i j: int) =
     match t with
     | Leaf ind ->
         is_indexes_for ind a i j /\ j = i+1
@@ -242,22 +185,23 @@ module CumulativeTree
 
   let rec tree_of_array (a:array int) (i j:int) : tree
     requires { 0 <= i < j <= a.length }
-    variant { j - i }
-    ensures { is_tree_for result a i j }
-    = if i+1=j then begin
+    variant  { j - i }
+    ensures  { is_tree_for result a i j }
+    ensures  { result.indexes.low = i }
+    ensures  { result.indexes.high = j }
+    = if i+1 = j then begin
        Leaf { low = i; high = j; isum = a[i] }
-       end
-      else
-        begin
+      end else begin
         let m = div (i+j) 2 in
         assert { i < m < j };
         let l = tree_of_array a i m in
         let r = tree_of_array a m j in
         let s = l.indexes.isum + r.indexes.isum in
-        assert { s = sum a i j };
-        Node { low = i; high = j; isum = s} l r
-        end
-
+        assert { s = sum a[i..j] };
+        let ind = { low = i; high = j; isum = s} in
+        assert { is_indexes_for ind a i j };
+        Node ind l r
+      end
 
   let create (a:array int) : tree
     requires { a.length >= 1 }
@@ -273,7 +217,7 @@ module CumulativeTree
     requires { is_tree_for t a t.indexes.low t.indexes.high }
     requires { 0 <= t.indexes.low <= i < j <= t.indexes.high <= a.length }
     variant { t }
-    ensures { result = sum a i j }
+    ensures { result = sum a[i..j] }
   = match t with
     | Leaf ind ->
       ind.isum
@@ -291,13 +235,13 @@ module CumulativeTree
   let query (t:tree) (ghost a: array int) (i j:int) : int
     requires { 0 <= i <= j <= a.length }
     requires { is_tree_for t a 0 a.length }
-    ensures { result = sum a i j }
+    ensures { result = sum a[i..j] }
   = if i=j then 0 else query_aux t a i j
 
 
   (** frame lemma for predicate `is_tree_for` *)
-  lemma is_tree_for_frame : forall t:tree, a:array int, k v i j:int.
-    0 <= k < a.length ->
+  lemma is_tree_for_frame : forall t:tree, a: seq int, k v i j:int.
+    0 <= k < #a ->
     k < i \/ k >= j ->
     is_tree_for t a i j ->
     is_tree_for t a[k<-v] i j
@@ -375,7 +319,7 @@ module CumulativeTree
 
   use bv.Pow2int
 
-  let rec lemma depth_is_log (t:tree) (a :array int) (k:int)
+  let rec lemma depth_is_log (t:tree) (a: seq int) (k:int)
      requires { k >= 0 }
      requires { is_tree_for t a t.indexes.low t.indexes.high }
      requires { t.indexes.high - t.indexes.low <= pow2 k }
@@ -435,7 +379,7 @@ module CumulativeTree
          if i = t.indexes.low /\ j = t.indexes.high then 1 else
          if i = t.indexes.low \/ j = t.indexes.high then 2 * depth t else
           4 * depth t }
-    ensures { result = sum a i j }
+    ensures { result = sum a[i..j] }
   = c := !c + 1;
     match t with
     | Leaf ind ->

@@ -122,6 +122,9 @@ module Seq
 
   lemma slice_full: forall s: seq 'a. s = s[0 .. #s]
 
+  (* lemma set_slice : forall s: seq 'a, i j k v. 0 <= i <= k < j <= #s -> *)
+  (*   s[k <- v][i..j] = s[i..j][k - i <- v] *)
+
   (** concatenation *)
   function (++) (s1: seq 'a) (s2: seq 'a) : seq 'a
 
@@ -429,9 +432,6 @@ module Sorted
       (forall i j. 0 <= i < #s1 /\ 0 <= j < #s2 -> rel s1[i] s2[j])) <->
     sorted (s1 ++ s2)
 
-  lemma sorted_equiv: forall s1 s2.
-    s1 == s2 -> sorted s1 <-> sorted s2
-
 end
 
 module SortedInt (** sorted sequences of integers *)
@@ -468,19 +468,20 @@ module Sum
   lemma sum_slice_init: forall s i j. 0 <= i <= j < #s ->
     sum s[i..j+1] = sum s[i..j] + s[j]
 
+  (* lemma sum_slice_init_strict: forall s i j. 0 <= i < j < #s -> *)
+  (*   sum s[i..j] = sum s[i..j-1] + s[j-1] *)
+
+  (* lemma sum_slice_tail_large: forall s i j. 0 <= i <= j <= #s -> *)
+  (*   sum s[i-1..j] = s[i-1] + sum s[i..j] *)
+
   lemma sum_slice_tail: forall s i j. 0 <= i < j <= #s ->
     sum s[i..j] = s[i] + sum s[i+1..j]
 
   lemma sum_slice_mid: forall s i j k. 0 <= i <= k <= j <= #s ->
     sum s[i..j] = sum s[i..k] + sum s[k..j]
 
-  lemma sum_append:
-    forall s1 s2.
+  lemma sum_append: forall s1 s2.
     sum (s1 ++ s2) = sum s1 + sum s2
-
-  lemma sum_equiv:
-    forall s1 s2.
-    s1 == s2 -> sum s1 = sum s2
 
 end
 
@@ -539,9 +540,6 @@ module NumOf
   lemma numof_append: forall p, s1 s2: seq 'a.
     numof p (s1 ++ s2) = numof p s1 + numof p s2
 
-  lemma numof_equiv: forall s1 s2: seq 'a, p.
-    s1 == s2 -> numof p s1 = numof p s2
-
   lemma numof_exchange: forall p, s: seq 'a, i j: int, x y: 'a.
     0 <= i < #s -> 0 <= j < #s -> i <> j ->
     numof p s[i <- x][j <- y] =
@@ -594,9 +592,6 @@ module Occ
 
   lemma occ_append: forall v: 'a, s1 s2: seq 'a.
     occ v (s1 ++ s2) = occ v s1 + occ v s2
-
-  lemma occ_equiv: forall s1 s2: seq 'a, v: 'a.
-    s1 == s2 -> occ v s1 = occ v s2
 
   lemma occ_pos: forall s: seq 'a, i: int.
     0 <= i < #s -> occ s[i] s > 0

@@ -405,9 +405,17 @@ module Sum
     variant { b - a }
   = if a < b then f a + sum f (a + 1) b else 0
 
+  (* lemma sum_left: *)
+  (*   forall f: int -> int, a b: int. a <= b -> *)
+  (*   sum f (a - 1) b = f (a - 1) + sum f a b *)
+
+  (* lemma sum_right_strict: *)
+  (*   forall f: int -> int, a b: int. a < b -> *)
+  (*   sum f a b = sum f a (b - 1) + f (b - 1) *)
+
   lemma sum_right:
-    forall f: int -> int, a b: int.
-    a <= b -> sum f a (b + 1) = sum f a b + f b
+    forall f: int -> int, a b: int. a <= b ->
+    sum f a (b + 1) = sum f a b + f b
 
   lemma sum_ext:
     forall f g: int -> int, a b: int.
