@@ -1246,7 +1246,7 @@ xsymbol:
 
 invariant:
 | INVARIANT option(ident_nq) LEFTBRC term RIGHTBRC
-    { name_term $2 "LoopInvariant" $4 }
+    { name_term $2 "Invariant" $4 }
 
 variant:
 | VARIANT LEFTBRC comma_list1(single_variant) RIGHTBRC { $3 }
