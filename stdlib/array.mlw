@@ -182,14 +182,18 @@ module ArraySwap
 
   use int.Int
   use Array
-  use export seq.Exchange
+  use seq.Permut
 
-  let swap (a:array 'a) (i:int) (j:int) : unit
+  let swap (a:array 'a) (i: int) (j: int) (ghost p: permutation) :
+      (ghost q: permutation)
     requires { 0 <= i < #a /\ 0 <= j < #a }
-    ensures  { exchange (old a) a i j }
+    requires { #p = #a }
+    ensures  { a = (old a)[i <- old a[j]][j <- old a[i]] }
+    ensures  { forall b: seq 'a. permut b (old a) p -> permut b a q }
   = let v = a[i] in
     a[i] <- a[j];
-    a[j] <- v
+    a[j] <- v;
+    ghost compose p (transpose #(p.forward) i j)
 
 end
 
@@ -223,7 +227,6 @@ end
 module Inversions
 
   use Array
-  use seq.Exchange
   use int.Int
   use int.Sum
   use int.NumOf
@@ -243,7 +246,7 @@ module Inversions
   let lemma exchange_inversion (a1 a2: array int) (i0: int)
     requires { 0 <= i0 < #a1 - 1 }
     requires { a1[i0] > a1[i0 + 1] }
-    requires { exchange a1 a2 i0 (i0 + 1) }
+    requires { a2 = a1[i0 <- a1[i0 + 1]][i0 + 1 <- a1[i0]] }
     ensures  { inversions a2 < inversions a1 }
   = assert { inversion a1 i0 (i0+1) };
     assert { not (inversion a2 i0 (i0+1)) };

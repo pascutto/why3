@@ -110,6 +110,8 @@ module Seq
 
   axiom slice_length:
     forall s: seq 'a, i, j. 0 <= i <= j <= #s -> #(s[i..j]) = j - i
+  axiom slice_length_neg:
+    forall s: seq 'a, i, j. 0 <= j <  i <= #s -> #(s[i..j]) = 0
   axiom slice_contents:
     forall s: seq 'a, i, j, k. 0 <= i <= j <= #s -> 0 <= k < j - i ->
     s[i..j][k] = s[i + k]
@@ -610,27 +612,87 @@ module Occ
 
 end
 
-(* TODO defined using map.Exchange? *)
-module Exchange
+module Permut
 
   use int.Int
   use Seq
 
-  predicate exchange (s1 s2: seq 'a) (i j: int) =
-    #s1 = #s2 /\
-    0 <= i < #s1 /\ 0 <= j < #s1 /\
-    s1[i] = s2[j] /\ s1[j] = s2[i] /\
-    (forall k:int. 0 <= k < #s1 -> k <> i -> k <> j -> s1[k] = s2[k])
+  predicate range (s: seq int) =
+    forall i. 0 <= i < #s -> 0 <= s[i] < #s
 
-  lemma exchange_set:
-    forall s: seq 'a, i j: int.
-    0 <= i < #s -> 0 <= j < #s ->
-    exchange s s[i <- s[j]][j <- s[i]] i j
+  predicate injective (s: seq int) =
+    forall i j. 0 <= i < #s -> 0 <= j < #s -> i <> j -> s[i] <> s[j]
+
+  type permutation = {
+    forward: seq int;
+    inverse: seq int;
+  } invariant { #forward = #inverse }
+    invariant { range forward }
+    invariant { range inverse }
+    invariant { forall i. 0 <= i < #forward -> inverse[forward[i]] = i }
+    invariant { forall i. 0 <= i < #forward -> forward[inverse[i]] = i }
+  by { forward = create 0 (fun i -> i);
+       inverse = create 0 (fun i -> i); }
+
+  meta coercion function forward
+
+  lemma injective_forward: forall p: permutation. injective p.forward
+  lemma injective_inverse: forall p: permutation. injective p.inverse
+
+  let ghost function identity (n: int) : permutation
+    requires { n >= 0 }
+    ensures  { #result = n }
+    ensures  { forall i. 0 <= i < n -> result[i] = i }
+  = { forward = create n (fun i -> i);
+      inverse = create n (fun i -> i); }
+
+  let ghost function compose (p1 p2: permutation) : permutation
+    requires { #p1 = #p2 }
+    ensures  { #result = #p1 }
+    ensures  { forall i. 0 <= i < #result -> result[i] = p2[p1[i]] }
+  = { forward = create #(p1.forward) (fun i -> p2.forward[p1.forward[i]]);
+      inverse = create #(p1.forward) (fun i -> p1.inverse[p2.inverse[i]]); }
+
+  let ghost function transpose (n: int) (i j: int) : permutation
+    requires { 0 <= i < n }
+    requires { 0 <= j < n }
+    ensures  { #result = n }
+    ensures  { result[i] = j }
+    ensures  { result[j] = i }
+    ensures  { forall k. 0 <= k < n -> k <> i -> k <> j -> result[k] = k }
+  = { forward = create n (fun k -> if k = i then j else if k = j then i else k);
+      inverse = create n (fun k -> if k = i then j else if k = j then i else k)}
+
+  (** permut a1 a2 l u is true when the segment a1(l..u-1) is a
+    permutation of the segment a2(l..u-1). Values outside of the
+    interval (l..u-1) are ignored. *)
+  predicate permut_slice (s1 s2: seq 'a) (l u: int) (p: permutation) =
+    #s1 = #s2 = #p /\ 0 <= l <= #s1 /\ 0 <= u <= #s1 /\
+    forall i. l <= i < u -> l <= p[i] < u /\ s2[p[i]] = s1[i]
+
+  (** permut_sub a1 a2 l u is true when the segment a1(l..u-1) is a
+    permutation of the segment a2(l..u-1) and values outside of the
+    interval (l..u-1) are equal. *)
+  predicate permut_sub (s1 s2: seq 'a) (l u: int) (p: permutation) =
+    permut_slice s1 s2 l u p /\
+    (forall i. 0 <= i < l \/ u <= i < #s1 -> p[i] = i /\ s2[i] = s1[i])
+
+  (** permut_all a1 a2 l u is true when array a1 is a permutation of
+      array a2. *)
+  predicate permut (s1 s2: seq 'a) (p: permutation) =
+    permut_slice s1 s2 0 #s1 p
+
+  lemma permut_trans: forall s1 s2 s3: seq 'a, p q.
+    permut s1 s2 p -> permut s2 s3 q -> permut s1 s3 (compose p q)
+
+  lemma permut_sub_permut: forall s1 s2: seq 'a, l u p.
+    permut_sub s1 s2 l u p -> permut s1 s2 p
 
 end
 
 (** {2 Permutation of sequences} *)
 
+(*
 module Permut
 
   use int.Int
@@ -638,7 +700,7 @@ module Permut
   use Occ
   use export Exchange
 
-  predicate permut (s1 s2: seq 'a) =
+  predicate permut (s1 s2: seq 'a) (p: permutation) =
     #s1 = #s2 /\ forall v: 'a. occ v s1 = occ v s2
   (** `permut s1 s2` is true when
       sequence `s1` is a permutation of sequence `s2` *)
@@ -683,6 +745,7 @@ module Permut
     exchange s1 s2 i j -> permut s1 s2
 
 end
+*)
 
 module FoldLeft
 

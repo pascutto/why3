@@ -18,8 +18,8 @@ module Elt
   clone relations.TotalPreOrder with
     type t = elt, predicate rel = le, axiom .
 
-  clone export array.Sorted with type
-    elt = elt, predicate le = le, axiom .
+  clone export seq.Sorted with type
+    t = elt, predicate rel = le, axiom .
 
 end
 
@@ -35,46 +35,59 @@ module Merge
   clone export Elt with axiom .
   use export ref.Refint
   use export array.Array
-  use map.Occ
-  use export array.ArrayPermut
+  use export seq.Permut
 
   (* merges tmp[l..m[ and tmp[m..r[ into a[l..r[ *)
-  let merge (tmp a: array elt) (l m r: int) : unit
+  let merge (tmp a: array elt) (l m r: int) : (ghost p: permutation)
     requires { 0 <= l <= m <= r <= length tmp = length a }
-    requires { sorted_sub tmp l m }
-    requires { sorted_sub tmp m r }
-    ensures  { sorted_sub a l r }
-    ensures  { permut tmp a l r }
+    requires { sorted tmp[l..m] }
+    requires { sorted tmp[m..r] }
+    ensures  { sorted a[l..r] }
+    ensures  { permut_slice tmp a l r p }
     ensures  { forall i: int.
                (0 <= i < l \/ r <= i < length a) -> a[i] = (old a)[i] }
-  = let i = ref l in
-    let j = ref m in
+  = let ref i = l in
+    let ref j = m in
+    let ghost ref fwd = create (length a) (fun i -> i) in
+    let ghost ref inv = create (length a) (fun i -> i) in
     for k = l to r-1 do
-      invariant { l <= !i <= m <= !j <= r }
-      invariant { !i - l + !j - m = k - l }
-      invariant { sorted_sub a l k }
-      invariant { forall x y: int. l <= x < k -> !i <= y < m -> le a[x] tmp[y] }
-      invariant { forall x y: int. l <= x < k -> !j <= y < r -> le a[x] tmp[y] }
-      invariant { forall v: elt.
-                  occ v tmp.elts l !i + occ v tmp.elts m !j = occ v a.elts l k }
-      invariant { forall i: int.
-                  (0 <= i < l \/ r <= i < length a) -> a[i] = (old a)[i] }
-      if !i < m && (!j = r || le tmp[!i] tmp[!j]) then begin
-        a[k] <- tmp[!i];
-        incr i
+      invariant { l <= i <= m <= j <= r }
+      invariant { i - l + j - m = k - l }
+      invariant { sorted a[l..k] }
+      invariant { forall x y: int. l <= x < k -> i <= y < m -> le a[x] tmp[y] }
+      invariant { forall x y: int. l <= x < k -> j <= y < r -> le a[x] tmp[y] }
+      invariant { #fwd = #inv = #a }
+      invariant { forall x. l <= x < i \/ m <= x < j -> l <= fwd[x] < k }
+      invariant { forall x. l <= x < k -> l <= inv[x] < i \/ m <= inv[x] < j }
+      invariant { forall x. l <= x < i \/ m <= x < j -> inv[fwd[x]] = x }
+      invariant { forall x. l <= x < k -> fwd[inv[x]] = x }
+      invariant { forall x. 0 <= x < l \/ r <= x < #a-> fwd[x] = inv[x] = x }
+      invariant { forall x. l <= x < i \/ m <= x < j -> a[fwd[x]] = tmp[x] }
+      invariant { forall i.
+                    (0 <= i < l \/ r <= i < length a) -> a[i] = (old a)[i] }
+      if i < m && (j = r || le tmp[i] tmp[j]) then begin
+        a[k] <- tmp[i];
+        fwd := fwd[i <- k]; inv := inv[k <- i];
+        incr i;
       end else begin
-        a[k] <- tmp[!j];
+        a[k] <- tmp[j];
+        fwd := fwd[j <- k]; inv := inv[k <- j];
         incr j
-      end
-    done
+      end;
+      assert { sorted a[l..k] };
+      assert { forall x y: int. l <= x < k -> i <= y < m -> le a[x] tmp[y] };
+      assert { forall x y: int. l <= x < k -> j <= y < r -> le a[x] tmp[y] };
+    done;
+    ghost { forward = fwd; inverse = inv }
 
+(*
   (* merges a[l..m[ and a[m..r[ into a[l..r[, using tmp as a temporary *)
   let merge_using (tmp a: array elt) (l m r: int) : unit
     requires { 0 <= l <= m <= r <= length tmp = length a }
-    requires { sorted_sub a l m }
-    requires { sorted_sub a m r }
-    ensures  { sorted_sub a l r }
-    ensures  { permut (old a) a l r }
+    requires { sorted a[l..m] }
+    requires { sorted a[m..r] }
+    ensures  { sorted a[l..r] }
+    (* ensures  { permut (old a) a l r } *)
     ensures  { forall i: int.
                (0 <= i < l \/ r <= i < length a) -> a[i] = (old a)[i] }
   = if l < m && m < r then (* both sides are non empty *)
@@ -85,11 +98,12 @@ module Merge
         label N in
         blit a l tmp l (r - l);
         merge tmp a l m r;
-        assert { permut_sub (a at N) a l r }
+        (* assert { permut_sub (a at N) a l r } *)
       end
-
+*)
 end
 
+(*
 (** {2 Top-down, recursive mergesort}
 
     Split in equal halves, recursively sort the two, and then merge. *)
@@ -98,30 +112,34 @@ module TopDownMergesort
 
   clone Merge with axiom .
   use mach.int.Int
+  use array.Array
 
   let rec mergesort_rec (a tmp: array elt) (l r: int) : unit
     requires { 0 <= l <= r <= length a = length tmp }
-    ensures { sorted_sub a l r }
-    ensures { permut_sub (old a) a l r }
+    ensures { sorted a[l..r] }
+    (* ensures { permut_sub (old a) a l r } *)
     variant { r - l }
   = if l >= r-1 then return;
     let m = l + (r - l) / 2 in
     assert { l <= m < r };
     mergesort_rec a tmp l m;
-    assert { permut_sub (old a) a l r };
+    (* assert { permut_sub (old a) a l r }; *)
     label M in
     mergesort_rec a tmp m r;
-    assert { permut_sub (a at M) a l r };
+    (* assert { permut_sub (a at M) a l r }; *)
     merge_using tmp a l m r
 
   let mergesort (a: array elt) : unit
     ensures { sorted a }
-    ensures { permut_all (old a) a }
+    (* ensures { permut_all (old a) a } *)
   =
     let tmp = Array.copy a in
     mergesort_rec a tmp 0 (length a)
 
 end
+*)
+
+(*
 
 (** {2 Bottom-up, iterative mergesort}
 
@@ -305,3 +323,5 @@ module NaturalMergesort
     ()
 
 end
+
+*)
