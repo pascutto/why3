@@ -61,6 +61,9 @@ let its_recursive s =
     x.its_exposed && not x.its_liable &&
     x.its_fixed && x.its_visible) s.its_arg_flg
 
+(* FIXME: duplicated in vc.ml *)
+let expl_type_inv = Ident.create_attribute "expl:type invariant"
+
 let create_semi_constructor id s fdl pjl invl =
   let tvl = List.map ity_var s.its_ts.ts_args in
   let rgl = List.map ity_reg s.its_regions in
@@ -72,6 +75,12 @@ let create_semi_constructor id s fdl pjl invl =
   let eff = match ity.ity_node with
     | Ityreg r -> eff_reset eff_empty (Sreg.singleton r)
     | _ -> eff_empty in
+  let set_expl ({t_attrs=attrs} as t) =
+    let is_expl a = Strings.has_prefix "expl:" a.attr_string in
+    let attrs = if Sattr.exists is_expl attrs then attrs
+      else Sattr.add expl_type_inv attrs in
+    t_attr_set attrs t in
+  let invl = List.map set_expl invl in
   let c = create_cty fdl invl [q] Mxs.empty Mpv.empty eff ity in
   create_rsymbol id c
 
