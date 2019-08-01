@@ -44,21 +44,18 @@ module Seq
 
   axiom create_length:
     forall len, f: int -> 'a. 0 <= len -> #(create len f) = len
+  axiom create_length_neg:
+    forall len, f: int -> 'a. len < 0  -> #(create len f) = 0
   axiom create_contents:
     forall len, f: int -> 'a, i. 0 <= i < len -> (create len f)[i] = f i
-
-  (*** FIXME: could be defined, but let constant does
-     not accept spec. *)
-  (*** let constant empty : seq 'a
-    ensures { #result = 0 }
-  = while false do variant { 0 } () done;
-    create 0 (fun _ requires { false } -> absurd)
-   *)
 
   (** empty sequence *)
   constant empty : seq 'a
 
   axiom empty_def: #(empty: seq 'a) = 0
+
+  lemma empty_ext:
+    forall s: seq 'a. #s = 0 -> s = empty
 
   (** `set s i v` is a new sequence `u` such that
       `u[i] = v` and `u[j] = s[j]` otherwise *)
@@ -76,6 +73,8 @@ module Seq
     forall s: seq 'a, i, v. 0 <= i < #s -> (set s i v)[i] = v
   lemma set_other:
     forall s: seq 'a, i, v, j. 0 <= j < #s -> j <> i -> (set s i v)[j] = s[j]
+  lemma set_same:
+    forall s: seq 'a, i. 0 <= i < #s -> set s i s[i] = s
 
   (** singleton sequence *)
   function singleton (v: 'a) : seq 'a
@@ -113,7 +112,7 @@ module Seq
   axiom slice_length_neg:
     forall s: seq 'a, i, j. 0 <= j <  i <= #s -> #(s[i..j]) = 0
   axiom slice_contents:
-    forall s: seq 'a, i, j, k. 0 <= i <= j <= #s -> 0 <= k < j - i ->
+    forall s: seq 'a, i, j, k. 0 <= i <= i + k < j <= #s ->
     s[i..j][k] = s[i + k]
 
   function ([_..]) [@inline:trivial] (s: seq 'a) (i: int) : seq 'a
@@ -393,9 +392,29 @@ module Sorted
   predicate rel t t
   (** the order relation to compare elements; can be strict or large *)
 
-  predicate sorted (s: seq t) = forall i1 i2.
-    0 <= i1 < i2 < #s -> rel s[i1] s[i2]
-  (** `sorted s` is true whenever the sequence `s` is sorted w.r.t `rel`  *)
+  predicate sorted_sub (s: seq t) (l r: int) =
+    forall i j. 0 <= l <= i < j < r <= #s -> rel s[i] s[j]
+  (** `sorted_sub s l r` is true whenever the sequence `s` is sorted w.r.t `rel`
+      between `l` and `r` *)
+
+  lemma sorted_sub_slice: forall s: seq t, l r i j: int.
+    0 <= i <= j <= #s -> 0 <= l <= j - i -> 0 <= r <= j - i ->
+    sorted_sub s[i..j] l r <-> sorted_sub s (i+l) (i+r)
+
+  lemma sorted_sub_init: forall s: seq t, i j. 0 <= i <= j < #s ->
+    (forall k. i <= k < j -> rel s[k] s[j]) /\ sorted_sub s i j <->
+    sorted_sub s i (j+1)
+
+  lemma sorted_sub_tail: forall s: seq t, i j. 0 <= i < j <= #s ->
+    (forall k. i+1 <= k < j -> rel s[i] s[k]) /\ sorted_sub s (i+1) j <->
+    sorted_sub s i j
+
+  lemma sorted_sub_mid: forall s: seq t, i j k. 0 <= i <= k <= j <= #s ->
+    (sorted_sub s i k /\ sorted_sub s k j /\
+      (forall m n. i <= m < k <= n < j -> rel s[m] s[n])) <->
+    sorted_sub s i j
+
+  predicate sorted [@inline_trivial] (s: seq t) = sorted_sub s 0 #s
 
   lemma sorted_cons: forall x: t, s: seq t.
     (forall i. 0 <= i < #s -> rel x s[i]) /\ sorted s <->
@@ -404,30 +423,6 @@ module Sorted
   lemma sorted_snoc: forall x: t, s: seq t.
     (forall i. 0 <= i < #s -> rel s[i] x) /\ sorted s <->
     sorted (snoc s x)
-
-  lemma sorted_init: forall s: seq t. #s > 0 ->
-    (forall i. 0 <= i < #s - 1 -> rel s[i] s[#s - 1]) /\ sorted s[.. #s-1] <->
-    sorted s
-
-  lemma sorted_tail: forall s: seq t. #s > 0 ->
-    (forall i. 1 <= i < #s -> rel s[0] s[i]) /\ sorted s[1..] <->
-    sorted s
-
-  lemma sorted_slice_empty:
-    forall s i. 0 <= i <= #s -> sorted s[i..i]
-
-  lemma sorted_slice_init: forall s: seq t, i j. 0 <= i <= j < #s ->
-    (forall k. i <= k < j -> rel s[k] s[j]) /\ sorted s[i..j] <->
-    sorted s[i..j+1]
-
-  lemma sorted_slice_tail: forall s: seq t, i j. 0 <= i < j <= #s ->
-    (forall k. i+1 <= k < j -> rel s[i] s[k]) /\ sorted s[i+1..j] <->
-    sorted s[i..j]
-
-  lemma sorted_slide_mid: forall s: seq t, i j k. 0 <= i <= k <= j <= #s ->
-    (sorted s[i..k] /\ sorted s[k..j] /\
-      (forall m n. i <= m < k /\ k <= n < j -> rel s[m] s[n])) <->
-    sorted s[i..j]
 
   lemma sorted_append: forall s1 s2: seq t.
     (sorted s1 /\ sorted s2 /\
@@ -450,37 +445,28 @@ module Sum
   use Seq
   use int.Sum as S
 
-  function sum (s: seq int) : int = S.sum (get s) 0 #s
+  function sum_sub (s: seq int) (l r: int) : int = S.sum (get s) l r
+
+  lemma sum_sub_slice: forall s l r i j.
+    0 <= i <= j <= #s -> 0 <= l <= j - i -> 0 <= r <= j - i ->
+    sum_sub s[i..j] l r = sum_sub s (i+l) (i+r)
+
+  lemma sum_sub_init: forall s i j. 0 <= i <= j < #s ->
+    sum_sub s i (j+1) = sum_sub s i j + s[j]
+
+  lemma sum_sub_tail: forall s i j. 0 <= i < j <= #s ->
+    sum_sub s i j = s[i] + sum_sub s (i+1) j
+
+  lemma sum_sub_mid: forall s i j k. 0 <= i <= k <= j <= #s ->
+    sum_sub s i j = sum_sub s i k + sum_sub s k j
+
+  function sum [@inline_trivial] (s: seq int) : int = sum_sub s 0 #s
 
   lemma sum_cons:
     forall s x. sum (cons x s) = x + sum s
 
   lemma sum_snoc:
     forall s x. sum (snoc s x) = sum s + x
-
-  lemma sum_init:
-    forall s. #s > 0 -> sum s = sum s[.. #s - 1] + s[#s - 1]
-
-  lemma sum_tail:
-    forall s. #s > 0 -> sum s = s[0] + sum s[1..]
-
-  lemma sum_slice_empty:
-    forall s i. 0 <= i <= #s -> sum s[i..i] = 0
-
-  lemma sum_slice_init: forall s i j. 0 <= i <= j < #s ->
-    sum s[i..j+1] = sum s[i..j] + s[j]
-
-  (* lemma sum_slice_init_strict: forall s i j. 0 <= i < j < #s -> *)
-  (*   sum s[i..j] = sum s[i..j-1] + s[j-1] *)
-
-  (* lemma sum_slice_tail_large: forall s i j. 0 <= i <= j <= #s -> *)
-  (*   sum s[i-1..j] = s[i-1] + sum s[i..j] *)
-
-  lemma sum_slice_tail: forall s i j. 0 <= i < j <= #s ->
-    sum s[i..j] = s[i] + sum s[i+1..j]
-
-  lemma sum_slice_mid: forall s i j k. 0 <= i <= k <= j <= #s ->
-    sum s[i..j] = sum s[i..k] + sum s[k..j]
 
   lemma sum_append: forall s1 s2.
     sum (s1 ++ s2) = sum s1 + sum s2
