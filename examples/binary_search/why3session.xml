@@ -7,17 +7,17 @@
 <path name=".."/><path name="binary_search.mlw"/>
 <theory name="BinarySearch" proved="true">
  <goal name="VC binary_search" expl="VC for binary_search" proved="true">
- <proof prover="0"><result status="valid" time="0.05" steps="132"/></proof>
+ <proof prover="0"><result status="valid" time="0.05" steps="128"/></proof>
  </goal>
 </theory>
 <theory name="BinarySearchAnyMidPoint" proved="true">
  <goal name="VC binary_search" expl="VC for binary_search" proved="true">
- <proof prover="0"><result status="valid" time="0.01" steps="63"/></proof>
+ <proof prover="0"><result status="valid" time="0.01" steps="50"/></proof>
  </goal>
 </theory>
 <theory name="BinarySearchBranchless" proved="true">
  <goal name="VC binary_search" expl="VC for binary_search" proved="true">
- <proof prover="0" timelimit="5"><result status="valid" time="0.06" steps="218"/></proof>
+ <proof prover="0" timelimit="5"><result status="valid" time="0.06" steps="194"/></proof>
  </goal>
 </theory>
 <theory name="BinarySearchInt32" proved="true">
@@ -27,7 +27,7 @@
 </theory>
 <theory name="BinarySearchBoolean" proved="true">
  <goal name="VC binary_search" expl="VC for binary_search" proved="true">
- <proof prover="0"><result status="valid" time="0.08" steps="245"/></proof>
+ <proof prover="0"><result status="valid" time="0.08" steps="215"/></proof>
  </goal>
 </theory>
 </file>

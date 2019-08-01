@@ -7,7 +7,7 @@ module Sum
   use int.Int
   use ref.Ref
   use array.Array
-  use array.ArraySum
+  use seq.Sum
 
   let sum (a: array int) (n: int)
     requires { 0 <= n < a.length }

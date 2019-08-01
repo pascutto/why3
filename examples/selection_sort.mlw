@@ -11,13 +11,13 @@ module SelectionSort
   use seq.Permut
 
   let selection_sort (a: array int) : (ghost p: permutation)
-    ensures { sorted a /\ permut (old a) a p } =
+    ensures { sorted_all a /\ permut_all (old a) a p } =
     let ref min = 0 in
     let ghost ref p = identity a.length in
     for i = 0 to length a - 1 do
       (* a[0..i[ is sorted; now find minimum of a[i..n[ *)
-      invariant { sorted a[..i] }
-      invariant { permut (old a) a p }
+      invariant { sorted a 0 i }
+      invariant { permut_all (old a) a p }
       invariant { forall k1 k2. 0 <= k1 < i <= k2 < length a -> a[k1] <= a[k2] }
       (* let min = ref i in *) min := i;
       for j = i + 1 to length a - 1 do
@@ -27,7 +27,6 @@ module SelectionSort
       done;
       label L in
       if min <> i then p := swap a min i p;
-      assert { sorted a[..i] };
     done;
     p
 

@@ -40,12 +40,11 @@ module Merge
   (* merges tmp[l..m[ and tmp[m..r[ into a[l..r[ *)
   let merge (tmp a: array elt) (l m r: int) : (ghost p: permutation)
     requires { 0 <= l <= m <= r <= length tmp = length a }
-    requires { sorted tmp[l..m] }
-    requires { sorted tmp[m..r] }
-    ensures  { sorted a[l..r] }
-    ensures  { permut_slice tmp a l r p }
-    ensures  { forall i: int.
-               (0 <= i < l \/ r <= i < length a) -> a[i] = (old a)[i] }
+    requires { sorted tmp l m }
+    requires { sorted tmp m r }
+    ensures  { sorted a l r }
+    ensures  { permut tmp a l r p }
+    ensures  { forall i. (0 <= i < l \/ r <= i < #a) -> a[i] = (old a)[i] }
   = let ref i = l in
     let ref j = m in
     let ghost ref fwd = create (length a) (fun i -> i) in
@@ -53,7 +52,7 @@ module Merge
     for k = l to r-1 do
       invariant { l <= i <= m <= j <= r }
       invariant { i - l + j - m = k - l }
-      invariant { sorted a[l..k] }
+      invariant { sorted a l k }
       invariant { forall x y: int. l <= x < k -> i <= y < m -> le a[x] tmp[y] }
       invariant { forall x y: int. l <= x < k -> j <= y < r -> le a[x] tmp[y] }
       invariant { #fwd = #inv = #a }
@@ -74,9 +73,9 @@ module Merge
         fwd := fwd[j <- k]; inv := inv[k <- j];
         incr j
       end;
-      assert { sorted a[l..k] };
-      assert { forall x y: int. l <= x < k -> i <= y < m -> le a[x] tmp[y] };
-      assert { forall x y: int. l <= x < k -> j <= y < r -> le a[x] tmp[y] };
+      assert { sorted a l k };
+      assert { forall x y. l <= x < k -> i <= y < m -> le a[x] tmp[y] };
+      assert { forall x y. l <= x < k -> j <= y < r -> le a[x] tmp[y] };
     done;
     ghost { forward = fwd; inverse = inv }
 

@@ -178,18 +178,19 @@ module Init
 
 end
 
-module ArraySwap
+module Swap
 
   use int.Int
   use Array
   use seq.Permut
 
-  let swap (a:array 'a) (i: int) (j: int) (ghost p: permutation) :
+  let swap (a: array 'a) (i: int) (j: int) (ghost p: permutation) :
       (ghost q: permutation)
     requires { 0 <= i < #a /\ 0 <= j < #a }
     requires { #p = #a }
     ensures  { a = (old a)[i <- old a[j]][j <- old a[i]] }
-    ensures  { forall b: seq 'a. permut b (old a) p -> permut b a q }
+    ensures  { forall b: seq 'a, l r. 0 <= l <= i < r <= #a -> l <= j < r ->
+               permut b (old a) l r p -> permut b a l r q }
   = let v = a[i] in
     a[i] <- a[j];
     a[j] <- v;

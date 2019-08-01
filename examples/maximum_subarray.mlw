@@ -19,11 +19,11 @@ module Spec
 
   (* s is no smaller than sums of subarrays a[l..h[ with 0 <= l < maxlo *)
   predicate maxsublo (a: array int) (maxlo: int) (s: int) =
-    forall l h: int. 0 <= l < maxlo -> l <= h <= length a -> sum a[l..h] <= s
+    forall l h: int. 0 <= l < maxlo -> l <= h <= length a -> sum a l h <= s
 
   (* s is no smaller than sums of subarrays of a *)
   predicate maxsub (a: array int) (s: int) =
-    forall l h: int. 0 <= l <= h <= length a -> sum a[l..h] <= s
+    forall l h: int. 0 <= l <= h <= length a -> sum a l h <= s
 
 end
 
@@ -38,24 +38,25 @@ module Algo1
   use Spec
 
   let maximum_subarray (a: array int) (ghost lo hi: ref int): int
-    ensures { 0 <= !lo <= !hi <= length a && result = sum a[!lo .. !hi] }
+    ensures { 0 <= !lo <= !hi <= length a && result = sum a !lo !hi }
     ensures { maxsub a result }
   = lo := 0;
     hi := 0;
     let n = length a in
     let ms = ref 0 in
     for l = 0 to n-1 do
-      invariant { 0 <= !lo <= l && !lo <= !hi <= n && !ms = sum a[!lo .. !hi] }
+      invariant { 0 <= !lo <= l && !lo <= !hi <= n }
+      invariant { 0 <= !ms = sum a !lo !hi }
       invariant { maxsublo a l !ms }
       for h = l to n do
-        invariant { 0 <= !lo <= l && !lo <= !hi <= n && !ms = sum a[!lo .. !hi] }
+        invariant { 0 <= !lo <= l && !lo <= !hi <= n }
+        invariant { 0 <= !ms = sum a !lo !hi }
         invariant { maxsublo a l !ms }
-        invariant { forall h': int. l <= h' < h -> sum a[l..h'] <= !ms }
+        invariant { forall h'. l <= h' < h -> sum a l h' <= !ms }
         (* compute the sum of a[l..h[ *)
         let s = ref 0 in
         for i = l to h-1 do
-          invariant { !s = sum a[l..i] }
-          invariant { 0 <= !lo <= l && !lo <= !hi <= n && !ms = sum a[!lo .. !hi] }
+          invariant { !s = sum a l i }
           s += a[i]
         done;
         if !s > !ms then begin ms := !s; lo := l; hi := h end
@@ -75,22 +76,23 @@ module Algo2
   use Spec
 
   let maximum_subarray (a: array int) (ghost lo hi: ref int): int
-    ensures { 0 <= !lo <= !hi <= length a && result = sum a[!lo .. !hi] }
+    ensures { 0 <= !lo <= !hi <= length a && result = sum a !lo !hi }
     ensures { maxsub a result }
   = lo := 0;
     hi := 0;
     let n = length a in
     let ms = ref 0 in
     for l = 0 to n-1 do
-      invariant { 0 <= !lo <= l && !lo <= !hi <= n && 0 <= !ms = sum a[!lo .. !hi] }
+      invariant { 0 <= !lo <= l && !lo <= !hi <= n }
+      invariant { 0 <= !ms = sum a !lo !hi }
       invariant { maxsublo a l !ms }
       let s = ref 0 in
       for h = l+1 to n do
-        invariant
-                { 0 <= !lo <= l && !lo <= !hi <= n && 0 <= !ms = sum a[!lo .. !hi] }
+        invariant { 0 <= !lo <= l && !lo <= !hi <= n }
+        invariant { 0 <= !ms = sum a !lo !hi }
         invariant { maxsublo a l !ms }
-        invariant { forall h': int. l <= h' < h -> sum a[l..h'] <= !ms }
-        invariant { !s = sum a[l .. h-1] }
+        invariant { forall h'. l <= h' < h -> sum a l h' <= !ms }
+        invariant { !s = sum a l (h-1) }
         s += a[h-1]; (* update the sum *)
         if !s > !ms then begin ms := !s; lo := l; hi := h end
       done
@@ -111,8 +113,8 @@ module Algo3
   let rec maximum_subarray_rec (a: array int) (l h: int) (ghost lo hi: ref int)
     : int
     requires { 0 <= l <= h <= length a }
-    ensures  { l <= !lo <= !hi <= h && result = sum a[!lo .. !hi] }
-    ensures  { forall l' h': int. l <= l' <= h' <= h -> sum a[l'..h'] <= result }
+    ensures  { l <= !lo <= !hi <= h && result = sum a !lo !hi }
+    ensures  { forall l' h'. l <= l' <= h' <= h -> sum a l' h' <= result }
     variant  { h - l }
   = if h = l then begin
       (* base case: no element at all *)
@@ -125,18 +127,18 @@ module Algo3
       let ms = ref 0 in
       let s  = ref !ms in
       for i = mid-1 downto l do
-        invariant { l <= !lo <= mid = !hi && !ms = sum a[!lo .. !hi] }
-        invariant { forall l': int. i < l' <= mid -> sum a[l'..mid] <= !ms }
-        invariant { !s = sum a[i+1 .. mid] }
+        invariant { l <= !lo <= mid = !hi && !ms = sum a !lo !hi }
+        invariant { forall l': int. i < l' <= mid -> sum a l' mid <= !ms }
+        invariant { !s = sum a (i+1) mid }
         s += a[i];
         if !s > !ms then begin ms := !s; lo := i end
       done;
       s := !ms;
       for i = mid to h-1 do
-        invariant { mid <= !hi <= h && !ms = sum a[!lo .. !hi] }
-        invariant { forall l' h': int. l <= l' <= mid <= h' <= i ->
-                    sum a[l'..h'] = sum a[l'..mid] + sum a[mid..h'] <= !ms }
-        invariant { !s = sum a[!lo..i] = sum a[!lo..mid] + sum a[mid..i] }
+        invariant { mid <= !hi <= h && !ms = sum a !lo !hi }
+        invariant { forall l' h'. l <= l' <= mid <= h' <= i ->
+                    sum a l' h' = sum a l' mid + sum a mid h' <= !ms }
+        invariant { !s = sum a !lo i = sum a !lo mid + sum a mid i }
         s += a[i];
         if !s > !ms then begin ms := !s; hi := (i+1) end
       done;
@@ -157,7 +159,7 @@ module Algo3
     end
 
  let maximum_subarray (a: array int) (ghost lo hi: ref int): int
-    ensures { 0 <= !lo <= !hi <= length a && result = sum a[!lo .. !hi] }
+    ensures { 0 <= !lo <= !hi <= length a && result = sum a !lo !hi }
     ensures { maxsub a result }
   = maximum_subarray_rec a 0 (length a) lo hi
 
@@ -173,7 +175,7 @@ module Algo4
   use Spec
 
   let maximum_subarray (a: array int) (ghost lo hi: ref int): int
-    ensures { 0 <= !lo <= !hi <= length a && result = sum a[!lo .. !hi] }
+    ensures { 0 <= !lo <= !hi <= length a && result = sum a !lo !hi }
     ensures { maxsub a result }
   = lo := 0;
     hi := 0;
@@ -182,10 +184,11 @@ module Algo4
     let ghost l = ref 0 in
     let s = ref 0 in
     for i = 0 to n-1 do
-      invariant { 0 <= !lo <= !hi <= i && 0 <= !ms = sum a[!lo .. !hi] }
-      invariant { forall l' h': int. 0 <= l' <= h' <= i -> sum a[l'..h'] <= !ms }
-      invariant { 0 <= !l <= i && !s = sum a[!l..i] }
-      invariant { forall l': int. 0 <= l' < i -> sum a[l'..i] <= !s }
+      invariant { 0 <= !lo <= !hi <= i }
+      invariant { 0 <= !ms = sum a !lo !hi }
+      invariant { forall l' h'. 0 <= l' <= h' <= i -> sum a l' h' <= !ms }
+      invariant { 0 <= !l <= i && !s = sum a !l i }
+      invariant { forall l'. 0 <= l' < i -> sum a l' i <= !s }
       if !s < 0 then begin s := a[i]; l := i end else s += a[i];
       if !s > !ms then begin ms := !s; lo := !l; hi := (i+1) end
     done;
@@ -209,8 +212,8 @@ module Algo5
 *)
 
   let maximum_subarray (a: array int): int
-    ensures { forall l h: int. 0 <= l <= h <= length a -> sum a[l..h] <= result }
-    ensures { exists l h: int. 0 <= l <= h <= length a /\ sum a[l..h]  = result }
+    ensures { forall l h. 0 <= l <= h <= length a -> sum a l h <= result }
+    ensures { exists l h. 0 <= l <= h <= length a /\ sum a l h  = result }
   =
     let maxsum = ref 0 in
     let curmax = ref 0 in
@@ -218,10 +221,10 @@ module Algo5
     let ghost hi = ref 0 in
     let ghost cl = ref 0 in
     for i = 0 to a.length - 1 do
-      invariant { forall l : int. 0 <= l <= i -> sum a[l..i] <= !curmax }
-      invariant { 0 <= !cl <= i /\ sum a[!cl..i]  = !curmax }
-      invariant { forall l h: int. 0 <= l <= h <= i -> sum a[l..h] <= !maxsum }
-      invariant { 0 <= !lo <= !hi <= i /\ sum a[!lo .. !hi] = !maxsum }
+      invariant { forall l. 0 <= l <= i -> sum a l i <= !curmax }
+      invariant { 0 <= !cl <= i /\ sum a !cl i = !curmax >= 0 }
+      invariant { forall l h. 0 <= l <= h <= i -> sum a l h <= !maxsum }
+      invariant { 0 <= !lo <= !hi <= i /\ sum a !lo !hi = !maxsum >= 0 }
       curmax += a[i];
       if !curmax < 0 then begin curmax := 0; cl := i+1 end;
       if !curmax > !maxsum then begin maxsum := !curmax; lo := !cl; hi := i+1 end
@@ -236,7 +239,7 @@ end
    than max_int.  There is no need to require the sums to be no
    smaller than min_int, since whenever the sum becomes negative it is
    replaced by the next element. *)
-(*
+
 module BoundedIntegers
 
   use int.Int
@@ -250,10 +253,10 @@ module BoundedIntegers
     Sum.sum (fun i -> (a[i] : int)) lo hi
 
   let maximum_subarray (a: array int63) (ghost lo hi: ref int): int63
-    requires { [@no overflow] forall l h. 0 <= l <= h <= length a ->
-               sum a[l..h] <= max_int }
-    ensures { 0 <= !lo <= !hi <= length a && result  = sum a[!lo..!hi] }
-    ensures { forall l h. 0 <= l <= h <= length a -> result >= sum a[!lo..!hi] }
+    requires { [@expl:no overflow] forall l h. 0 <= l <= h <= length a ->
+               sum a l h <= max_int }
+    ensures { 0 <= !lo <= !hi <= length a && result = sum a !lo !hi }
+    ensures { forall l h. 0 <= l <= h <= length a -> result >= sum a !lo !hi }
   = lo := 0;
     hi := 0;
     let n = length a in
@@ -262,13 +265,13 @@ module BoundedIntegers
     let s = ref zero in
     let i = ref zero in
     while !i < n do
-      invariant { 0 <= !lo <= !hi <= !i <= n && 0 <= !ms = sum a[!lo..!hi] }
-      invariant { forall l' h': int. 0 <= l' <= h' <= !i -> sum a[l'..h'] <= !ms }
-      invariant { 0 <= !l <= !i && !s = sum a[!l..!i] }
-      invariant { forall l': int. 0 <= l' < !i -> sum a[l'..!i] <= !s }
+      invariant { 0 <= !lo <= !hi <= !i <= n && 0 <= !ms = sum a !lo !hi }
+      invariant { forall l' h'. 0 <= l' <= h' <= !i -> sum a l' h' <= !ms }
+      invariant { 0 <= !l <= !i && !s = sum a !l !i }
+      invariant { forall l'. 0 <= l' < !i -> sum a l' !i <= !s }
       variant   { n - !i }
       if !s < zero then begin s := a[!i]; l := to_int !i end
-      else begin assert { sum a[!l.. !i + 1] <= max_int }; s += a[!i] end;
+      else begin assert { sum a !l (!i + 1) <= max_int }; s += a[!i] end;
       if !s > !ms then begin
         ms := !s; lo := !l; hi := to_int !i + 1 end;
       incr i
@@ -276,4 +279,3 @@ module BoundedIntegers
     !ms
 
 end
-*)

@@ -34,10 +34,10 @@ module Simple
       index `i` inclusive and index `j` exclusive *)
   let query (a: array int) (i j: int) : int
     requires { 0 <= i <= j <= a.length }
-    ensures { result = sum a[i..j] }
+    ensures  { result = sum a i j }
   = let ref s = 0 in
     for k = i to j-1 do
-      invariant { s = sum a[i..k] }
+      invariant { s = sum a i k }
       s <- s + a[k]
     done;
     s
@@ -50,13 +50,15 @@ module ExtraLemmas
   use seq.Seq
   use seq.Sum
 
+(*
   lemma slice_ext: forall s1 s2: seq 'a, i j.
     0 <= i <= j <= #s1 -> j <= #s2 ->
     (forall k. i <= k < j -> s1[k] = s2[k]) ->
     s1[i..j] = s2[i..j]
+*)
 
   lemma sum_set_slice : forall s i j k v. 0 <= i <= k < j <= #s ->
-    sum s[k <- v][i..j] = sum s[i..j] + v - s[k]
+    sum s[k <- v] i j = sum s i j + v - s[k]
 
 end
 
@@ -80,7 +82,7 @@ module CumulativeArray
 
   predicate is_cumulative_array_for (c: seq int) (a: seq int) =
     #c = #a + 1 /\
-    forall i. 0 <= i < #c -> c[i] = sum a[..i]
+    forall i. 0 <= i < #c -> c[i] = sum a 0 i
 
   (** `create a` builds the cumulative array associated with `a`. *)
   let create (a:array int) : array int
@@ -88,7 +90,7 @@ module CumulativeArray
   = let l = a.length in
     let s = Array.make (l+1) 0 in
     for i = 1 to l do
-      invariant { forall k. 0 <= k < i -> s[k] = sum a[..k] }
+      invariant { forall k. 0 <= k < i -> s[k] = sum a 0 k }
       s[i] <- s[i-1] + a[i-1]
     done;
     s
@@ -98,13 +100,13 @@ module CumulativeArray
   let query (c:array int) (i j:int) (ghost a:array int): int
     requires { is_cumulative_array_for c a }
     requires { 0 <= i <= j < c.length }
-    ensures { result = sum a[i..j] }
+    ensures { result = sum a i j }
   = c[j] - c[i]
 
 
   (** `update c i v a` updates cell `a[i]` to value `v` and updates
       the cumulative array `c` accordingly *)
-  let update (c:array int) (i:int) (v:int) (ghost a:array int) : unit
+  let update (c: array int) (i: int) (v: int) (ghost a: array int) : unit
     requires { is_cumulative_array_for c a }
     requires { 0 <= i < a.length }
     writes  { c, a }
@@ -115,8 +117,8 @@ module CumulativeArray
   = let incr = v - c[i+1] + c[i] in
     a[i] <- v;
     for j=i+1 to c.length-1 do
-      invariant { forall k. j <= k < c.length -> c[k] = sum a[..k] - incr }
-      invariant { forall k. 0 <= k < j -> c[k] = sum a[..k] }
+      invariant { forall k. j <= k < c.length -> c[k] = sum a 0 k - incr }
+      invariant { forall k. 0 <= k < j -> c[k] = sum a 0 k }
       c[j] <- c[j] + incr
     done
 
@@ -165,7 +167,7 @@ module CumulativeTree
   predicate is_indexes_for (ind:indexes) (a: seq int) (i j:int) =
     ind.low = i /\ ind.high = j /\
     0 <= i < j <= #a /\
-    ind.isum = sum a[i..j]
+    ind.isum = sum a i j
 
   predicate is_tree_for (t:tree) (a: seq int) (i j: int) =
     match t with
@@ -197,7 +199,7 @@ module CumulativeTree
         let l = tree_of_array a i m in
         let r = tree_of_array a m j in
         let s = l.indexes.isum + r.indexes.isum in
-        assert { s = sum a[i..j] };
+        assert { s = sum a i j };
         let ind = { low = i; high = j; isum = s} in
         assert { is_indexes_for ind a i j };
         Node ind l r
@@ -217,7 +219,7 @@ module CumulativeTree
     requires { is_tree_for t a t.indexes.low t.indexes.high }
     requires { 0 <= t.indexes.low <= i < j <= t.indexes.high <= a.length }
     variant { t }
-    ensures { result = sum a[i..j] }
+    ensures { result = sum a i j }
   = match t with
     | Leaf ind ->
       ind.isum
@@ -235,7 +237,7 @@ module CumulativeTree
   let query (t:tree) (ghost a: array int) (i j:int) : int
     requires { 0 <= i <= j <= a.length }
     requires { is_tree_for t a 0 a.length }
-    ensures { result = sum a[i..j] }
+    ensures { result = sum a i j }
   = if i=j then 0 else query_aux t a i j
 
 
@@ -379,7 +381,7 @@ module CumulativeTree
          if i = t.indexes.low /\ j = t.indexes.high then 1 else
          if i = t.indexes.low \/ j = t.indexes.high then 2 * depth t else
           4 * depth t }
-    ensures { result = sum a[i..j] }
+    ensures { result = sum a i j }
   = c := !c + 1;
     match t with
     | Leaf ind ->
