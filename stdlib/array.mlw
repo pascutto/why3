@@ -10,13 +10,8 @@ modification of an array does not modify its length.
 module Array
 
   use int.Int
+  use export seq.ArrayType
   use export seq.Seq
-
-  type array [@extraction:array] 'a = private {
-    mutable ghost elts: seq 'a;
-                length: int
-  } invariant { 0 <= length = #elts }
-  meta coercion function elts
 
   val ([]) (a: array 'a) (i: int) : 'a
     requires { [@expl:index in array bounds] 0 <= i < #a }

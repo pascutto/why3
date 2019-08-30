@@ -245,7 +245,6 @@ module BoundedIntegers
   use int.Int
   use mach.int.Int63
   use mach.int.Refint63
-  use seq.Seq
   use mach.array.Array63
   use int.Sum
 

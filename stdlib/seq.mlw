@@ -6,27 +6,31 @@
 
 (** {2 Sequences and basic operations} *)
 
-module Seq
+module ArrayType
 
-  use map.Map
   use int.Int
 
+  type array [@extraction:array] 'a = private {
+    mutable ghost elts: int -> 'a;
+                length: int
+  } invariant { 0 <= length }
+
+  (** `array 'a` is an infinite type *)
+  meta "infinite_type" type array
+
+end
+
+module Seq
+
+  use int.Int
+  use map.Map
+  use ArrayType
+
   (** the polymorphic type of sequences *)
-  type seq 'a
+  type seq 'a = { array 'a }
 
-  (** `seq 'a` is an infinite type *)
-  meta "infinite_type" type seq
-
-  function (#_) (seq 'a) : int
-
-  axiom length_nonnegative:
-    forall s: seq 'a. 0 <= #s
-
-  function get (seq 'a) : int -> 'a
-  (** `get s i` is the `i+1`-th element of sequence `s`
-      (the first element has index 0) *)
-
-  function ([]) [@inline:trivial] (s: seq 'a) (i: int) : 'a = get s i
+  function (#_) [@inline:trivial] (s: seq 'a) : int = s.length
+  function ([]) [@inline:trivial] (s: seq 'a) (i: int) : 'a = s.elts i
 
   (** equality *)
   predicate (==) (s1 s2: seq 'a)
@@ -57,24 +61,21 @@ module Seq
   lemma empty_ext:
     forall s: seq 'a. #s = 0 -> s = empty
 
-  (** `set s i v` is a new sequence `u` such that
+  (** `s[i <- v]` is a new sequence `u` such that
       `u[i] = v` and `u[j] = s[j]` otherwise *)
-  function set (s: seq 'a) (i: int) (v: 'a) : seq 'a
-
   function ([<-]) (s: seq 'a) (i: int) (v: 'a) : seq 'a
-  = set s i v
 
   axiom set_length:
-    forall s: seq 'a, i, v. #(set s i v) = #s
+    forall s: seq 'a, i, v. #(s[i <- v]) = #s
   axiom set_contents:
     forall s: seq 'a, i, v. 0 <= i < #s ->
-    get (set s i v) = Map.set (get s) i v
+    elts s[i <- v] = Map.set s.elts i v
   lemma set_value:
-    forall s: seq 'a, i, v. 0 <= i < #s -> (set s i v)[i] = v
+    forall s: seq 'a, i, v. 0 <= i < #s -> s[i <- v][i] = v
   lemma set_other:
-    forall s: seq 'a, i, v, j. 0 <= j < #s -> j <> i -> (set s i v)[j] = s[j]
+    forall s: seq 'a, i, v, j. 0 <= j < #s -> j <> i -> s[i <- v][j] = s[j]
   lemma set_same:
-    forall s: seq 'a, i. 0 <= i < #s -> set s i s[i] = s
+    forall s: seq 'a, i. 0 <= i < #s -> s[i <- s[i]] = s
 
   (** singleton sequence *)
   function singleton (v: 'a) : seq 'a
@@ -277,7 +278,7 @@ module OfList
     forall l: list 'a. #(of_list l) = L.length l
 
   predicate point_wise (s: seq 'a) (l: list 'a) =
-    forall i. 0 <= i < L.length l -> Some (get s i) = nth i l
+    forall i. 0 <= i < L.length l -> Some s[i] = nth i l
 
   lemma elts_seq_of_list: forall l: list 'a.
     point_wise (of_list l) l
@@ -448,7 +449,7 @@ module Sum
   use Seq
   use int.Sum as S
 
-  function sum (s: seq int) (l r: int) : int = S.sum (get s) l r
+  function sum (s: seq int) (l r: int) : int = S.sum s.ArrayType.elts l r
 
   lemma sum_empty: forall s l r. r <= l ->
     sum s l r = 0
