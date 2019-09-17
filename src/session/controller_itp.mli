@@ -27,6 +27,7 @@ type proof_attempt_status =
   | Uninstalled of Whyconf.prover (** prover is uninstalled *)
   | UpgradeProver of Whyconf.prover (** prover is upgraded *)
   | Removed of Whyconf.prover (** prover has been removed or upgraded *)
+  | CacheMiss (** The call to provers has been deactivated and not in the cache *)
 
 val print_status : Format.formatter -> proof_attempt_status -> unit
 

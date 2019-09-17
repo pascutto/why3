@@ -1111,7 +1111,7 @@ end
                P.notify (Node_change (node_id, Name_change n))
             | Removed _ -> P.notify (Remove node_id); raise Return
             | Uninstalled _ -> ()
-            | Undone | Scheduled | Running
+            | Undone | Scheduled | Running | CacheMiss
             | Interrupted | Detached | Done _
             | InternalFailure _ -> ()
       end;

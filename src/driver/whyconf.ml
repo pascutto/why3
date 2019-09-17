@@ -49,6 +49,12 @@ let default_conf_file =
     | None -> Filename.concat (Rc.get_home_dir ()) ".why3.conf"
     | Some d -> Filename.concat d "why3.conf"
 
+let default_cache_dir =
+  match Config.localdir with
+    | None -> Filename.concat (Rc.get_home_dir ()) ".why3.cache"
+    | Some d -> Filename.concat d "why3.cache"
+
+
 (* Prover *)
 
 (* BEGIN{provertype} anchor for automatic documentation, do not remove *)
@@ -174,6 +180,11 @@ let set_strategies rc strategies =
 
 (** Main record *)
 
+type cache_mode =
+  | Cache_none
+  | Cache_use
+  | Cache_record
+
 type main = {
   libdir   : string;      (* "/usr/local/lib/why/" *)
   datadir  : string;      (* "/usr/local/share/why/" *)
@@ -188,6 +199,12 @@ type main = {
   (* plugins to load, without extension, relative to [libdir]/plugins *)
   default_editor : string;
   (* editor name used when no specific editor known for a prover *)
+  use_cache: bool;
+  (* Use the cache information *)
+  update_cache: bool;
+  (* Use the cache information *)
+  cache_dir: string;
+  (* cache directory to use *)
 }
 
 let libdir m =
@@ -235,6 +252,9 @@ let get_complete_command pc ~with_steps =
 let set_limits m time mem running =
   { m with timelimit = time; memlimit = mem; running_provers_max = running }
 
+let cache_mode m = m.cache_mode
+let set_cache_mode m cache_mode = { m with cache_mode }
+
 let set_default_editor m e = { m with default_editor = e }
 
 let plugins m = m.plugins
@@ -278,6 +298,8 @@ let empty_main =
     plugins = [];
     default_editor = (try Sys.getenv "EDITOR" ^ " %f"
                       with Not_found -> "editor %f");
+    cache_mode = Cache_none;
+    cache_dir = default_cache_dir;
   }
 
 let default_main =
@@ -538,6 +560,13 @@ let load_main dirname section =
                                   section "running_provers_max";
     plugins = get_stringl ~default:[] section "plugin";
     default_editor = get_string ~default:default_main.default_editor section "default_editor";
+    cache_mode = begin match get_stringo section "cache_mode" with
+      | None -> default_main.cache_mode
+      | Some "none" -> Cache_node
+      | Some "yes" -> Cache_yes
+      | Some "only" -> Cache_only
+    end;
+    cache_dir = get_string ~default:default_main.cache_dir section "cache_dir";
   }
 
 let read_config_rc conf_file =

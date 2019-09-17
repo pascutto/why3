@@ -87,7 +87,7 @@ let convert_proof_result (pr: prover_result) =
 
 let convert_proof_attempt (pas: proof_attempt_status) =
   Record (match pas with
-  | Undone ->
+  | Undone | CacheMiss ->
       convert_record ["proof_attempt", String "Undone"]
   | Interrupted ->
       convert_record ["proof_attempt", String "Interrupted"]

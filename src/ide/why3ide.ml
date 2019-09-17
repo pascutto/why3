@@ -1392,6 +1392,7 @@ let on_selected_row r =
          | Controller_itp.Undone -> "no result known"
          | Controller_itp.Detached -> "detached proof attempt: parent goal has no task"
          | Controller_itp.Interrupted -> "prover run was interrupted"
+         | Controller_itp.CacheMiss -> "prover call is deactivated and the call is not in the cache"
          | Controller_itp.Scheduled -> "proof scheduled but not running yet"
          | Controller_itp.Running -> "prover currently running"
          | Controller_itp.InternalFailure e ->
@@ -1605,7 +1606,8 @@ let is_selected_alone id =
 let image_of_pa_status ~obsolete pa =
   match pa with
   | Controller_itp.Undone
-  | Controller_itp.Interrupted -> !image_undone
+  | Controller_itp.Interrupted
+  | Controller_itp.CacheMiss -> !image_undone
   | Controller_itp.Scheduled -> !image_scheduled
   | Controller_itp.Running -> !image_running
   | Controller_itp.InternalFailure _e -> !image_failure
@@ -1702,6 +1704,7 @@ let set_status_and_time_column ?limit row =
         | C.InternalFailure _ -> "(internal failure)"
         | C.Interrupted -> "(interrupted)"
         | C.Undone -> "(undone)"
+        | C.CacheMiss -> "(cachemiss)"
         | C.Uninstalled _ -> "(uninstalled prover)"
         | C.UpgradeProver _ -> "(upgraded prover)"
         | C.Removed _ -> "(removed prover)"

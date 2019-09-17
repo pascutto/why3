@@ -32,6 +32,7 @@ type proof_attempt_status =
   | Uninstalled of Whyconf.prover (** prover is uninstalled *)
   | UpgradeProver of Whyconf.prover (** prover is upgraded *)
   | Removed of Whyconf.prover (** prover has been removed or upgraded *)
+  | CacheMiss (** prover has been removed or upgraded *)
 
 let print_status fmt st =
   match st with
@@ -42,6 +43,7 @@ let print_status fmt st =
       fprintf fmt "Done(%a)"
         (Call_provers.print_prover_result ~json_model:false) r
   | Interrupted       -> fprintf fmt "Interrupted"
+  | CacheMiss         -> fprintf fmt "CacheMiss"
   | Detached          -> fprintf fmt "Detached"
   | InternalFailure e ->
       fprintf fmt "InternalFailure(%a)" Exn_printer.exn_printer e
@@ -450,6 +452,10 @@ let timeout_handler () =
   if Hashtbl.length prover_tasks_in_progress != 0 then begin
     let results = Call_provers.get_new_results ~blocking:S.blocking in
     List.iter (fun (call, prover_update) ->
+        let end_run ptp =
+          Hashtbl.remove prover_tasks_in_progress ptp.tp_call;
+          if ptp.tp_started then decr number_of_running_provers;
+        in
       match Hashtbl.find prover_tasks_in_progress call with
       | ptp ->
         begin match prover_update with
@@ -461,19 +467,20 @@ let timeout_handler () =
             Hashtbl.replace prover_tasks_in_progress ptp.tp_call
               {ptp with tp_started = true}
         | Call_provers.ProverFinished res ->
-            Hashtbl.remove prover_tasks_in_progress ptp.tp_call;
-            if ptp.tp_started then decr number_of_running_provers;
+            end_run ptp;
             let res = Opt.fold fuzzy_proof_time res ptp.tp_ores in
             (* inform the callback *)
             ptp.tp_callback (Done res)
         | Call_provers.ProverInterrupted ->
-            Hashtbl.remove prover_tasks_in_progress ptp.tp_call;
-            if ptp.tp_started then decr number_of_running_provers;
+            end_run ptp;
             (* inform the callback *)
             ptp.tp_callback (Interrupted)
+        | Call_provers.CacheMiss ->
+            end_run ptp;
+            (* inform the callback *)
+            ptp.tp_callback (CacheMiss)
         | Call_provers.InternalFailure exn ->
-            Hashtbl.remove prover_tasks_in_progress ptp.tp_call;
-            if ptp.tp_started then decr number_of_running_provers;
+            end_run ptp;
             (* inform the callback *)
             ptp.tp_callback (InternalFailure (exn))
         end
@@ -578,6 +585,7 @@ let schedule_proof_attempt c id pr ?save_to ~limit ~callback ~notification =
          update_proof_attempt ~obsolete:false notification ses id pr res;
          update_goal_node notification ses id
       | Interrupted
+      | CacheMiss
       | InternalFailure _ ->
          Hpan.remove c.controller_running_proof_attempts panid;
          (* what to do ?
@@ -732,7 +740,7 @@ let schedule_edition c id pr ~callback ~notification =
                        print_proofAttemptID panid print_proofNodeID id;
          update_proof_attempt ~obsolete:true notification session id pr res;
          update_goal_node notification session id
-      | Interrupted
+      | Interrupted | CacheMiss
       | InternalFailure _ ->
          update_goal_node notification session id
       | Undone | Detached | Uninstalled _ | Scheduled | Removed _ -> assert false
@@ -811,7 +819,7 @@ let run_strategy_on_goal
            | Done { Call_provers.pr_answer = Call_provers.Valid } ->
               (* proof succeeded, nothing more to do *)
               callback STShalt
-           | Interrupted | InternalFailure _ ->
+           | Interrupted | CacheMiss | InternalFailure _ ->
               callback STShalt
            | Done _ ->
               (* proof did not succeed, goto to next step *)
@@ -1118,7 +1126,7 @@ let replay ~valid_only ~obsolete_only ?(use_steps=false) ?(filter=fun _ -> true)
        found_upgraded_prover := true;
        decr count
     | Scheduled | Running -> ()
-    | Undone | Interrupted ->
+    | Undone | Interrupted | CacheMiss ->
        decr count;
        report := (id, pr, limits, Replay_interrupted ) :: !report
     | Done new_r ->
@@ -1263,7 +1271,7 @@ let bisect_proof_attempt ~callback_tr ~callback_pa ~notification ~removed c pa_i
                   begin match st with
                   | UpgradeProver _ | Scheduled | Running -> ()
                   | Detached | Uninstalled _ | Removed _ -> assert false
-                  | Undone | Interrupted -> Debug.dprintf debug "Bisecting interrupted.@."
+                  | Undone | Interrupted | CacheMiss -> Debug.dprintf debug "Bisecting interrupted.@."
                   | InternalFailure exn ->
                      (* Perhaps the test can be considered false in this case? *)
                      Debug.dprintf debug "Bisecting interrupted by an error %a.@."
@@ -1335,7 +1343,7 @@ later on. We do has if proof fails. *)
                    debug "[Bisect] prover on subtask is running@.";
               | Detached
               | Uninstalled _ -> assert false
-              | Undone | Interrupted -> Debug.dprintf debug "Bisecting interrupted.@."
+              | Undone | Interrupted | CacheMiss -> Debug.dprintf debug "Bisecting interrupted.@."
               | InternalFailure exn ->
                  (* Perhaps the test can be considered false in this case? *)
                  Debug.dprintf debug "[Bisect] prover interrupted by an error: %a.@."

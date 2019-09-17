@@ -170,6 +170,7 @@ type prover_update =
   | InternalFailure of exn
   | ProverStarted
   | ProverFinished of prover_result
+  | CacheMiss
 
 val get_new_results: blocking:bool -> (prover_call * prover_update) list
 (** returns new results from why3server, in an unordered fashion. *)

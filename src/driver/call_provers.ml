@@ -42,6 +42,7 @@ type prover_result = {
 }
 (* END{proverresult} anchor for automatic documentation, do not remove *)
 
+
 (* BEGIN{resourcelimit} anchor for automatic documentation, do not remove *)
 type resource_limit = {
   limit_time  : int;
@@ -464,6 +465,7 @@ type prover_update =
   | InternalFailure of exn
   | ProverStarted
   | ProverFinished of prover_result
+  | CacheMiss
 
 let result_buffer : (server_id, prover_update) Hashtbl.t = Hashtbl.create 17
 

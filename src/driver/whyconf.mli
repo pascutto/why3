@@ -79,6 +79,15 @@ val memlimit: main -> int
 val running_provers_max: main -> int
 val set_limits: main -> int -> int -> int -> main
 
+
+type cache_mode =
+  | Cache_none
+  | Cache_yes
+  | Cache_only
+
+val cache_mode: main -> cache_mode
+val set_cache_mode: main -> cache_mode -> main
+
 val default_editor: main -> string
 (** editor name used when no specific editor known for a prover *)
 val set_default_editor: main -> string -> main
