@@ -305,6 +305,8 @@ module LatexInd (Cnf: sig val prefix: string val flatten_applies : bool end) = s
     List.iter (pp_rule fmt) defs;
     fprintf fmt "\\end{mathparpagebreakable}@."
 
+  exception Found of ind_decl
+
   (** Search an inductive type in mlw file by path (module.Theory.type or module.type) *)
   let search_inductive (path: string list) (mlw_file: mlw_file) : ind_decl =
     let name, decls =
@@ -314,7 +316,6 @@ module LatexInd (Cnf: sig val prefix: string val flatten_applies : bool end) = s
           let aux (id, _) = String.equal id.id_str module_name in
           name, snd (List.find aux modules)
       | _ -> raise Not_found in
-    let exception Found of ind_decl in
     try
       let aux = function
         | Dind (Decl.Ind, ind_decls) ->
