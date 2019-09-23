@@ -1162,7 +1162,7 @@ module EVMSimple = struct
    | SELFDESTRUCT
    | ALLOCATE of label * label * BigInt.t option (** None dynamic size *)
 
-  let get_args_ret instr =
+let get_args_ret instr =
     let get_args_ret asm =
       let info = EVM.get_info asm in
       info.EVM.args, info.EVM.ret
@@ -1746,6 +1746,19 @@ module EVMSimple = struct
    | SELFDESTRUCT -> [EVM.SELFDESTRUCT]
    | ALLOCATE(label_ret,label_call,size) ->
       List.concat (List.map to_evm (allocate_code label_ret label_call size))
+
+  let pp fmt x = match x with
+   | ALLOCATE _ -> Format.fprintf fmt "ALLOCATE"
+   | JUMPDEST label -> Format.fprintf fmt "@[JUMPDEST(%s)@]" label.label_name
+   | JUMP label -> Format.fprintf fmt "@[JUMP(%s)@]" label.label_name
+   | JUMPDYN -> Format.fprintf fmt "JUMPDYN"
+   | JUMPI label -> Format.fprintf fmt "@[JUMPI(%s)@]" label.label_name
+   | PUSHLABEL label -> Format.fprintf fmt "@[PUSHLABEL(%s)@]" label.label_name
+   | ADDGAS (Addgas (g,a)) -> Format.fprintf fmt "@[Addgas(%s,%s)@]" (BigInt.to_string g) (BigInt.to_string a)
+   | ADDGAS (Startgas s) -> Format.fprintf fmt "@[Startgas(%i)@]" s
+   | ADDGAS (Stopgas s) -> Format.fprintf fmt "@[Stopgas(%i)@]" s
+   | _ ->
+       (Pp.print_list Pp.space EVM.print_human) fmt (to_evm x)
 
   type asm = {
     mutable codes: instruction list;
@@ -2850,7 +2863,9 @@ let print_decls pargs fmt l =
   List.iter arg_extraction externals;
 
   List.iter (print_decl pargs stack) l;
-  let asms = EVMSimple.finalize (List.rev stack.EVMSimple.asm.EVMSimple.codes) in
+  let asms = (List.rev stack.EVMSimple.asm.EVMSimple.codes) in
+  Debug.dprintf debug "@[instrs:@ %a@]@." (Pp.print_list Pp.space EVMSimple.pp) asms;
+  let asms = EVMSimple.finalize asms in
   Debug.dprintf debug "%a@." EVM.print_humanl asms;
   EVM.print_code fmt asms
 
