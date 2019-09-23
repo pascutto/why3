@@ -87,7 +87,7 @@ EMACS = @EMACS@
 #PSVIEWER  = @PSVIEWER@
 #PDFVIEWER = @PDFVIEWER@
 
-INCLUDES = @WHY3INCLUDE@ @ZIPINCLUDE@ @MENHIRINCLUDE@ @NUMINCLUDE@
+INCLUDES = @WHY3INCLUDE@ @ZIPINCLUDE@ @MENHIRINCLUDE@ @NUMINCLUDE@ @MLMPFRINCLUDE@
 
 # warnings are enabled and non fatal by default, except:
 # - disabled:
@@ -113,8 +113,8 @@ WARNINGS = A-4-9-41-44-45-50-52@5@8@48
 OFLAGS = -w $(WARNINGS) -safe-string -keep-locs -bin-annot -dtypes -g $(INCLUDES)
 BFLAGS = -w $(WARNINGS) -safe-string -keep-locs -bin-annot -dtypes -g $(INCLUDES)
 
-OLINKFLAGS = -linkall $(EXTCMXA)
-BLINKFLAGS = -linkall $(EXTCMA)
+OLINKFLAGS = -linkall @MLMPFR_LINK@ $(EXTCMXA)
+BLINKFLAGS = -linkall @MLMPFR_LINK@ $(EXTCMA)
 
 ifeq (@enable_profiling@,yes)
 OFLAGS += -g -p
@@ -126,7 +126,7 @@ CMIHACK = -intf-suffix .cmi
 # external libraries common to all binaries
 
 EXTOBJS = menhirLib
-EXTLIBS = str unix nums dynlink @ZIPLIB@ @WHY3LIB@
+EXTLIBS = str unix nums dynlink @ZIPLIB@ @MLMPFR@ @WHY3LIB@
 
 EXTCMA	= $(addsuffix .cmo,$(EXTOBJS)) $(addsuffix .cma,$(EXTLIBS))
 EXTCMXA = $(addsuffix .cmx,$(EXTOBJS)) $(addsuffix .cmxa,$(EXTLIBS))
@@ -187,9 +187,10 @@ GENERATED =
 LIBGENERATED = src/util/config.ml \
 	       src/util/rc.ml src/util/lexlib.ml \
 	       src/util/json_parser.mli src/util/json_parser.ml \
-	       src/util/json_lexer.ml \
+	       src/util/json_lexer.ml src/util/mlmpfr_wrapper.ml \
 	       src/parser/lexer.ml \
 	       src/parser/parser.mli src/parser/parser.ml \
+	       src/parser/parser_messages.ml \
 	       src/driver/driver_parser.mli src/driver/driver_parser.ml \
 	       src/driver/driver_lexer.ml \
 	       src/driver/parse_smtv2_model_parser.mli src/driver/parse_smtv2_model_parser.ml \
@@ -197,7 +198,7 @@ LIBGENERATED = src/util/config.ml \
 	       src/session/compress.ml src/session/xml.ml \
 	       src/session/strategy_parser.ml
 
-LIB_UTIL = config bigInt util opt lists strings \
+LIB_UTIL = config bigInt mlmpfr_wrapper util opt lists strings \
 	   pp extmap extset exthtbl weakhtbl \
 	   hashcons wstdlib exn_printer \
 	   json_base json_parser json_lexer \
@@ -213,11 +214,11 @@ LIB_DRIVER = prove_client call_provers driver_ast driver_parser driver_lexer dri
 		collect_data_model parse_smtv2_model_lexer parse_smtv2_model \
 		parse_smtv2_model
 
-LIB_MLW = ity expr pdecl eval_match typeinv vc pmodule dexpr \
+LIB_MLW = ity expr pdecl eval_match typeinv vc pmodule dexpr big_real \
           pinterp mltree compile mlinterp pdriver cprinter ml_printer \
 	  ocaml_printer cakeml_printer
 
-LIB_PARSER = ptree glob typing parser typing lexer
+LIB_PARSER = ptree glob typing parser_messages parser typing report lexer
 
 LIB_TRANSFORM = simplify_formula inlining split_goal \
 		args_wrapper detect_polymorphism reduction_engine compute \
@@ -269,6 +270,16 @@ $(LIBCMX): OFLAGS += -for-pack Why3
 
 $(LIBDEP): $(LIBGENERATED)
 
+# Mlmpfr
+
+ifeq (@found_mlmpfr@,yes)
+src/util/mlmpfr_wrapper.ml: config.status src/util/mlmpfr_real.ml
+	cp src/util/mlmpfr_real.ml $@
+else
+src/util/mlmpfr_wrapper.ml: config.status src/util/mlmpfr_dummy.ml
+	cp src/util/mlmpfr_dummy.ml $@
+endif
+
 # Ocamlzip
 
 ifeq (@enable_zip@,yes)
@@ -278,6 +289,25 @@ else
 src/session/compress.ml: config.status src/session/compress_none.ml
 	cp src/session/compress_none.ml $@
 endif
+
+.PHONY: initialize_messages update-parsing-error-handling
+
+src/parser/parser_messages.ml: src/parser/parser.mly src/parser/handcrafted.messages
+	rm -f src/parser/parser_messages.ml src/parser/parser_messages.ml.tmp
+	$(MENHIR) --explain --strict src/parser/parser.mly --update-errors \
+	src/parser/handcrafted.messages > src/parser/handcrafted.messages.temp
+	@if ! cmp -s src/parser/handcrafted.messages src/parser/handcrafted.messages.temp; then \
+		echo "Parsing error handling must be updated, the file 'src/parser/handcrafted.messages.temp' \
+contains an updated version that must be checked before replacing 'src/parser/handcrafted.messages'"; \
+		exit 1; \
+	fi
+	rm -f src/parser/handcrafted.messages.temp
+	$(MENHIR) --explain --strict src/parser/parser.mly --compile-errors \
+	src/parser/handcrafted.messages > src/parser/parser_messages.ml.tmp
+	mv src/parser/parser_messages.ml.tmp src/parser/parser_messages.ml
+
+clean::
+	rm -f src/parser/parser_messages.ml.tmp src/parser/handcrafted.messages.temp
 
 # hide deprecated warnings for strings
 
@@ -1709,8 +1739,10 @@ src/ide/why3_js.byte: lib/why3/why3.cma src/ide/why3_js.cmo
 src/ide/why3_js.js: src/ide/why3_js.byte
 	js_of_ocaml +nat.js +dynlink.js +toplevel.js $<
 
-opt: bin/why3webserver.opt src/ide/why3_js.js
-byte: bin/why3webserver.byte src/ide/why3_js.js
+web_ide: src/ide/why3_js.js
+
+opt: bin/why3webserver.opt
+byte: bin/why3webserver.byte src/ide/why3_js.cmo
 
 endif
 
@@ -1723,6 +1755,8 @@ endif
 bench:: bin/why3.@OCAMLBEST@ bin/why3config.@OCAMLBEST@ plugins $(TOOLS) \
   share/Makefile.config bin/why3extract.@OCAMLBEST@
 	bash bench/bench ".@OCAMLBEST@"
+	@echo "=== Check parsing message ==="
+	bench/parsing-bench
 	$(MAKE) bench-api
 	@echo ""
 	@echo "=== Checking extraction ==="
@@ -1942,9 +1976,9 @@ OCAMLCODE_CALLPROVERS = proveranswer proverresult resourcelimit
 
 OCAMLCODE_TRANSFORM = negate register
 
-OCAMLCODE_MLWTREE = buildenv openmodule useimport \
-	source1 code1 helper1 source2 code2 source3 code3 \
-	closemodule checkingvcs
+OCAMLCODE_MLWTREE = buildenv \
+	source1 code1 helper1 source2 code2 source3 code3 source4 code4 \
+	getmodules checkingvcs
 
 OCAMLCODE_MLWEXPR = buildenv source2 code2_import code2 createmodule checkingvcs
 
@@ -2024,6 +2058,7 @@ MODULESTODOC = \
 	util/extmap util/extset util/exthtbl \
 	util/weakhtbl util/wstdlib util/rc util/debug \
 	util/loc util/pp util/bigInt util/number \
+	util/mlmpfr_wrapper \
 	core/ident core/ty core/term core/decl core/coercion core/theory \
 	core/env core/task core/trans core/pretty core/printer \
 	parser/typing \

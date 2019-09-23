@@ -240,20 +240,25 @@ let print_session fmt c =
 (** reload files, associating old proof attempts and transformations
     to the new goals.  old theories and old goals for which we cannot
     find a corresponding new theory resp. old goal are kept, with
-    tasks associated to them *)
+    tasks associated to them.
+    When [hard_reload] option is true, dependencies and drivers are also
+    reloaded.
+ *)
 
-let reload_files (c : controller) ~shape_version =
+let reload_files ?(hard_reload=false) (c : controller) ~shape_version  =
   let old_ses = c.controller_session in
-  c.controller_env <- Env.create_env (Env.get_loadpath c.controller_env);
-  Whyconf.Hprover.reset c.controller_provers;
-  load_drivers c;
+  if hard_reload then begin
+    c.controller_env <- Env.create_env (Env.get_loadpath c.controller_env);
+    Whyconf.Hprover.reset c.controller_provers;
+    load_drivers c;
+  end;
   c.controller_session <- empty_session ~shape_version ~from:old_ses (get_dir old_ses);
   merge_files ~shape_version c.controller_env c.controller_session old_ses
 
 exception Errors_list of exn list
 
-let reload_files (c: controller) ~shape_version =
-  let errors, b1, b2 = reload_files c ~shape_version in
+let reload_files ?(hard_reload=false) (c: controller) ~shape_version =
+  let errors, b1, b2 = reload_files c ~shape_version ~hard_reload in
   match errors with
   | [] -> b1, b2
   | _ -> raise (Errors_list errors)
@@ -510,8 +515,9 @@ let idle_handler () =
      more tasks *)
   begin
     try
-      if Hashtbl.length prover_tasks_in_progress <
-         S.multiplier * !session_max_tasks
+      if S.blocking ||
+         (Hashtbl.length prover_tasks_in_progress <
+          S.multiplier * !session_max_tasks)
       then
         let spa = Queue.pop scheduled_proof_attempts in
         try build_prover_call spa
