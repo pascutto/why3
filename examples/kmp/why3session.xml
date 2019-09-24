@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "http://why3.lri.fr/why3session.dtd">
-<why3session shape_version="5">
+<why3session shape_version="8">
 <prover id="0" name="CVC4" version="1.5" timelimit="1" steplimit="0" memlimit="1000"/>
 <prover id="1" name="Z3" version="4.6.0" timelimit="1" steplimit="0" memlimit="1000"/>
-<prover id="3" name="Coq" version="8.7.1" timelimit="5" steplimit="0" memlimit="1000"/>
+<prover id="2" name="Z3" version="4.8.4" timelimit="1" steplimit="0" memlimit="1000"/>
 <prover id="4" name="Eprover" version="2.0" timelimit="5" steplimit="0" memlimit="1000"/>
 <prover id="5" name="Alt-Ergo" version="2.0.0" timelimit="5" steplimit="0" memlimit="1000"/>
+<prover id="6" name="CVC4" version="1.6" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="7" name="Coq" version="8.9.1" timelimit="5" steplimit="0" memlimit="1000"/>
 <file proved="true">
-<path name=".."/>
-<path name="kmp.mlw"/>
+<path name=".."/><path name="kmp.mlw"/>
 <theory name="KnuthMorrisPratt" proved="true">
  <goal name="matches_empty" proved="true">
- <proof prover="0"><result status="valid" time="0.02"/></proof>
+ <proof prover="0"><result status="valid" time="0.02" steps="3421"/></proof>
  <proof prover="5"><result status="valid" time="0.00" steps="7"/></proof>
  </goal>
  <goal name="matches_right_extension" proved="true">
@@ -22,33 +23,33 @@
  <proof prover="4"><result status="valid" time="0.04"/></proof>
  </goal>
  <goal name="matches_contradiction_at_i" proved="true">
- <proof prover="1"><result status="valid" time="0.01"/></proof>
+ <proof prover="1"><result status="valid" time="0.01" steps="12083"/></proof>
  <proof prover="5"><result status="valid" time="0.00" steps="23"/></proof>
  </goal>
  <goal name="matches_right_weakening" proved="true">
- <proof prover="1"><result status="valid" time="0.42"/></proof>
  <proof prover="1"><result status="valid" time="0.42" steps="1689773"/></proof>
  <proof prover="5"><result status="valid" time="0.00" steps="21"/></proof>
  </goal>
  <goal name="matches_left_weakening" proved="true">
- <proof prover="3" edited="kmp_WP_KnuthMorrisPratt_matches_left_weakening_1.v"><result status="valid" time="1.10"/></proof>
+ <proof prover="7"><path
+                    name="kmp_WP_KnuthMorrisPratt_matches_left_weakening_1.v"/><result status="valid" time="0.22"/></proof>
  </goal>
  <goal name="matches_sym" proved="true">
- <proof prover="0"><result status="valid" time="0.02"/></proof>
+ <proof prover="0"><result status="valid" time="0.02" steps="4111"/></proof>
  <proof prover="5"><result status="valid" time="0.00" steps="7"/></proof>
  </goal>
  <goal name="matches_trans" proved="true">
  <proof prover="5" timelimit="1"><result status="valid" time="0.00" steps="26"/></proof>
  </goal>
  <goal name="next_iteration" proved="true">
- <proof prover="0"><result status="valid" time="0.05"/></proof>
- <proof prover="1" timelimit="5"><result status="valid" time="0.02"/></proof>
+ <proof prover="0"><result status="valid" time="0.05" steps="14221"/></proof>
+ <proof prover="1" timelimit="5"><result status="valid" time="0.02" steps="54610"/></proof>
  </goal>
  <goal name="next_is_maximal" proved="true">
  <proof prover="7"><path name="kmp_WP_KnuthMorrisPratt_next_is_maximal_1.v"/><result status="valid" time="0.31"/></proof>
  </goal>
  <goal name="next_1_0" proved="true">
- <proof prover="0"><result status="valid" time="0.01"/></proof>
+ <proof prover="0"><result status="valid" time="0.01" steps="5726"/></proof>
  <proof prover="5"><result status="valid" time="0.00" steps="8"/></proof>
  </goal>
  <goal name="initnext&#39;VC" expl="VC for initnext" proved="true">
