@@ -3,19 +3,20 @@
 exception Undetermined
 
 open Mlmpfr_wrapper
-type real = mpfr_float * mpfr_float
+type real = t * t
 (* computationally, a real is represented as an interval of two floating-point numbers.
    such an interval `[a;b]` represents the set of real numbers between `a` and `b` *)
 
-let init, set_exponents, get_prec, get_zero, get_one =
+let init, set_exponents, get_prec =
 (*
    By default, for approximating real numbers, let's use binary128 floats
 *)
   let emin = ref (-16493) in
   let emax = ref 16384 in
   let prec = ref 113 in
+  (*
   let zero = ref (make_zero ~prec:!prec Positive) in
-  let one = ref (make_from_int ~prec:!prec ~rnd:Toward_Minus_Infinity 1) in
+     let one = ref (make_from_int ~prec:!prec ~rnd:Toward_Minus_Infinity 1) in*)
   (fun emin_i emax_i prec_i ->
     emin := emin_i;
     emax := emax_i;
@@ -23,30 +24,30 @@ let init, set_exponents, get_prec, get_zero, get_one =
   (fun () ->
     set_emin !emin;
     set_emax !emax),
-  (fun () -> !prec),
-  (fun () -> !zero),
-  (fun () -> !one)
-
-let print_float fmt x =
-  Format.fprintf fmt "%s" (get_formatted_str ~base:10 x)
+  (fun () -> !prec)
 
 let print_real fmt (x, y) =
-  Format.fprintf fmt "[%a, %a]" print_float x print_float y
-
+  let x = convert_string ~base:10 x in
+  let y = convert_string ~base:10 y in
+  Format.fprintf fmt "[%s, %s]" x y
 
 let add (xmin, xmax) (ymin, ymax) =
   (* Exponents can be changed if floats occur in the code. *)
   set_exponents ();
   let prec = get_prec () in
-  let res_min = add ~prec ~rnd:Toward_Minus_Infinity xmin ymin in
-  let res_max = add ~prec ~rnd:Toward_Plus_Infinity xmax ymax in
+  let res_min = init2 prec in
+  let res_max = init2 prec in
+  let (_: int) = add res_min xmin ymin Down in
+  let (_: int) = add res_max xmax ymax Up in
   (res_min, res_max)
 
 let neg (xmin, xmax) =
   set_exponents ();
   let prec = get_prec () in
-  let res_min = neg ~prec ~rnd:Toward_Minus_Infinity xmax in
-  let res_max = neg ~prec ~rnd:Toward_Plus_Infinity xmin in
+  let res_min = init2 prec in
+  let res_max = init2 prec in
+  let (_: int) = neg res_min xmax Down in
+  let (_: int) = neg res_max xmin Up in
   (res_min, res_max)
 
 (* Properties on intervals:
@@ -61,55 +62,65 @@ let mul (xl, xu) (yl, yu) =
   set_exponents ();
   (* abbreviation functions *)
   let prec = get_prec () in
-  let min = min ~prec ~rnd:Toward_Minus_Infinity in
-  let max = max ~prec ~rnd:Toward_Plus_Infinity in
-  let zero = get_zero () in
+  let min a b  =
+    let res = init2 prec in
+    let (_: int) = min res a b Down in
+    res in
+  let max a b =
+    let res = init2 prec in
+    let (_: int) = max res a b Up in
+    res in
+  let zero = get_zero prec in
+  let mul a b round =
+    let res = init2 prec in
+    let (_: int) = mul res a b round in
+    res in
 
   if less_p xl zero then
     if less_p zero xu then
       if less_p yl zero then
         if less_p zero yu then (* Mixed * Mixed *)
-          (min (mul ~prec ~rnd:Toward_Minus_Infinity xl yu)
-               (mul ~prec ~rnd:Toward_Minus_Infinity xu yl),
-           max (mul ~prec ~rnd:Toward_Plus_Infinity xl yl)
-               (mul ~prec ~rnd:Toward_Plus_Infinity xu yu))
+          (min (mul xl yu Down)
+               (mul xu yl Down),
+           max (mul xl yl Up)
+               (mul xu yu Up))
         else                   (* Mixed * Neg *)
           (* yl < 0 so NaN cannot be produced by this *)
-          ((mul ~prec ~rnd:Toward_Minus_Infinity xu yl),
-           (mul ~prec ~rnd:Toward_Plus_Infinity xl yl))
+          (mul xu yl Down,
+           mul xl yl Up)
       else
         if less_p zero yu then (* Mixed * Pos *)
-          (mul ~prec ~rnd:Toward_Minus_Infinity xl yu,
-           mul ~prec ~rnd:Toward_Plus_Infinity xu yu)
+          (mul xl yu Down,
+           mul xu yu Up)
         else                   (* Mixed * Zero *)
           (zero, zero)
     else
       if less_p yl zero then
         if less_p zero yu then (* Neg * Mixed *)
-          (mul ~prec ~rnd:Toward_Minus_Infinity xl yu,
-           mul ~prec ~rnd:Toward_Plus_Infinity xl yl)
+          (mul xl yu Down,
+           mul xl yl Up)
         else                   (* Neg * Neg *)
-          (mul ~prec ~rnd:Toward_Minus_Infinity xu yu,
-           mul ~prec ~rnd:Toward_Plus_Infinity xl yl)
+          (mul xu yu Down,
+           mul xl yl Up)
       else
         if less_p zero yu then (* Neg * Pos *)
-          (mul ~prec ~rnd:Toward_Minus_Infinity xl yu,
-           mul ~prec ~rnd:Toward_Plus_Infinity xu yl)
+          (mul xl yu Down,
+           mul xu yl Up)
         else                   (* Neg * Zero *)
           (zero, zero)
   else
     if less_p zero xu then
       if less_p yl zero then
         if less_p zero yu then (* Pos * Mixed *)
-          (mul ~prec ~rnd:Toward_Minus_Infinity xu yl,
-           mul ~prec ~rnd:Toward_Plus_Infinity xu yu)
+          (mul xu yl Down,
+           mul xu yu Up)
         else                   (* Pos * Neg *)
-          (mul ~prec ~rnd:Toward_Minus_Infinity xu yl,
-           mul ~prec ~rnd:Toward_Plus_Infinity xl yu)
+          (mul xu yl Down,
+           mul xl yu Up)
       else
         if less_p zero yu then (* Pos * Pos *)
-          (mul ~prec ~rnd:Toward_Minus_Infinity xl yl,
-           mul ~prec ~rnd:Toward_Plus_Infinity xu yu)
+          (mul xl yl Down,
+           mul xu yu Up)
         else                   (* Pos * Zero *)
           (zero, zero)
     else                       (* Zero * Mixed *)
@@ -118,15 +129,17 @@ let mul (xl, xu) (yl, yu) =
 let inv (xmin, xmax) =
   set_exponents ();
   let prec = get_prec () in
-  let zero = get_zero () in
+  let zero = get_zero prec in
   (* If 0 is inside the interval we cannot compute the expression *)
   if lessequal_p xmin zero && lessequal_p zero xmax then
     raise Undetermined
   else
-    let one = get_one () in
+    let one = get_one prec in
     (* Inverse is decreasing on ]-inf; 0[ and on ]0; inf[ *)
-    let res_min = div ~prec ~rnd:Toward_Minus_Infinity one xmax in
-    let res_max = div ~prec ~rnd:Toward_Plus_Infinity one xmin in
+    let res_min = init2 prec in
+    let res_max = init2 prec in
+    let (_: int) = div res_min one xmax Down in
+    let (_: int) = div res_max one xmin Up in
     (res_min, res_max)
 
 let div x y =
@@ -135,10 +148,12 @@ let div x y =
 let sqrt (xmin, xmax) =
   set_exponents ();
   let prec = get_prec () in
-  let zero = get_zero () in
+  let zero = get_zero prec in
   if lessequal_p zero xmin then
-    let res_min = sqrt ~rnd:Toward_Minus_Infinity ~prec xmin in
-    let res_max = sqrt ~rnd:Toward_Plus_Infinity ~prec xmax in
+    let res_min = init2 prec in
+    let res_max = init2 prec in
+    let (_: int) = sqrt res_min xmin Down in
+    let (_: int) = sqrt res_max xmax Up in
     (res_min, res_max)
   else
     raise Undetermined
@@ -146,23 +161,29 @@ let sqrt (xmin, xmax) =
 let exp (xmin, xmax) =
   set_exponents ();
   let prec = get_prec () in
-  (exp ~rnd:Toward_Minus_Infinity ~prec xmin,
-   exp ~rnd:Toward_Plus_Infinity ~prec xmax)
+  let res_min = init2 prec in
+  let res_max = init2 prec in
+  let (_: int) = exp res_min xmin Down in
+  let (_: int) = exp res_max xmax Up in
+  (res_min, res_max)
 
 let log (xmin, xmax) =
   set_exponents ();
   let prec = get_prec () in
-  let zero = get_zero () in
+  let zero = get_zero prec in
   if less_p zero xmin then
-    (log ~rnd:Toward_Minus_Infinity ~prec xmin,
-     log ~rnd:Toward_Plus_Infinity ~prec xmax)
+    let res_min = init2 prec in
+    let res_max = init2 prec in
+    let (_: int) = log res_min xmin Down in
+    let (_: int) = log res_max xmax Up in
+    (res_min, res_max)
   else
     raise Undetermined
 
 let real_from_str s =
   let prec = get_prec () in
-  let n1 = make_from_str ~prec ~base:10 ~rnd:Toward_Minus_Infinity s in
-  let n2 = make_from_str ~prec ~base:10 ~rnd:Toward_Plus_Infinity s in
+  let n1 = make_from_str ~prec ~base:10 ~rnd:Down s in
+  let n2 = make_from_str ~prec ~base:10 ~rnd:Up s in
   (n1, n2)
 
 let real_from_fraction p q =
@@ -197,5 +218,8 @@ let ge x y = le y x
 
 let pi () =
   let prec = get_prec () in
-  (const_pi ~rnd:Toward_Minus_Infinity prec,
-   const_pi ~rnd:Toward_Plus_Infinity prec)
+  let res_min = init2 prec in
+  let res_max = init2 prec in
+  let (_: int) = const_pi res_min Down in
+  let (_: int) = const_pi res_max Up in
+  (res_min, res_max)

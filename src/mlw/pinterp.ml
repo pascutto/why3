@@ -25,8 +25,8 @@ open Mlmpfr_wrapper
 
 (* module Nummap = Map.Make(BigInt) *)
 
-type float_mode = mpfr_rnd_t
-type big_float = mpfr_float
+type float_mode = round
+type big_float = t
 
 type value =
   | Vconstr of rsymbol * field list
@@ -50,12 +50,12 @@ let constr rs vl =
 
 let mode_to_string m =
   match m with
-  | To_Nearest            -> "RNE"
-  | Away_From_Zero        -> "RNA"
-  | Toward_Plus_Infinity  -> "RTP"
-  | Toward_Minus_Infinity -> "RTN"
-  | Toward_Zero           -> "RTZ"
-  | Faithful              -> assert false
+  | Near -> "RNE"
+  | Away -> "RNA"
+  | Up   -> "RTP"
+  | Down -> "RTN"
+  | Zero -> "RTZ"
+  | Faith | NearAway -> assert false
 
 let rec print_value fmt v =
   match v with
@@ -69,10 +69,8 @@ let rec print_value fmt v =
   | Vreal r ->
     print_real fmt r
   | Vfloat f ->
-      (* Getting "@" is intentional in mlmpfr library for bases higher than 10.
-         So, we keep this notation. *)
-      let hexadecimal = get_formatted_str ~base:16 f in
-      let decimal = get_formatted_str ~base:10 f in
+      let hexadecimal = convert_string ~base:16 f in
+      let decimal = convert_string ~base:10 f in
       fprintf fmt "%s (%s)" decimal hexadecimal
   | Vfloat_mode m ->
       fprintf fmt "%s" (mode_to_string m)
@@ -238,12 +236,18 @@ let eval_float:
      try
        begin match ty, l with
          | Mode1, [Vfloat_mode mode; Vfloat f] ->
+             let res = op mode f in
              (* Subnormalize used to simulate IEEE behavior *)
-             Vfloat (subnormalize ~rnd:mode (op mode f))
+             let (_: int) = subnormalize res mode in
+             Vfloat res
          | Mode2, [Vfloat_mode mode; Vfloat f1; Vfloat f2] ->
-             Vfloat (subnormalize ~rnd:mode (op mode f1 f2))
+             let res = op mode f1 f2 in
+             let (_: int) = subnormalize res mode in
+             Vfloat res
          | Mode3, [Vfloat_mode mode; Vfloat f1; Vfloat f2; Vfloat f3] ->
-             Vfloat (subnormalize ~rnd:mode (op mode f1 f2 f3))
+             let res = op mode f1 f2 f3 in
+             let (_: int) = subnormalize res mode in
+             Vfloat res
          | Mode_rel, [Vfloat f1; Vfloat f2] ->
              Vbool (op f1 f2)
          | Mode_rel1, [Vfloat f] ->
@@ -254,6 +258,18 @@ let eval_float:
      | Mlmpfr_wrapper.Not_Implemented -> raise CannotCompute
      | _ -> assert false
   )
+
+(* Encapsulation function to convert float functions to the right type for
+   adding them in the list of implemented interpretation function. *)
+let encaps2 prec f rnd a b =
+  let res = init2 prec in
+  let (_: int) = f res a b rnd in res
+let encaps1 prec f rnd a =
+  let res = init2 prec in
+  let (_: int) = f res a rnd in res
+let encaps3 prec f rnd a b c =
+  let res = init2 prec in
+  let (_: int) = f res a b c rnd in res
 
 type 'a real_arity =
   | Modeconst: real real_arity
@@ -432,27 +448,28 @@ let built_in_modules =
   let mode_module =
     ["ieee_float"], "RoundingMode",
     ["mode", builtin_mode],
-    ["RNE", (fun _ _ -> Vfloat_mode To_Nearest);
-     "RNA", (fun _ _ -> Vfloat_mode Away_From_Zero);
-     "RTP", (fun _ _ -> Vfloat_mode Toward_Plus_Infinity);
-     "RTN", (fun _ _ -> Vfloat_mode Toward_Minus_Infinity);
-     "RTZ", (fun _ _ -> Vfloat_mode Toward_Zero);
+    ["RNE", (fun _ _ -> Vfloat_mode Near);
+     "RNA", (fun _ _ -> Vfloat_mode Away);
+     "RTP", (fun _ _ -> Vfloat_mode Up);
+     "RTN", (fun _ _ -> Vfloat_mode Down);
+     "RTZ", (fun _ _ -> Vfloat_mode Zero);
     ]
   in
   let float_modules tyb ~prec m =
     ["ieee_float"], m,
     ["t", builtin_float_type],
     ["zeroF", (fun _rs _l ->
-         Vfloat (make_zero ~prec Positive));
-     "add", eval_float tyb Mode2 (fun rnd -> add ~rnd ~prec);
-     "sub", eval_float tyb Mode2 (fun rnd -> sub ~rnd ~prec);
-     "mul", eval_float tyb Mode2 (fun rnd -> mul ~rnd ~prec);
-     "div", eval_float tyb Mode2 (fun rnd -> div ~rnd ~prec);
-     "abs", eval_float tyb Mode1 (fun rnd -> abs ~rnd ~prec);
-     "neg", eval_float tyb Mode1 (fun rnd -> neg ~rnd ~prec);
-     "fma", eval_float tyb Mode3 (fun rnd -> fma ~rnd ~prec);
-     "sqrt", eval_float tyb Mode1 (fun rnd -> sqrt ~rnd ~prec);
-     "roundToIntegral", eval_float tyb Mode1 (fun rnd -> rint ~rnd ~prec);
+         let zero = get_zero prec in
+         Vfloat zero);
+     "add", eval_float tyb Mode2 (encaps2 prec add);
+     "sub", eval_float tyb Mode2 (encaps2 prec sub);
+     "mul", eval_float tyb Mode2 (encaps2 prec mul);
+     "div", eval_float tyb Mode2 (encaps2 prec div);
+     "abs", eval_float tyb Mode1 (encaps1 prec abs);
+     "neg", eval_float tyb Mode1 (encaps1 prec neg);
+     "fma", eval_float tyb Mode3 (encaps3 prec fma);
+     "sqrt", eval_float tyb Mode1 (encaps1 prec sqrt);
+     "roundToIntegral", eval_float tyb Mode1 (encaps1 prec rint);
 (* Intentionnally removed from programs
      "min", eval_float_minmax min;
      "max", eval_float_minmax max;
@@ -463,8 +480,8 @@ let built_in_modules =
      "is_zero", eval_float tyb Mode_rel1 zero_p;
      "is_infinite", eval_float tyb Mode_rel1 inf_p;
      "is_nan", eval_float tyb Mode_rel1 nan_p;
-     "is_positive", eval_float tyb Mode_rel1 (fun s -> signbit s = Positive);
-     "is_negative", eval_float tyb Mode_rel1 (fun s -> signbit s = Negative);
+     "is_positive", eval_float tyb Mode_rel1 (fun s -> sgn s >= 0);
+     "is_negative", eval_float tyb Mode_rel1 (fun s -> sgn s <= 0);
     ]
   in
 
@@ -716,7 +733,9 @@ let rec eval_expr env (e : expr) : result =
       else
         let c = Constant.ConstReal r in
         let s = Format.asprintf "%a" Constant.print_def c in
-        Normal (Vfloat (make_from_str s))
+        let prec = get_default_prec () in
+        let res = make_from_str ~prec ~base:16 ~rnd:Near s in
+        Normal (Vfloat res)
   | Econst (Constant.ConstStr s) -> Normal (Vstring s)
   | Eexec (ce,cty) ->
     assert (cty.cty_args = []);

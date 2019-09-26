@@ -88,7 +88,7 @@ EMACS = @EMACS@
 #PSVIEWER  = @PSVIEWER@
 #PDFVIEWER = @PDFVIEWER@
 
-INCLUDES = @WHY3INCLUDE@ @ZIPINCLUDE@ @MENHIRINCLUDE@ @NUMINCLUDE@ @MLMPFRINCLUDE@
+INCLUDES = @WHY3INCLUDE@ @ZIPINCLUDE@ @MENHIRINCLUDE@ @NUMINCLUDE@ @GMPINCLUDE@
 
 # warnings are enabled and non fatal by default, except:
 # - disabled:
@@ -114,8 +114,8 @@ WARNINGS = A-4-9-41-44-45-50-52@5@8@48
 OFLAGS = -w $(WARNINGS) -safe-string -keep-locs -bin-annot -dtypes -g $(INCLUDES)
 BFLAGS = -w $(WARNINGS) -safe-string -keep-locs -bin-annot -dtypes -g $(INCLUDES)
 
-OLINKFLAGS = -linkall @MLMPFR_LINK@ $(EXTCMXA)
-BLINKFLAGS = -linkall @MLMPFR_LINK@ $(EXTCMA)
+OLINKFLAGS = -linkall $(EXTCMXA)
+BLINKFLAGS = -linkall $(EXTCMA)
 
 ifeq (@enable_profiling@,yes)
 OFLAGS += -g -p
@@ -127,7 +127,7 @@ CMIHACK = -intf-suffix .cmi
 # external libraries common to all binaries
 
 EXTOBJS = menhirLib
-EXTLIBS = str unix nums dynlink @ZIPLIB@ @MLMPFR@ @WHY3LIB@
+EXTLIBS = str unix nums dynlink bigarray @ZIPLIB@ @GMP@ @WHY3LIB@
 
 EXTCMA	= $(addsuffix .cmo,$(EXTOBJS)) $(addsuffix .cma,$(EXTLIBS))
 EXTCMXA = $(addsuffix .cmx,$(EXTOBJS)) $(addsuffix .cmxa,$(EXTLIBS))
@@ -274,9 +274,9 @@ $(LIBCMX): OFLAGS += -for-pack Why3
 
 $(LIBDEP): $(LIBGENERATED)
 
-# Mlmpfr
+# gmp
 
-ifeq (@found_mlmpfr@,yes)
+ifeq (@found_gmp@,yes)
 src/util/mlmpfr_wrapper.ml: config.status src/util/mlmpfr_real.ml
 	cp src/util/mlmpfr_real.ml $@
 else

@@ -1,13 +1,15 @@
 (* TODO This wrapper should eventually be removed !
-   For documentation refer to the mlmpfr documentation.
+   For documentation refer to the gmp documentation.
 *)
 
-(* Wrapper for mlMPFR:
-   MPFR installed -> implemented with mlMPFR
+(* Wrapper for gmp's MPFR:
+   MPFR installed -> implemented with mlgmp
    MPFR not installed -> dummy implementation
 *)
 
-type mpfr_float
+type m
+type 'a tt
+type t = m tt
 
 (* Exception to be raised if mpfr is not installed *)
 exception Not_Implemented
@@ -15,57 +17,62 @@ exception Not_Implemented
 val set_emin: int -> unit
 val set_emax: int -> unit
 val set_default_prec: int -> unit
+val get_default_prec: unit -> int
 
-type mpfr_rnd_t =
-  | To_Nearest
-  | Toward_Zero
-  | Toward_Plus_Infinity
-  | Toward_Minus_Infinity
-  | Away_From_Zero
-  | Faithful
+type round =
+  | Near     (* To_Nearest *)
+  | Zero     (* Toward_Zero *)
+  | Up       (* Toward_Plus_Infinity *)
+  | Down     (* Toward_Minus_Infinity *)
+  | Away     (* Away_From_Zero *)
+  | Faith    (* Faithful *)
+  | NearAway
 
-type sign = Positive | Negative
+(* Init function *)
+val init2: int -> t
+(* [init2 precision]: returns an initialized NaN number *)
 
-(* Elementary operations *)
-val add: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float -> mpfr_float
-val neg: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float
-val mul: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float -> mpfr_float
-val div: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float -> mpfr_float
-val sqrt: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float
-val sub: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float -> mpfr_float
-val abs: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float
-val fma: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float -> mpfr_float -> mpfr_float
-val rint: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float
-val exp : ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float
-val log : ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float
+(* Elementary operations  *)
+val add : t (* out *) -> 'a tt -> 'b tt -> round -> int
+val neg : t (* out *) -> 'a tt -> round -> int
+val mul : t (* out *) -> 'a tt -> 'b tt -> round -> int
+val div : t (* out *) -> 'a tt -> 'b tt -> round -> int
+val sqrt: t (* out *) -> 'a tt -> round -> int
+val sub : t (* out *) -> 'a tt -> 'b tt -> round -> int
+val abs : t (* out *) -> 'a tt -> round -> int
+val fma : t (* out *) -> 'a tt -> 'b tt -> 'c tt -> round -> int
+val rint: t (* out *) -> 'a tt -> round -> int
+val exp : t (* out *) -> 'a tt -> round -> int
+val log : t (* out *) -> 'a tt -> round -> int
 
+val min : t (* out *) -> 'a tt -> 'b tt -> round -> int
+val max : t (* out *) -> 'a tt -> 'b tt -> round -> int
 
-val min: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float -> mpfr_float
-val max: ?rnd:mpfr_rnd_t -> ?prec:int -> mpfr_float -> mpfr_float -> mpfr_float
+val sgn: 'a tt -> int
 
-val signbit: mpfr_float -> sign
+val subnormalize : 'a tt -> round -> int
 
-val subnormalize : ?rnd:mpfr_rnd_t -> mpfr_float -> mpfr_float
+val make_from_str: prec:int -> base:int -> rnd:round -> string -> m tt
 
-
-val make_from_str: ?prec:int -> ?rnd:mpfr_rnd_t -> ?base:int -> string -> mpfr_float
-val make_from_int: ?prec:int -> ?rnd:mpfr_rnd_t -> int -> mpfr_float
-val make_zero: ?prec:int -> sign -> mpfr_float
-
-val get_formatted_str : ?rnd:mpfr_rnd_t -> ?base:int -> ?size:int -> mpfr_float -> string
+val convert_string: base:int -> t -> string
 
 (* Comparison functions *)
 
-val greater_p : mpfr_float -> mpfr_float -> bool
-val greaterequal_p : mpfr_float -> mpfr_float -> bool
-val less_p : mpfr_float -> mpfr_float -> bool
-val lessequal_p : mpfr_float -> mpfr_float -> bool
-val equal_p : mpfr_float -> mpfr_float -> bool
-val lessgreater_p : mpfr_float -> mpfr_float -> bool
+val greater_p : 'a tt -> 'b tt -> bool
+val greaterequal_p : 'a tt -> 'b tt -> bool
+val less_p : 'a tt -> 'b tt -> bool
+val lessequal_p : 'a tt -> 'b tt -> bool
+val equal_p : 'a tt -> 'b tt -> bool
+val lessgreater_p : 'a tt -> 'b tt -> bool
 
-val zero_p: mpfr_float -> bool
-val nan_p : mpfr_float -> bool
-val inf_p : mpfr_float -> bool
+
+(* Reallocating version of get_zero and get_one to avoid precision errors *)
+val get_zero: int -> t
+val get_one: int -> t
+
+val zero_p: 'a tt -> bool
+val nan_p : 'a tt -> bool
+val inf_p : 'a tt -> bool
 
 (* Constants *)
-val const_pi: ?rnd:mpfr_rnd_t -> int -> mpfr_float
+val const_pi: t -> round -> int
