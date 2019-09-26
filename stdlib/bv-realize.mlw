@@ -1,0 +1,6 @@
+
+module BV8Realize
+
+  clone export bv.BV8
+
+end
