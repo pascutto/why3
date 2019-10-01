@@ -1,0 +1,246 @@
+module Cnd
+
+  use int.Int
+  use mach.int.Int32
+  use import mach.int.UInt64GMP as Limb
+  use int.Power
+  use ref.Ref
+  use mach.c.C
+  use array.Array
+  use map.Map
+  use types.Types
+  use lemmas.Lemmas
+
+  (** Computes R=U+V if cnd is non-zero, U otherwise. Both cases should take
+      the same time and perform the same memory accesses. *)
+  let wmpn_cnd_add_n (cnd:limb) (rp up vp: ptr limb) (n:int32) : limb
+    requires { valid rp n /\ valid up n /\ valid vp n }
+    requires { n >= 0 }
+    ensures  { cnd = 0 -> value rp n = value up n /\ result = 0 }
+    ensures  { cnd <> 0 -> value rp n + power radix n * result
+                           = value up n + value vp n }
+    ensures  { 0 <= result <= 1 }
+    ensures  { forall j. (j < offset rp \/ offset rp + n <= j)
+                         -> (pelts rp)[j] = old (pelts rp)[j] }
+    writes   { rp.data.elts }
+  =
+    let mask = begin ensures { cnd = 0 -> result = 0 }
+                     ensures { cnd <> 0 -> result = radix - 1 }
+                     minus_mod (of_bool(cnd <> 0))
+               end in
+    let ref cy = 0 in
+    let ref lx = 0 in
+    let ref ly = 0 in
+    let ref i = 0 in
+    while (i < n) do
+      variant { n - i }
+      invariant { 0 <= i <= n }
+      invariant { cnd = 0 -> value rp i = value up i /\ cy = 0 }
+      invariant { cnd <> 0 -> value rp i + power radix i * cy
+                              = value up i + value vp i }
+      invariant { 0 <= cy <= 1 }
+      invariant { forall j. (j < offset rp \/ offset rp + n <= j)
+                          -> (pelts rp)[j] = old (pelts rp)[j] }
+      label StartLoop in
+      lx <- get_ofs up i;
+      ly <- get_ofs vp i;
+      let mly = band ly mask in
+      assert { if cnd = 0 then mly = 0 else mly = ly };
+      let res, carry = add_with_carry lx mly cy in
+      set_ofs rp i res;
+      assert { (if cnd = 0 then value rp i = value up i
+                else value rp i + power radix i * cy
+               = value up i + value vp i)
+               by value rp i = value rp i at StartLoop };
+      cy <- carry;
+      value_tail rp i;
+      value_tail up i;
+      value_tail vp i;
+      assert { if cnd = 0
+               then cy = 0 /\ value rp (i+1) = value up (i+1)
+                    by res = lx
+               else value rp (i+1) + power radix (i+1) * cy
+                    = value up (i+1) + value vp (i+1) };
+      i <- i+1;
+    done;
+    cy
+
+  let wmpn_cnd_add_n_in_place (cnd:limb) (up vp: ptr limb) (n:int32) : limb
+    requires { valid up n /\ valid vp n }
+    requires { n >= 0 }
+    ensures  { cnd = 0 -> value up n = old value up n /\ result = 0 }
+    ensures  { cnd <> 0 -> value up n + power radix n * result
+                           = old value up n + value vp n }
+    ensures  { 0 <= result <= 1 }
+    ensures  { forall j. (j < offset up \/ offset up + n <= j)
+                         -> (pelts up)[j] = old (pelts up)[j] }
+    writes   { up.data.elts }
+  =
+    let mask = begin ensures { cnd = 0 -> result = 0 }
+                     ensures { cnd <> 0 -> result = radix - 1 }
+                     minus_mod (of_bool(cnd <> 0))
+               end in
+    let ghost ou = pure { up } in
+    let ref cy = 0 in
+    let ref lx = 0 in
+    let ref ly = 0 in
+    let ref i = 0 in
+    while (i < n) do
+      variant { n - i }
+      invariant { 0 <= i <= n }
+      invariant { cnd = 0 -> value up i = value ou i /\ cy = 0 }
+      invariant { cnd <> 0 -> value up i + power radix i * cy
+                              = value ou i + value vp i }
+      invariant { 0 <= cy <= 1 }
+      invariant { forall j. i <= j < n ->
+                         (pelts up)[offset up + j] = (pelts ou)[offset up + j] }
+      invariant { forall j. (j < offset up \/ offset up + n <= j) ->
+                         (pelts up)[j] = (pelts ou)[j] }
+      label StartLoop in
+      lx <- get_ofs up i;
+      ly <- get_ofs vp i;
+      let olx = get_ofs ou i in
+      assert { lx = olx };
+      let mly = band ly mask in
+      assert { if cnd = 0 then mly = 0 else mly = ly };
+      let res, carry = add_with_carry lx mly cy in
+      set_ofs up i res;
+      assert { forall j. i < j < n ->
+                 (pelts up)[offset up + j]
+                 = (pelts ou)[offset up + j]
+                 by (pelts up)[offset up + j]
+                 = (pelts up at StartLoop)[offset up + j]
+                 = (pelts ou)[offset up + j] };
+      assert { (if cnd = 0 then value up i = value ou i
+                else value up i + power radix i * cy
+               = value ou i + value vp i)
+               by value up i = value up i at StartLoop };
+      cy <- carry;
+      value_tail up i;
+      value_tail ou i;
+      value_tail vp i;
+      assert { if cnd = 0
+               then cy = 0 /\ value up (i+1) = value ou (i+1)
+                    by res = lx
+               else value up (i+1) + power radix (i+1) * cy
+                    = value ou (i+1) + value vp (i+1) };
+      i <- i+1;
+    done;
+    cy
+
+  let wmpn_cnd_sub_n (cnd:limb) (rp up vp: ptr limb) (n:int32) : limb
+    requires { valid rp n /\ valid up n /\ valid vp n }
+    requires { n >= 0 }
+    ensures  { cnd = 0 -> value rp n = value up n /\ result = 0 }
+    ensures  { cnd <> 0 -> value rp n - power radix n * result
+                           = value up n - value vp n }
+    ensures  { 0 <= result <= 1 }
+    ensures  { forall j. (j < offset rp \/ offset rp + n <= j)
+                         -> (pelts rp)[j] = old (pelts rp)[j] }
+    writes   { rp.data.elts }
+  =
+    let mask = begin ensures { cnd = 0 -> result = 0 }
+                     ensures { cnd <> 0 -> result = radix - 1 }
+                     minus_mod (of_bool(cnd <> 0))
+               end in
+    let ref b = 0 in
+    let ref lx = 0 in
+    let ref ly = 0 in
+    let ref i = 0 in
+    while (i < n) do
+      variant { n - i }
+      invariant { 0 <= i <= n }
+      invariant { cnd = 0 -> value rp i = value up i /\ b = 0 }
+      invariant { cnd <> 0 -> value rp i - power radix i * b
+                              = value up i - value vp i }
+      invariant { 0 <= b <= 1 }
+      invariant { forall j. (j < offset rp \/ offset rp + n <= j)
+                          -> (pelts rp)[j] = old (pelts rp)[j] }
+      label StartLoop in
+      lx <- get_ofs up i;
+      ly <- get_ofs vp i;
+      let mly = band ly mask in
+      assert { if cnd = 0 then mly = 0 else mly = ly };
+      let res, bo = sub_with_borrow lx mly b in
+      set_ofs rp i res;
+      assert { (if cnd = 0 then value rp i = value up i
+                else value rp i - power radix i * b
+               = value up i - value vp i)
+               by value rp i = value rp i at StartLoop };
+      b <- bo;
+      value_tail rp i;
+      value_tail up i;
+      value_tail vp i;
+      assert { if cnd = 0
+               then b = 0 /\ value rp (i+1) = value up (i+1)
+                    by res = lx
+               else value rp (i+1) - power radix (i+1) * b
+                    = value up (i+1) - value vp (i+1) };
+      i <- i+1;
+    done;
+    b
+
+  let wmpn_cnd_sub_n_in_place (cnd:limb) (up vp: ptr limb) (n:int32) : limb
+    requires { valid up n /\ valid vp n }
+    requires { n >= 0 }
+    ensures  { cnd = 0 -> value up n = old value up n /\ result = 0 }
+    ensures  { cnd <> 0 -> value up n - power radix n * result
+                           = old value up n - value vp n }
+    ensures  { 0 <= result <= 1 }
+    ensures  { forall j. (j < offset up \/ offset up + n <= j)
+                         -> (pelts up)[j] = old (pelts up)[j] }
+    writes   { up.data.elts }
+  =
+    let mask = begin ensures { cnd = 0 -> result = 0 }
+                     ensures { cnd <> 0 -> result = radix - 1 }
+                     minus_mod (of_bool(cnd <> 0))
+               end in
+    let ghost ou = pure { up } in
+    let ref b = 0 in
+    let ref lx = 0 in
+    let ref ly = 0 in
+    let ref i = 0 in
+    while (i < n) do
+      variant { n - i }
+      invariant { 0 <= i <= n }
+      invariant { cnd = 0 -> value up i = value ou i /\ b = 0 }
+      invariant { cnd <> 0 -> value up i - power radix i * b
+                              = value ou i - value vp i }
+      invariant { 0 <= b <= 1 }
+      invariant { forall j. i <= j < n ->
+                         (pelts up)[offset up + j] = (pelts ou)[offset up + j] }
+      invariant { forall j. (j < offset up \/ offset up + n <= j) ->
+                         (pelts up)[j] = (pelts ou)[j] }
+      label StartLoop in
+      lx <- get_ofs up i;
+      ly <- get_ofs vp i;
+      let olx = get_ofs ou i in
+      assert { lx = olx };
+      let mly = band ly mask in
+      assert { if cnd = 0 then mly = 0 else mly = ly };
+      let res, bo = sub_with_borrow lx mly b in
+      set_ofs up i res;
+      assert { forall j. i < j < n ->
+                 (pelts up)[offset up + j]
+                 = (pelts ou)[offset up + j]
+                 by (pelts up)[offset up + j]
+                 = (pelts up at StartLoop)[offset up + j]
+                 = (pelts ou)[offset up + j] };
+      assert { (if cnd = 0 then value up i = value ou i
+                else value up i - power radix i * b
+               = value ou i - value vp i)
+               by value up i = value up i at StartLoop };
+      b <- bo;
+      value_tail up i;
+      value_tail ou i;
+      value_tail vp i;
+      assert { if cnd = 0
+               then b = 0 /\ value up (i+1) = value ou (i+1)
+                    by res = lx
+               else value up (i+1) - power radix (i+1) * b
+                    = value ou (i+1) - value vp (i+1) };
+      i <- i+1;
+    done;
+    b
+
+end

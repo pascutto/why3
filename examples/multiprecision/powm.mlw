@@ -362,7 +362,6 @@ module Powm
     assert { redc (value (old up) (2 * n))
                   (value rp n) n vm }
 
-  (* TODO table like sqrt1 *)
   val binvert_limb_table (n:limb) : limb
     requires { 0 <= n < 128 }
     ensures { 0 <= result < 256 }

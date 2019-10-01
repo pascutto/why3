@@ -204,6 +204,24 @@ module UnsignedGMP
   val minus_mod (x:t) : t
     ensures { to_int result = mod (- (to_int x)) radix }
 
+  (* bitwise and, with partial spec for masking *)
+  val band (x y:t) : t
+    ensures { y = 0 -> result = 0 }
+    ensures { x = 0 -> result = 0 }
+    ensures { y = max -> result = x }
+    ensures { x = max -> result = y }
+    ensures { y = 1 -> result = mod x 2 }
+    ensures { x = 1 -> result = mod y 2 }
+
+  val bor (x y:t) : t
+    ensures { x = 0 -> result = y }
+    ensures { y = 0 -> result = x }
+    ensures { x = 1 /\ y = 1 -> result = 1 }
+
+  val of_bool (b:bool) : t
+    ensures { b -> result = 1 }
+    ensures { not b -> result = 0 }
+
 end
 
 module Int31
