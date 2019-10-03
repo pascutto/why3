@@ -109,11 +109,26 @@ module BV_Gen
   constant size : int
   axiom size_pos : size > 0
 
+  use Pow2int
+
+  constant two_power_size : int
+
   type t
 
   (** `nth b n` is the `n`-th bit of `b`. Bit 0 is
       the least significant bit *)
   val function nth t int : bool
+  val function nth_bv t t: bool
+  function to_uint t : int
+  val function of_int int : t
+
+  axiom Nth_bv_is_nth:
+    forall x i.
+      nth x (to_uint i) = nth_bv x i
+
+  axiom Nth_bv_is_nth2:
+    forall x i. 0 <= i < two_power_size ->
+      nth_bv x (of_int i) = nth x i
 
   axiom nth_out_of_bound: forall x n. n < 0 \/ n >= size -> nth x n = False
 
@@ -213,9 +228,6 @@ module BV_Gen
 
   (** Conversions from/to integers *)
 
-  use Pow2int
-
-  constant two_power_size : int
   constant max_int : int
 
   axiom two_power_size_val : two_power_size = pow2 size
@@ -223,9 +235,7 @@ module BV_Gen
 
   predicate is_signed_positive t
 
-  function to_uint t : int
   val to_uint (x:t) : int  ensures { result = to_uint x }
-  val function of_int int : t
 
   function to_int (x:t) : int =
     if (is_signed_positive x) then (to_uint x) else (- (two_power_size - (to_uint x)))
@@ -367,19 +377,9 @@ module BV_Gen
   axiom rotate_right_bv_is_rotate_right :
     forall v n. rotate_right_bv v n = rotate_right v (to_uint n)
 
-  val function nth_bv t t: bool
-
   axiom nth_bv_def:
     forall x i.
       nth_bv x i = not (bw_and (lsr_bv x i) one = zeros)
-
-  axiom Nth_bv_is_nth:
-    forall x i.
-      nth x (to_uint i) = nth_bv x i
-
-  axiom Nth_bv_is_nth2:
-    forall x i. 0 <= i < two_power_size ->
-      nth_bv x (of_int i) = nth x i
 
   (** equality axioms *)
 
@@ -615,4 +615,56 @@ module BVConverter_8_16
     function to_uint_big = BV16.t'int,
     axiom toSmall_to_uint, (* TODO: "lemma"? "goal"? *)
     axiom toBig_to_uint    (* TODO: "lemma"? "goal"? *)
+end
+
+
+(** {3 Realization}
+
+This extra module is not intended to be used for other purpose than
+realization, that is to check that axioms of the `BV_Gen` theory aer
+compatible with SMT-LIB
+
+See also the file `examples/stdlib/bv_check.mlw`
+
+ *)
+
+
+module BV8_realization
+
+  constant size           : int = 8
+  constant two_power_size : int = 0x1_00
+
+  use int.Int as Int (* needed to use range types *)
+
+  type bv8 = < range 0 0xFF >
+
+  val function nth_bv bv8 bv8: bool
+
+  val function bw_and bv8 bv8 : bv8
+
+  val function lsr_bv bv8 bv8 : bv8
+
+  val constant one : bv8
+
+  val constant zeros : bv8
+
+  axiom nth_bv_axiom:
+    forall x i.
+      nth_bv x i = not (bw_and (lsr_bv x i) one = zeros)
+
+
+  clone export BV_Gen with
+    type t = bv8,
+    function to_uint = bv8'int,
+    constant size = size,
+    constant two_power_size = two_power_size,
+    constant max_int = bv8'maxInt,
+    val nth_bv = nth_bv,
+    val bw_and = bw_and,
+    val lsr_bv = lsr_bv,
+    val one = one,
+    val zeros = zeros,
+    goal .  (* specific for realization purpose:
+               all axioms are turned into goals *)
+
 end

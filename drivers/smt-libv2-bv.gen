@@ -219,3 +219,52 @@ end
 theory bv.Pow2int
   remove allprops
 end
+
+
+
+(* for realizations only *)
+
+theory bv.BV8_realization
+
+  meta "literal:keep" type bv8
+
+  syntax literal bv8 (* "#b%8b"  *) "#x%2x"
+  syntax type bv8 "(_ BitVec 8)"
+
+  syntax function zeros "#x00"
+  syntax function one   "#x01"
+  syntax function ones  "#xFF"
+  syntax function size_bv "(_ bv8 8)"
+
+  syntax predicate is_signed_positive "(bvsge %1 (_ bv0 8))"
+
+  syntax function rotate_left_bv "(bvor (bvshl %1 (bvurem %2 (_ bv8 8))) (bvlshr %1 (bvsub (_ bv8 8) (bvurem %2 (_ bv8 8)))))"
+  syntax function rotate_right_bv "(bvor (bvlshr %1 (bvurem %2 (_ bv8 8))) (bvshl %1 (bvsub (_ bv8 8) (bvurem %2 (_ bv8 8)))))"
+
+  syntax function bw_and "(bvand %1 %2)"
+  syntax function bw_or "(bvor %1 %2)"
+  syntax function bw_xor "(bvxor %1 %2)"
+  syntax function bw_not "(bvnot %1)"
+
+  syntax predicate ult "(bvult %1 %2)"
+  syntax predicate ule "(bvule %1 %2)"
+  syntax predicate ugt "(bvugt %1 %2)"
+  syntax predicate uge "(bvuge %1 %2)"
+  syntax predicate slt "(bvslt %1 %2)"
+  syntax predicate sle "(bvsle %1 %2)"
+  syntax predicate sgt "(bvsgt %1 %2)"
+  syntax predicate sge "(bvsge %1 %2)"
+
+
+  syntax function add "(bvadd %1 %2)"
+  syntax function sub "(bvsub %1 %2)"
+  syntax function neg "(bvneg %1)"
+  syntax function mul "(bvmul %1 %2)"
+  syntax function udiv "(bvudiv %1 %2)"
+  syntax function urem "(bvurem %1 %2)"
+
+  syntax function lsr_bv "(bvlshr %1 %2)"
+  syntax function asr_bv "(bvashr %1 %2)"
+  syntax function lsl_bv "(bvshl %1 %2)"
+
+end

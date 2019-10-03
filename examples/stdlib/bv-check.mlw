@@ -1,0 +1,6 @@
+
+use "bv-realize".BV8Realize
+
+clone bv.BV8
+   with type t = t
+        function bw_and = bw_and
