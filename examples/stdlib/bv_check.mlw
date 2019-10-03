@@ -1,0 +1,21 @@
+
+clone bv.BV8_realization as B
+
+clone bv.BV_Gen with
+  type t = B.bv8,
+  function to_uint = B.bv8'int,
+  constant size = B.size,
+  constant two_power_size = B.two_power_size,
+  constant max_int = B.bv8'maxInt,
+  val of_int = B.of_int,
+  val nth_bv = B.nth_bv,
+  val nth = B.nth,
+  val bw_and = B.bw_and,
+  val bw_or = B.bw_or,
+  val bw_xor = B.bw_xor,
+  val bw_not = B.bw_not,
+  val lsr_bv = B.lsr_bv,
+  val lsr = B.lsr,
+  val one = B.one,
+  val zeros = B.zeros,
+  val ones = B.ones

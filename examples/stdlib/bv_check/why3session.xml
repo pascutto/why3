@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
+"http://why3.lri.fr/why3session.dtd">
+<why3session shape_version="8">
+<prover id="0" name="Z3" version="4.8.4" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="1" name="CVC4" version="1.7" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="2" name="Alt-Ergo" version="2.3.0" timelimit="1" steplimit="0" memlimit="1000"/>
+<file>
+<path name=".."/><path name="bv_check.mlw"/>
+<theory name="Top">
+ <goal name="B.nth_bv_axiom">
+ <proof prover="0"><result status="unknown" time="0.01" steps="1198"/></proof>
+ <proof prover="1"><result status="unknown" time="0.02" steps="4820"/></proof>
+ <proof prover="2"><result status="unknown" time="0.01"/></proof>
+ </goal>
+ <goal name="BV_Gen.size_pos" proved="true">
+ <proof prover="0" timelimit="5"><result status="valid" time="0.01" steps="500"/></proof>
+ <proof prover="1" timelimit="5"><result status="valid" time="0.01" steps="2285"/></proof>
+ <proof prover="2"><result status="valid" time="0.01" steps="130"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_bv_is_nth">
+ <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="15073385"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="250287"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_bv_is_nth2">
+ <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="15291339"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="1034532"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.nth_out_of_bound">
+ <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="12901667"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="167430"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_zeros" proved="true">
+ <proof prover="0"><result status="valid" time="0.02" steps="8538"/></proof>
+ <proof prover="1"><result status="valid" time="0.02" steps="3461"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_ones">
+ <proof prover="0"><result status="timeout" time="1.00" steps="10787720"/></proof>
+ <proof prover="1"><result status="timeout" time="1.00" steps="178078"/></proof>
+ <proof prover="2"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_bw_and" proved="true">
+ <proof prover="0"><result status="valid" time="0.02" steps="20473"/></proof>
+ <proof prover="1" timelimit="5"><result status="valid" time="0.03" steps="4506"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_bw_or" proved="true">
+ <proof prover="0"><result status="valid" time="0.02" steps="17242"/></proof>
+ <proof prover="1"><result status="valid" time="0.03" steps="4671"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_bw_xor" proved="true">
+ <proof prover="0"><result status="valid" time="0.03" steps="33086"/></proof>
+ <proof prover="1"><result status="valid" time="0.03" steps="5288"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_bw_not" proved="true">
+ <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="11337520"/></proof>
+ <proof prover="1"><result status="valid" time="0.03" steps="5913"/></proof>
+ </goal>
+ <goal name="BV_Gen.Lsr_nth_low">
+ <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="11256296"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="849486"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Lsr_nth_high">
+ <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="12726398"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="219757"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Asr_nth_low">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="419922"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Asr_nth_high">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Lsl_nth_high">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="425942"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Lsl_nth_low">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="207025"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_rotate_right">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="426526"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Nth_rotate_left">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="415949"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.two_power_size_val" proved="true">
+ <proof prover="2"><result status="valid" time="0.01" steps="131"/></proof>
+ </goal>
+ <goal name="BV_Gen.max_int_val" proved="true">
+ <proof prover="2"><result status="valid" time="0.01" steps="131"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_extensionality">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="227895"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_int_extensionality" proved="true">
+ <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="11707606"/></proof>
+ <proof prover="1" obsolete="true"><result status="unknown" time="0.04" steps="8287"/></proof>
+ <proof prover="2"><result status="valid" time="0.07" steps="360"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_bounds" proved="true">
+ <proof prover="2"><result status="valid" time="0.06" steps="330"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_of_int">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="176477"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_size_bv">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="156525"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_zeros" proved="true">
+ <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="12015728"/></proof>
+ <proof prover="1"><result status="valid" time="0.03" steps="6147"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_one">
+ <proof prover="0"><result status="timeout" time="1.00" steps="12435738"/></proof>
+ <proof prover="1"><result status="timeout" time="1.00" steps="220240"/></proof>
+ <proof prover="2"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_ones" proved="true">
+ <proof prover="0"><result status="timeout" time="1.00" steps="277894683"/></proof>
+ <proof prover="1"><result status="valid" time="0.10" steps="28589"/></proof>
+ <proof prover="2"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.positive_is_ge_zeros">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="423039"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_add">
+ <proof prover="0"><result status="timeout" time="1.00" steps="16743710"/></proof>
+ <proof prover="1"><result status="timeout" time="1.00" steps="236209"/></proof>
+ <proof prover="2"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_sub">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="199950"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_neg">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="195629"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_mul">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="174831"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_udiv">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="309730"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_urem">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="309825"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.lsr_bv_is_lsr">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="181386"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_lsr">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="277447"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.asr_bv_is_asr">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="206165"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.lsl_bv_is_lsl">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="192565"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.to_uint_lsl">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="224970"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.rotate_left_bv_is_rotate_left">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="207434"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.rotate_right_bv_is_rotate_right">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="194175"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.nth_bv_def" proved="true">
+ <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="10796846"/></proof>
+ <proof prover="1" obsolete="true"><result status="unknown" time="0.03" steps="8030"/></proof>
+ <proof prover="2"><result status="valid" time="0.08" steps="360"/></proof>
+ </goal>
+ <goal name="BV_Gen.eq_sub_bv_def">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="236540"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.eq_sub_equiv">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="185428"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+ <goal name="BV_Gen.Extensionality">
+ <proof prover="0" obsolete="true"><result status="failure" time="0.00"/></proof>
+ <proof prover="1" obsolete="true"><result status="timeout" time="1.00" steps="207253"/></proof>
+ <proof prover="2" obsolete="true"><result status="timeout" time="1.00"/></proof>
+ </goal>
+</theory>
+</file>
+</why3session>
