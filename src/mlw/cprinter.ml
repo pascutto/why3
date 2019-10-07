@@ -1237,9 +1237,11 @@ module MLToC = struct
           match pvsl, r.e_node with
           | [pv], Mltree.Evar pv'
             when pv_equal pv pv' && env.computes_return_value ->
-            (bs, Sid.add id rs)
+             (bs, Sid.add id rs)
           | [], (Eblock []) when is_unit r.e_ity && is_while ->
-            (Sid.add id bs, rs)
+             (Sid.add id bs, rs)
+          | [], (Eblock []) when is_unit r.e_ity ->
+             (bs, Sid.add id rs)
           |_ -> raise (Unsupported "non break/return exception in try"))
         (Sid.empty, env.returns) xl
       in
@@ -1251,13 +1253,14 @@ module MLToC = struct
                  } in
       expr info env' b
     | Eraise (xs,_) when Sid.mem xs.xs_name env.breaks ->
-      Debug.dprintf debug_c_extraction "BREAK@.";
-      ([], C.Sbreak)
+       Debug.dprintf debug_c_extraction "BREAK@.";
+       ([], C.Sbreak)
     | Eraise (xs, Some r) when Sid.mem xs.xs_name env.returns ->
-      Debug.dprintf debug_c_extraction "RETURN@.";
-      expr info {env with computes_return_value = true} r
+       Debug.dprintf debug_c_extraction "RETURN@.";
+       expr info {env with computes_return_value = true} r
     | Eraise (xs, None) when Sid.mem xs.xs_name env.returns ->
-       assert false (* nothing to pass to return *)
+       Debug.dprintf debug_c_extraction "RETURN void@.";
+       ([], C.Sreturn Enothing)
     | Eraise _ -> raise (Unsupported "non break/return exception raised")
     | Elet (Lvar(eb, ee),
             { e_node = Elet(Lvar (sb, se),

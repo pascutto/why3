@@ -22,7 +22,7 @@ module Div
 
   use int.MinMax as MM
 
-  predicate reciprocal (v d:limb) =
+  predicate reciprocal (v d:int) =
     v = (div (radix*radix - 1) (d)) - radix
 
   let lemma fact_div (x y z:int)

@@ -1,0 +1,135 @@
+module Sec_div
+
+  use int.Int
+  use int.EuclideanDivision
+  use mach.int.Int32
+  use import mach.int.UInt64GMP as Limb
+  use int.Power
+  use ref.Ref
+  use mach.c.C
+  use array.Array
+  use map.Map
+  use types.Types
+  use lemmas.Lemmas
+  use sub.Sub
+  use div.Div
+  use logical.Logical
+  use cnd.Cnd
+
+  let sec_pi1_div_r (n:ptr limb) (nn:int32) (dp:ptr limb)
+                    (dn:int32) (dinv:limb) (tp:ptr limb) : unit
+    requires { valid n nn /\ valid dp dn }
+    requires { valid tp (dn + 1) }
+    requires { normalized dp dn }
+    requires { if (pelts dp)[dn-1] = radix - 1
+               then reciprocal dinv ((pelts dp)[dn-1])
+               else reciprocal dinv ((pelts dp)[dn-1] + 1) }
+    requires { 1 <= dn <= nn }
+    ensures  { value n dn = mod (old value n nn) (value dp dn) }
+    writes   { n.data.elts, tp.data.elts }
+  =
+    let ghost vn = value n (int32'int nn) in
+    if nn = dn
+    then begin
+      (* TODO sub_n_rx *)
+      let cy = wmpn_sub_in_place n dn dp dn in
+      let ghost _c = wmpn_cnd_add_n_in_place cy n dp dn in
+      assert { _c = 0 };
+      return;
+    end;
+    (* computing the quotient simplifies the proof: do it in ghost code *)
+    let ghost ref vq:int = 0 in
+    let ghost vd = value dp (int32'int dn) in
+    let ref hp = C.incr tp 0 in
+    assert { valid hp (dn+1) };
+    set_ofs hp dn (wmpn_lshift hp dp dn 32);
+    value_tail hp dn;
+    assert { value hp (dn+1) = value dp dn * power 2 32 };
+    let ref np = C.incr n (nn - dn) in
+    let ref nh:limb = 0 in
+    value_tail dp (dn - 1);
+    assert { 2 * vd >= power radix dn
+             by normalized dp dn
+             so 2 * (pelts dp)[offset dp + dn - 1] >= radix
+             so 2 * vd
+                = 2 * (value dp (dn - 1)
+                       + power radix (dn - 1) * (pelts dp)[offset dp + dn - 1])
+                >= power radix (dn - 1) * 2 * (pelts dp)[offset dp + dn - 1]
+                >= power radix (dn - 1) * radix = power radix dn };
+    for i = nn - dn - 1 downto 0 do
+      invariant { i < nn - dn }
+      invariant { offset np = offset n + i + 1 }
+      invariant { plength hp = plength tp }
+      invariant { plength np = plength n }
+      invariant { min np = min n /\ max np = max n }
+      invariant { min hp = min tp /\ max hp = max tp }
+      invariant { pelts np = pelts n }
+      invariant { vn = vq * vd
+                  + value n (dn + i + 1) + power radix (dn + i + 1) * nh }
+      invariant { value np dn + power radix dn * nh < 4 * vd (* ??? *) }
+      invariant { 0 <= nh <= 1 }
+      label StartLoop in
+      np <- C.incr np (-1);
+      let ndn = get_ofs np dn in
+      nh <- lsl nh 32 + lsr_mod ndn 32;
+      let (ghost _d1, q1h) = mul_double nh dinv in
+      let q1h =  q1h + nh in
+      vq <- vq + power 2 32 * power radix (int32'int i) * uint64'int q1h;
+      let ghost _b1 = wmpn_submul_1 np hp (dn+1) q1h in
+      assert { _b1 = nh }; (*?*)
+      nh <- get_ofs np dn;
+      let (ghost _d0, q0h) = mul_double nh dinv in
+      let q0h = q0h + nh in
+      vq <- vq + power radix (int32'int i) * uint64'int q0h;
+      nh <- nh - wmpn_submul_1 np dp dn q0h;
+    done;
+    assert { offset np = offset n };
+    assert { vn = vq * vd + value np dn + power radix dn * nh };
+    begin
+      ensures { vn = vq * vd + value n dn + power radix dn * nh }
+      ensures { value np dn + power radix dn * nh < 3 * vd (* ??? *) }
+      ensures { 0 <= nh <= 1 }
+      label Adj1 in
+      let cnd = if nh <> 0 then 1 else 0 in
+      vq <- vq + uint64'int cnd;
+      assert { cnd = 0 -> value np dn + power radix dn * nh < 3 * vd
+               by nh = 0
+               so value np dn + power radix dn * nh
+                  < power radix dn
+                  <= 2 * vd };
+      nh <- nh - wmpn_cnd_sub_n_in_place cnd np dp dn;
+      assert { cnd = 1 ->
+               (vq * vd + value np dn + power radix dn * nh = vn
+               /\ value np dn + power radix dn * nh < 3 * vd)
+               by value np dn + power radix dn * nh
+                   = (value np dn + power radix dn * nh at Adj1) - vd
+                   < 4 * vd - vd = 3 * vd
+               so vq = (vq at Adj1) + 1
+               so value n dn = value np dn };
+    end;
+    begin
+      ensures { vn = vq * vd + value n dn }
+      ensures { value np dn < 2 * vd }
+      (* TODO sub_n_rx *)
+      let ref cy = wmpn_sub_in_place np dn dp dn in
+      assert { nh = 1 -> cy = 1 };
+      cy <- cy - nh;
+      assert { 0 <= cy <= 1 };
+      vq <- vq + uint64'int (1 - cy);
+      let ghost _c = wmpn_cnd_add_n_in_place cy np dp dn in
+      assert { _c = 0 };
+    end;
+    begin
+      ensures { if old value np dn >= vd
+                then value np dn = value np dn - vd /\ vq = old vq + 1
+                else value np dn = old value np dn /\ vq = old vq }
+      ensures { vn = vq * vd + value n dn }
+      ensures { value np dn < vd }
+      (* TODO sub_n_rx *)
+      let cy = wmpn_sub_in_place np dn dp dn in
+      vq <- vq + uint64'int (1 - cy);
+      let ghost _c = wmpn_cnd_add_n_in_place cy np dp dn in
+      assert { _c = 0 };
+    end;
+    return
+end

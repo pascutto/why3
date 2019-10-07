@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
+"http://why3.lri.fr/why3session.dtd">
+<why3session shape_version="8">
+<prover id="0" name="Z3" version="4.6.0" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="1" name="CVC3" version="2.4.1" timelimit="5" steplimit="0" memlimit="2000"/>
+<prover id="2" name="Eprover" version="2.0" timelimit="5" steplimit="0" memlimit="2000"/>
+<prover id="3" name="Alt-Ergo" version="2.2.0" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="4" name="CVC4" version="1.6" timelimit="1" steplimit="0" memlimit="1000"/>
+<file format="whyml">
+<path name=".."/><path name="sec_div.mlw"/>
+<theory name="Sec_div">
+ <goal name="sec_pi1_div_r&#39;VC" expl="VC for sec_pi1_div_r">
+ <transf name="split_vc" >
+  <goal name="sec_pi1_div_r&#39;VC.0" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="14811"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.1" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.12" steps="15207"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.2" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.06" steps="13926"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.3" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.14" steps="20839"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.4" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.05" steps="15418"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.5" expl="assertion">
+  <proof prover="0"><result status="timeout" time="1.00" steps="1817568"/></proof>
+  <proof prover="3"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4"><result status="timeout" time="1.00" steps="73677"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.6" expl="postcondition">
+  <proof prover="0"><result status="timeout" time="1.00" steps="2991624"/></proof>
+  <proof prover="3"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4"><result status="timeout" time="1.00" steps="96730"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.7" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.09" steps="19287"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.8" expl="assertion" proved="true">
+  <proof prover="4"><result status="valid" time="0.13" steps="19003"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.9" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="13952"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.10" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.12" steps="19997"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.11" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="14326"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.12" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="13989"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.13" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.12" steps="22443"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.14" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="16060"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.15" expl="assertion" proved="true">
+  <proof prover="3"><result status="valid" time="0.38" steps="417"/></proof>
+  <proof prover="4"><result status="timeout" time="1.00" steps="61217"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.16" expl="integer overflow" proved="true">
+  <proof prover="4"><result status="valid" time="0.11" steps="20805"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.17" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.16" steps="21798"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.18" expl="integer overflow" proved="true">
+  <proof prover="4"><result status="valid" time="0.10" steps="21399"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.19" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.06" steps="16508"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.20" expl="assertion" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="sec_pi1_div_r&#39;VC.20.0" expl="assertion" proved="true">
+   <proof prover="4"><result status="valid" time="0.04" steps="14945"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.20.1" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2315694"/></proof>
+   <proof prover="1" obsolete="true"><result status="timeout" time="5.00"/></proof>
+   <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
+   <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+   <proof prover="4"><result status="valid" time="0.14" steps="23404"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.20.2" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2484728"/></proof>
+   <proof prover="1" obsolete="true"><result status="highfailure" time="1.48"/></proof>
+   <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
+   <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+   <proof prover="4"><result status="valid" time="0.55" steps="76905"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.20.3" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="4"><result status="valid" time="0.79" steps="82765"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.20.4" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="0"><result status="timeout" time="1.00" steps="2252804"/></proof>
+   <proof prover="1"><result status="valid" time="0.06"/></proof>
+   <proof prover="2"><result status="timeout" time="5.00"/></proof>
+   <proof prover="3"><result status="timeout" time="1.00"/></proof>
+   <proof prover="4"><result status="timeout" time="1.00" steps="102664"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.20.5" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="4"><result status="valid" time="0.12" steps="22224"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.20.6" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="3021004"/></proof>
+   <proof prover="1" obsolete="true"><result status="timeout" time="5.00"/></proof>
+   <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
+   <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+   <proof prover="4"><result status="valid" time="0.07" steps="16932"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.21" expl="integer overflow" proved="true">
+  <proof prover="4"><result status="valid" time="0.18" steps="22248"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.22" expl="integer overflow" proved="true">
+  <proof prover="4"><result status="valid" time="0.16" steps="22292"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.23" expl="loop invariant init" proved="true">
+  <proof prover="4"><result status="valid" time="0.12" steps="16801"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.24" expl="loop invariant init" proved="true">
+  <proof prover="4"><result status="valid" time="0.12" steps="17346"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.25" expl="loop invariant init" proved="true">
+  <proof prover="2"><result status="valid" time="0.01"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.26" expl="loop invariant init" proved="true">
+  <proof prover="4"><result status="valid" time="0.05" steps="15309"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.27" expl="loop invariant init" proved="true">
+  <proof prover="4"><result status="valid" time="0.05" steps="15327"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.28" expl="loop invariant init" proved="true">
+  <proof prover="4"><result status="valid" time="0.12" steps="17193"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.29" expl="loop invariant init" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="15621"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.30" expl="loop invariant init" proved="true">
+  <proof prover="4"><result status="valid" time="0.12" steps="17352"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.31" expl="loop invariant init" proved="true">
+  <proof prover="4"><result status="valid" time="0.21" steps="39735"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.32" expl="loop invariant init" proved="true">
+  <proof prover="4"><result status="valid" time="0.05" steps="15283"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.33" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.15" steps="25203"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.34" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.20" steps="25485"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.35" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="15725"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.36" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="15801"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.37" expl="precondition">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="1998564"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="80452"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.38" expl="integer overflow">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="1932833"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="95989"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.39" expl="integer overflow">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="1750393"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="97559"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.40" expl="integer overflow" proved="true">
+  <proof prover="4"><result status="valid" time="0.22" steps="26542"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.41" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.43" steps="46388"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.42" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.24" steps="28666"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.43" expl="assertion">
+  <proof prover="0" timelimit="5" memlimit="2000" obsolete="true"><result status="timeout" time="5.00" steps="13222099"/></proof>
+  <proof prover="2" obsolete="true"><undone/></proof>
+  <proof prover="3" timelimit="5" memlimit="2000" obsolete="true"><result status="timeout" time="5.00"/></proof>
+  <proof prover="4" timelimit="5" memlimit="2000" obsolete="true"><result status="timeout" time="5.00" steps="129725"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.44" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.16" steps="28198"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.45" expl="integer overflow">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2468418"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="53596"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.46" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.07" steps="16920"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.47" expl="precondition">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2016521"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="56314"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.48" expl="integer overflow">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2573524"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="59036"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.49" expl="loop invariant preservation">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2366867"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="59884"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.50" expl="loop invariant preservation" proved="true">
+  <proof prover="4"><result status="valid" time="0.15" steps="20134"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.51" expl="loop invariant preservation" proved="true">
+  <proof prover="4"><result status="valid" time="0.06" steps="17284"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.52" expl="loop invariant preservation" proved="true">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2406234"/></proof>
+  <proof prover="2"><result status="valid" time="0.01"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="70876"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.53" expl="loop invariant preservation" proved="true">
+  <proof prover="4"><result status="valid" time="0.15" steps="20045"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.54" expl="loop invariant preservation" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="17319"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.55" expl="loop invariant preservation">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2884955"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="57742"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.56" expl="loop invariant preservation">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2985941"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="74736"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.57" expl="loop invariant preservation">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2989710"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="74937"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.58" expl="loop invariant preservation">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="3033822"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="74368"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.59" expl="assertion" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="15738"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.60" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.15" steps="300986"/></proof>
+  <proof prover="3" timelimit="5" memlimit="2000" obsolete="true"><result status="timeout" time="5.00"/></proof>
+  <proof prover="4" timelimit="5" memlimit="2000" obsolete="true"><result status="timeout" time="5.00" steps="127780"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.61" expl="assertion" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="sec_pi1_div_r&#39;VC.61.0" expl="assertion" proved="true">
+   <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2481165"/></proof>
+   <proof prover="3"><result status="valid" time="0.12" steps="168"/></proof>
+   <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="106044"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.61.1" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2481252"/></proof>
+   <proof prover="1" obsolete="true"><result status="timeout" time="5.00"/></proof>
+   <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
+   <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+   <proof prover="4"><result status="valid" time="0.34" steps="40966"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.61.2" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="4"><result status="valid" time="0.07" steps="15677"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.61.3" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2534845"/></proof>
+   <proof prover="2"><result status="timeout" time="5.00"/></proof>
+   <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+   <proof prover="4"><result status="valid" time="0.07" steps="17849"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.62" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.22" steps="25212"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.63" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.04" steps="17589"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.64" expl="integer overflow" proved="true">
+  <proof prover="4"><result status="valid" time="0.22" steps="25365"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.65" expl="assertion" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="sec_pi1_div_r&#39;VC.65.0" expl="assertion" proved="true">
+   <proof prover="3"><result status="valid" time="0.29" steps="196"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.65.1" expl="assertion" proved="true">
+   <proof prover="4"><result status="valid" time="0.09" steps="16296"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.65.2" expl="assertion" proved="true">
+   <proof prover="4"><result status="valid" time="0.08" steps="16287"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.65.3" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="4"><result status="valid" time="0.06" steps="16372"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.65.4" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="2"><result status="valid" time="0.02"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.65.5" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="4"><result status="valid" time="0.10" steps="18675"/></proof>
+   </goal>
+   <goal name="sec_pi1_div_r&#39;VC.65.6" expl="VC for sec_pi1_div_r" proved="true">
+   <proof prover="4"><result status="valid" time="0.12" steps="18614"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.66" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.04"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.67" expl="postcondition" proved="true">
+  <proof prover="1"><result status="valid" time="0.10"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.68" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.05" steps="17712"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.69" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2361219"/></proof>
+  <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <transf name="inline_goal" proved="true" >
+   <goal name="sec_pi1_div_r&#39;VC.69.0" expl="precondition" proved="true">
+   <transf name="split_vc" proved="true" >
+    <goal name="sec_pi1_div_r&#39;VC.69.0.0" expl="precondition" proved="true">
+    <proof prover="4"><result status="valid" time="0.15" steps="24445"/></proof>
+    </goal>
+    <goal name="sec_pi1_div_r&#39;VC.69.0.1" expl="precondition" proved="true">
+    <proof prover="4"><result status="valid" time="0.08" steps="15904"/></proof>
+    </goal>
+    <goal name="sec_pi1_div_r&#39;VC.69.0.2" expl="precondition" proved="true">
+    <proof prover="4"><result status="valid" time="0.14" steps="25206"/></proof>
+    </goal>
+    <goal name="sec_pi1_div_r&#39;VC.69.0.3" expl="precondition" proved="true">
+    <proof prover="4"><result status="valid" time="0.12" steps="25248"/></proof>
+    </goal>
+    <goal name="sec_pi1_div_r&#39;VC.69.0.4" expl="precondition" proved="true">
+    <proof prover="4"><result status="valid" time="0.14" steps="25299"/></proof>
+    </goal>
+    <goal name="sec_pi1_div_r&#39;VC.69.0.5" expl="precondition" proved="true">
+    <proof prover="0" timelimit="5" memlimit="2000" obsolete="true"><result status="timeout" time="5.00" steps="16117819"/></proof>
+    <proof prover="2"><result status="valid" time="0.02"/></proof>
+    <proof prover="3" timelimit="5" memlimit="2000" obsolete="true"><result status="timeout" time="5.00"/></proof>
+    <proof prover="4" timelimit="5" memlimit="2000" obsolete="true"><result status="timeout" time="5.00" steps="147330"/></proof>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.70" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.07" steps="16286"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.71" expl="assertion">
+  <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2324527"/></proof>
+  <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="109249"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.72" expl="integer overflow">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="95202"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.73" expl="assertion" proved="true">
+  <proof prover="4"><result status="valid" time="0.21" steps="25755"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.74" expl="integer overflow" proved="true">
+  <proof prover="4"><result status="valid" time="0.19" steps="25790"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.75" expl="precondition">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="97227"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.76" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.06" steps="18517"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.77" expl="assertion">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="77090"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.78" expl="postcondition">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="105820"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.79" expl="postcondition">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="105783"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.80" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.05" steps="18076"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.81" expl="precondition">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="94719"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.82" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.06" steps="16577"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.83" expl="integer overflow" proved="true">
+  <proof prover="4"><result status="valid" time="0.20" steps="26231"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.84" expl="precondition">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="72050"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.85" expl="precondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.07" steps="18748"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.86" expl="assertion">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="108981"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.87" expl="postcondition">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="113230"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.88" expl="postcondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.44" steps="50711"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.89" expl="postcondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.06" steps="19968"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.90" expl="postcondition">
+  <proof prover="4" obsolete="true"><result status="timeout" time="1.00" steps="112033"/></proof>
+  </goal>
+  <goal name="sec_pi1_div_r&#39;VC.91" expl="out of loop bounds" proved="true">
+  <proof prover="4"><result status="valid" time="0.17" steps="32964"/></proof>
+  </goal>
+ </transf>
+ </goal>
+</theory>
+</file>
+</why3session>
