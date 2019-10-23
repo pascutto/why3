@@ -218,9 +218,14 @@ module UnsignedGMP
     ensures { y = 0 -> result = x }
     ensures { x = 1 /\ y = 1 -> result = 1 }
 
+  val bnot (x:t) : t
+    ensures { x = 0 <-> result = max }
+    ensures { x = max <-> result = 0 }
+
   val of_bool (b:bool) : t
     ensures { b -> result = 1 }
     ensures { not b -> result = 0 }
+
 
 end
 

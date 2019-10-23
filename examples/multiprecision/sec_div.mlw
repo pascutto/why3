@@ -21,9 +21,9 @@ module Sec_div
     requires { valid n nn /\ valid dp dn }
     requires { valid tp (dn + 1) }
     requires { normalized dp dn }
-    requires { if (pelts dp)[dn-1] = radix - 1
-               then reciprocal dinv ((pelts dp)[dn-1])
-               else reciprocal dinv ((pelts dp)[dn-1] + 1) }
+    requires { if (pelts dp)[offset dp + dn-1] = radix - 1
+               then reciprocal dinv ((pelts dp)[offset dp + dn-1])
+               else reciprocal dinv ((pelts dp)[offset dp + dn-1] + 1) }
     requires { 1 <= dn <= nn }
     ensures  { value n dn = mod (old value n nn) (value dp dn) }
     writes   { n.data.elts, tp.data.elts }
@@ -42,9 +42,11 @@ module Sec_div
     let ghost vd = value dp (int32'int dn) in
     let ref hp = C.incr tp 0 in
     assert { valid hp (dn+1) };
+    let ghost gamma : int = power 2 32 in
+    assert { gamma * gamma = radix };
     set_ofs hp dn (wmpn_lshift hp dp dn 32);
     value_tail hp dn;
-    assert { value hp (dn+1) = value dp dn * power 2 32 };
+    assert { value hp (dn+1) = value dp dn * gamma };
     let ref np = C.incr n (nn - dn) in
     let ref nh:limb = 0 in
     value_tail dp (dn - 1);
@@ -56,6 +58,7 @@ module Sec_div
                        + power radix (dn - 1) * (pelts dp)[offset dp + dn - 1])
                 >= power radix (dn - 1) * 2 * (pelts dp)[offset dp + dn - 1]
                 >= power radix (dn - 1) * radix = power radix dn };
+    (*let ghost d = (pelts dp)[dn-1] in*)
     for i = nn - dn - 1 downto 0 do
       invariant { i < nn - dn }
       invariant { offset np = offset n + i + 1 }
@@ -66,17 +69,25 @@ module Sec_div
       invariant { pelts np = pelts n }
       invariant { vn = vq * vd
                   + value n (dn + i + 1) + power radix (dn + i + 1) * nh }
-      invariant { value np dn + power radix dn * nh < 4 * vd (* ??? *) }
+      invariant { (* vd *) 0 <= value np dn + power radix dn * nh < 4 * vd
+                  \/ (nh = 0 /\ vq = 0) }
       invariant { 0 <= nh <= 1 }
       label StartLoop in
       np <- C.incr np (-1);
+      assert { radix * vd <= value np (dn+1) + power radix (dn+1) * nh
+               < 4 * radix * vd
+               \/ (nh = 0 /\ vq = 0) };
       let ndn = get_ofs np dn in
       nh <- lsl nh 32 + lsr_mod ndn 32;
       let (ghost _d1, q1h) = mul_double nh dinv in
       let q1h =  q1h + nh in
-      vq <- vq + power 2 32 * power radix (int32'int i) * uint64'int q1h;
+      assert { radix * q1h <= nh * (radix + dinv) < radix * (q1h + 1) };
+      vq <- vq + gamma * power radix (int32'int i) * uint64'int q1h;
       let ghost _b1 = wmpn_submul_1 np hp (dn+1) q1h in
-      assert { _b1 = nh }; (*?*)
+      assert { _b1 = nh at StartLoop }; (*?*)
+      assert { gamma * vd <= value np dn < 4 * gamma * vd
+                  \/ (nh = 0 /\ vq = 0) };
+      assert { 0 <= nh <= 3 };
       nh <- get_ofs np dn;
       let (ghost _d0, q0h) = mul_double nh dinv in
       let q0h = q0h + nh in
@@ -132,4 +143,118 @@ module Sec_div
       assert { _c = 0 };
     end;
     return
+
+  let wmpn_sec_div_r (np: ptr limb) (nn: int32) (dp: ptr limb) (dn: int32)
+                (tp: ptr limb) : unit
+    requires { 1 <= dn <= nn < power 2 31 }
+    requires { valid np nn }
+    requires { valid dp dn }
+    requires { valid tp (nn + 2 * dn + 2) }
+    requires { (pelts dp)[offset dp + (dn-1)] > 0 }
+    ensures  { value np dn = mod (old value np nn) (value dp dn) }
+  =
+    label Start in
+    let d1 = get_ofs dp (dn - 1) in
+    let cnt = of_int32 (count_leading_zeros d1) in
+    let ghost vn = value np (int32'int nn) in
+    if cnt <> 0
+    then begin
+      let tp2 = incr_split tp (nn + dn + 1) in
+      let np2 = incr_split tp dn in
+      let dp2 = tp in
+      value_tail dp (dn - 1);
+      let ghost _c = wmpn_lshift dp2 dp dn cnt in
+      assert { _c = 0
+               by value dp dn = value dp (dn - 1) + power radix (dn - 1) * d1
+               so d1 * power 2 cnt < radix
+               so let tnc = Limb.length - cnt in
+                  power 2 tnc * power 2 cnt = power 2 (tnc + cnt) = radix
+               so d1 * power 2 cnt < power 2 tnc * power 2 cnt
+               so d1 < power 2 tnc
+               so (d1 + 1) * power 2 cnt <= power 2 tnc * power 2 cnt = radix
+               so value dp (dn - 1) < power radix (dn - 1)
+               so value dp dn < power radix (dn - 1) + power radix (dn - 1) * d1
+                  = power radix (dn - 1) * (d1 + 1)
+               so value dp dn * power 2 cnt
+                  < power radix (dn - 1) * ((d1 + 1) * power 2 cnt)
+                  <= power radix (dn - 1) * radix = power radix dn
+               so power radix dn * _c <= value dp2 dn + power radix dn * _c
+                  < power radix dn
+               so _c < 1 };
+      let cy = wmpn_lshift np2 np nn cnt in
+      value_sub_update_no_change (pelts np2) (offset np2 + int32'int nn)
+                                 (offset np2) (offset np2 + int32'int nn) cy;
+      C.set_ofs np2 nn cy;
+      value_tail np2 nn;
+      assert { value np2 (nn+1) = vn * power 2 cnt };
+      let ref nn = nn + 1 in
+      let ghost vn2 = value np2 (int32'int nn) in
+      let ref d0 = get_ofs dp2 (dn - 1) in
+      value_tail dp2 (dn - 1);
+      assert { d0 >= div radix 2
+               by 2 * power 2 cnt * d1 >= radix
+               so value dp dn >= d1 * power radix (dn - 1)
+               so power radix dn = power radix (dn - 1) * radix
+                  <= power radix (dn - 1) * (2 * power 2 cnt * d1)
+                  <= (2 * power 2 cnt) * value dp dn
+               so value dp2 dn = value dp dn * power 2 cnt
+               so 2 * value dp2 dn >= power radix dn
+               so value dp2 dn
+                  = value dp2 (dn - 1) + power radix (dn - 1) * d0
+                  < power radix (dn - 1) + power radix (dn - 1) * d0
+                  = power radix (dn - 1) * (d0 + 1)
+               so 2 * power radix (dn - 1) * (d0 + 1)
+                  > power radix dn
+               so 2 * (d0 + 1) > radix
+               so d0 + 1 > div radix 2 };
+      begin ensures { (pelts dp2)[offset dp2 + dn-1] = radix - 1
+                      -> d0 = (pelts dp2)[offset dp2 + dn-1] }
+            ensures { (pelts dp2)[offset dp2 + dn-1] <> radix - 1
+                      -> d0 = (pelts dp2)[offset dp2 + dn-1] + 1 }
+        d0 <- d0 + of_bool (bnot d0 <> 0);
+      end;
+      let inv32 = invert_limb d0 in
+      sec_pi1_div_r np2 nn dp2 dn inv32 tp2;
+      assert { value dp2 dn > 0 by d0 > 0 };
+      let ghost q = div vn2 (value dp2 (int32'int dn)) in
+      assert { vn2 = q * value dp2 dn + value np2 dn };
+      let ghost _c = wmpn_rshift np np2 dn cnt in
+      let ghost vd = value dp (int32'int dn) in
+      assert { _c = 0 /\ value np dn = mod vn vd
+               by vn2 = power 2 cnt * vn
+                  = q * power 2 cnt * vd + value np2 dn
+               so value np2 dn = power 2 cnt * (vn - q * vd)
+               so let tnc = Limb.length - cnt in
+                  power 2 tnc * power 2 cnt = radix
+               so _c + radix * value np dn
+                  = value np2 dn * power 2 tnc
+                  = power 2 tnc * power 2 cnt * (vn - q * vd)
+                  = radix * (vn - q * vd)
+               so _c = radix * (vn - q * vd - value np dn)
+               so 0 <= _c < radix
+               so _c = 0
+               so radix * value np dn = radix * (vn - q * vd)
+               so value np dn = vn - q * vd
+               so value np2 dn < value dp2 dn
+               so value np dn * power 2 cnt = value np2 dn
+               so vd * power 2 cnt = value dp2 dn
+               so 0 <= value np dn < vd
+               so mod vn vd
+                  = mod (vd * (-q) + vn) vd
+                  = mod (value np dn) vd
+                  = value np dn };
+      join dp2 np2;
+      join dp2 tp2
+    end
+    else begin
+      let ref d0 = get_ofs dp (dn - 1) in
+      begin ensures { if (old d0) = radix - 1
+                      then d0 = old d0
+                      else d0 = old d0 + 1 }
+        d0 <- d0 + of_bool (bnot d0 <> 0);
+      end;
+      let inv32 = invert_limb d0 in
+      sec_pi1_div_r np nn dp dn inv32 tp
+    end
+
 end
