@@ -497,7 +497,7 @@ module Powm
              by value tp (un + n) = value mp n * value qp (un + 1)
                                     + value rp n };
     assert { 0 <= value rp n < value mp n };
-    assert { mod (value rp n) (value mp n) = value rp n };
+    assert { mod (value rp n) (value mp n) = value rp n }
 
   function valueb (p:t) (nbits:int) : int
   =

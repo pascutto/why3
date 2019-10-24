@@ -541,10 +541,10 @@
    <proof prover="3"><result status="valid" time="0.31" steps="117"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.3" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.08" steps="14872"/></proof>
+   <proof prover="4"><result status="valid" time="0.08" steps="14887"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.4" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.13" steps="17369"/></proof>
+   <proof prover="4"><result status="valid" time="0.13" steps="17389"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.5" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="1"><result status="valid" time="0.11"/></proof>
@@ -553,16 +553,16 @@
    <proof prover="1"><result status="valid" time="0.10"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.7" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.09" steps="14965"/></proof>
+   <proof prover="4"><result status="valid" time="0.09" steps="14980"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.8" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.82" steps="82736"/></proof>
+   <proof prover="4"><result status="valid" time="0.82" steps="82756"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.9" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.13" steps="17718"/></proof>
+   <proof prover="4"><result status="valid" time="0.13" steps="17738"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.10" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.08" steps="15749"/></proof>
+   <proof prover="4"><result status="valid" time="0.08" steps="15764"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.11" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="1"><result status="valid" time="0.22"/></proof>
@@ -573,68 +573,68 @@
     <proof prover="3"><result status="valid" time="0.07" steps="128"/></proof>
     </goal>
     <goal name="wmpn_sec_div_r&#39;VC.16.12.1" expl="apply premises" proved="true">
-    <proof prover="4"><result status="valid" time="0.10" steps="22238"/></proof>
+    <proof prover="4"><result status="valid" time="0.10" steps="22258"/></proof>
     </goal>
    </transf>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.13" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.15" steps="22206"/></proof>
+   <proof prover="4"><result status="valid" time="0.15" steps="22226"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.14" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.21" steps="36432"/></proof>
+   <proof prover="4"><result status="valid" time="0.21" steps="36452"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.15" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.12" steps="17057"/></proof>
+   <proof prover="4"><result status="valid" time="0.12" steps="17077"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.16" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="1"><result status="valid" time="0.07"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.16.17" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.11" steps="22404"/></proof>
+   <proof prover="4"><result status="valid" time="0.11" steps="22424"/></proof>
    </goal>
   </transf>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.17" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.12" steps="16537"/></proof>
+  <proof prover="4"><result status="valid" time="0.08" steps="16557"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.18" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.17" steps="22144"/></proof>
+  <proof prover="4"><result status="valid" time="0.17" steps="22164"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.19" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.08" steps="15201"/></proof>
+  <proof prover="4"><result status="valid" time="0.08" steps="15216"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.20" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.10" steps="16589"/></proof>
+  <proof prover="4"><result status="valid" time="0.10" steps="16609"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.21" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.14" steps="17069"/></proof>
+  <proof prover="4"><result status="valid" time="0.14" steps="17089"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.22" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.08" steps="15246"/></proof>
+  <proof prover="4"><result status="valid" time="0.08" steps="15261"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.23" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.11" steps="17196"/></proof>
+  <proof prover="4"><result status="valid" time="0.11" steps="17216"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.24" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.06" steps="17145"/></proof>
+  <proof prover="4"><result status="valid" time="0.06" steps="17165"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.25" expl="assertion" proved="true">
   <proof prover="2"><result status="valid" time="0.02"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.26" expl="integer overflow" proved="true">
-  <proof prover="4"><result status="valid" time="0.12" steps="23887"/></proof>
+  <proof prover="4"><result status="valid" time="0.12" steps="23907"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.27" expl="integer overflow" proved="true">
-  <proof prover="4"><result status="valid" time="0.14" steps="24092"/></proof>
+  <proof prover="4"><result status="valid" time="0.21" steps="24112"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.28" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.23" steps="24933"/></proof>
+  <proof prover="4"><result status="valid" time="0.23" steps="24953"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.29" expl="integer overflow" proved="true">
-  <proof prover="4"><result status="valid" time="0.21" steps="24211"/></proof>
+  <proof prover="4"><result status="valid" time="0.14" steps="24231"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.30" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.14" steps="17335"/></proof>
+  <proof prover="4"><result status="valid" time="0.14" steps="17355"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.31" expl="assertion" proved="true">
   <transf name="split_vc" proved="true" >
@@ -645,15 +645,15 @@
    <proof prover="2"><result status="valid" time="0.53"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.2" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.46" steps="48233"/></proof>
+   <proof prover="4"><result status="valid" time="0.46" steps="48253"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.3" expl="VC for wmpn_sec_div_r" proved="true">
    <transf name="apply" proved="true" arg1="prod_compat_r">
     <goal name="wmpn_sec_div_r&#39;VC.31.3.0" expl="apply premises" proved="true">
-    <proof prover="4"><result status="valid" time="0.05" steps="16144"/></proof>
+    <proof prover="4"><result status="valid" time="0.05" steps="16159"/></proof>
     </goal>
     <goal name="wmpn_sec_div_r&#39;VC.31.3.1" expl="apply premises" proved="true">
-    <proof prover="4"><result status="valid" time="0.25" steps="48064"/></proof>
+    <proof prover="4"><result status="valid" time="0.50" steps="48084"/></proof>
     </goal>
    </transf>
    </goal>
@@ -661,36 +661,37 @@
    <proof prover="1"><result status="valid" time="0.10"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.5" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.11" steps="17437"/></proof>
+   <proof prover="3"><result status="valid" time="0.24" steps="163"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.6" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.08" steps="17698"/></proof>
+   <proof prover="4"><result status="valid" time="0.08" steps="17718"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.7" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="3"><result status="valid" time="0.24" steps="166"/></proof>
+   <proof prover="4"><result status="timeout" time="1.00" steps="129868"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.8" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4" timelimit="5" memlimit="2000"><result status="valid" time="1.47" steps="129060"/></proof>
+   <proof prover="4" timelimit="5" memlimit="2000"><result status="valid" time="1.47" steps="129080"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.9" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.09" steps="16290"/></proof>
+   <proof prover="4"><result status="valid" time="0.09" steps="16305"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.10" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.12" steps="18605"/></proof>
+   <proof prover="4"><result status="valid" time="0.12" steps="18625"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.11" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="1"><result status="valid" time="0.12"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.12" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.09" steps="16414"/></proof>
+   <proof prover="4"><result status="valid" time="0.09" steps="16429"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.31.13" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.06" steps="16425"/></proof>
+   <proof prover="4"><result status="valid" time="0.06" steps="16440"/></proof>
    </goal>
   </transf>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.32" expl="integer overflow" proved="true">
-  <proof prover="4"><result status="valid" time="0.15" steps="26244"/></proof>
+  <proof prover="4"><result status="valid" time="0.15" steps="26264"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.33" expl="postcondition" proved="true">
   <proof prover="2"><result status="valid" time="0.66"/></proof>
@@ -707,13 +708,13 @@
   <proof prover="1" obsolete="true"><result status="timeout" time="5.00"/></proof>
   <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
   <proof prover="3" timelimit="5" memlimit="2000" obsolete="true"><result status="timeout" time="5.00"/></proof>
-  <proof prover="4"><result status="valid" time="0.14" steps="18276"/></proof>
+  <proof prover="4"><result status="valid" time="0.14" steps="18296"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.36" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.50" steps="49896"/></proof>
+  <proof prover="4"><result status="valid" time="0.50" steps="49916"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.37" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.42" steps="52894"/></proof>
+  <proof prover="4"><result status="valid" time="0.58" steps="52914"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.38" expl="precondition" proved="true">
   <proof prover="1"><result status="valid" time="0.14"/></proof>
@@ -723,18 +724,18 @@
   <proof prover="1" obsolete="true"><result status="timeout" time="5.00"/></proof>
   <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
   <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
-  <proof prover="4"><result status="valid" time="0.07" steps="18520"/></proof>
+  <proof prover="4"><result status="valid" time="0.07" steps="18540"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.40" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.06" steps="17862"/></proof>
+  <proof prover="4"><result status="valid" time="0.06" steps="17882"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.41" expl="assertion" proved="true">
   <transf name="split_vc" proved="true" >
    <goal name="wmpn_sec_div_r&#39;VC.41.0" expl="assertion" proved="true">
-   <proof prover="4"><result status="valid" time="0.10" steps="18870"/></proof>
+   <proof prover="4"><result status="valid" time="0.10" steps="18890"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.41.1" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="1"><result status="valid" time="1.02"/></proof>
+   <proof prover="1"><result status="valid" time="3.32"/></proof>
    </goal>
   </transf>
   </goal>
@@ -742,40 +743,45 @@
   <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="1412415"/></proof>
   <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
   <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
-  <proof prover="4"><result status="valid" time="0.06" steps="17834"/></proof>
+  <proof prover="4"><result status="valid" time="0.06" steps="17854"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.43" expl="assertion" proved="true">
-  <proof prover="2"><result status="valid" time="0.08"/></proof>
+  <transf name="rewrite" proved="true" arg1="Ensures">
+   <goal name="wmpn_sec_div_r&#39;VC.43.0" expl="assertion" proved="true">
+   <proof prover="0"><result status="valid" time="0.03" steps="55771"/></proof>
+   <proof prover="2"><result status="timeout" time="5.00"/></proof>
+   </goal>
+  </transf>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.44" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.18" steps="27906"/></proof>
+  <proof prover="4"><result status="valid" time="0.18" steps="27926"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.45" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.16" steps="27854"/></proof>
+  <proof prover="4"><result status="valid" time="0.16" steps="27874"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.46" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.08" steps="18496"/></proof>
+  <proof prover="4"><result status="valid" time="0.12" steps="18516"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.47" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.12" steps="16008"/></proof>
+  <proof prover="4"><result status="valid" time="0.12" steps="16023"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.48" expl="assertion" proved="true">
   <transf name="split_vc" proved="true" >
    <goal name="wmpn_sec_div_r&#39;VC.48.0" expl="assertion" proved="true">
-   <proof prover="4"><result status="valid" time="0.14" steps="19327"/></proof>
+   <proof prover="4"><result status="valid" time="0.14" steps="19347"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.1" expl="assertion" proved="true">
    <proof prover="3"><result status="valid" time="0.53" steps="196"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.2" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.09" steps="16216"/></proof>
+   <proof prover="4"><result status="valid" time="0.09" steps="16231"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.3" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="0"><result status="valid" time="0.10" steps="134643"/></proof>
+   <proof prover="0"><result status="valid" time="0.10" steps="134667"/></proof>
    <proof prover="2"><result status="valid" time="0.41"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.4" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.08" steps="16238"/></proof>
+   <proof prover="4"><result status="valid" time="0.08" steps="16253"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.5" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="1"><result status="valid" time="0.08"/></proof>
@@ -784,34 +790,34 @@
    <proof prover="2"><result status="valid" time="0.02"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.7" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.11" steps="19193"/></proof>
+   <proof prover="4"><result status="valid" time="0.11" steps="19213"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.8" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.27" steps="28472"/></proof>
+   <proof prover="4"><result status="valid" time="0.27" steps="28492"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.9" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.13" steps="27679"/></proof>
+   <proof prover="4"><result status="valid" time="0.13" steps="27699"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.10" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="1"><result status="valid" time="0.10"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.11" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.11" steps="18949"/></proof>
+   <proof prover="4"><result status="valid" time="0.11" steps="18969"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.12" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.08" steps="16359"/></proof>
+   <proof prover="4"><result status="valid" time="0.08" steps="16374"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.13" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.15" steps="19241"/></proof>
+   <proof prover="4"><result status="valid" time="0.15" steps="19261"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.14" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="2"><result status="valid" time="0.04"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.15" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.12" steps="19025"/></proof>
+   <proof prover="4"><result status="valid" time="0.12" steps="19045"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.16" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.41" steps="53405"/></proof>
+   <proof prover="4"><result status="valid" time="0.41" steps="53425"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.17" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="1"><result status="valid" time="0.10"/></proof>
@@ -819,10 +825,10 @@
    <goal name="wmpn_sec_div_r&#39;VC.48.18" expl="VC for wmpn_sec_div_r" proved="true">
    <transf name="rewrite" proved="true" arg1="Mod_mult1">
     <goal name="wmpn_sec_div_r&#39;VC.48.18.0" expl="VC for wmpn_sec_div_r" proved="true">
-    <proof prover="4"><result status="valid" time="0.06" steps="16453"/></proof>
+    <proof prover="4"><result status="valid" time="0.06" steps="16468"/></proof>
     </goal>
     <goal name="wmpn_sec_div_r&#39;VC.48.18.1" expl="rewrite premises" proved="true">
-    <proof prover="4"><result status="valid" time="0.07" steps="19357"/></proof>
+    <proof prover="4"><result status="valid" time="0.07" steps="19377"/></proof>
     </goal>
    </transf>
    </goal>
@@ -834,70 +840,76 @@
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.21" expl="VC for wmpn_sec_div_r" proved="true">
    <proof prover="1"><result status="valid" time="0.09"/></proof>
-   <proof prover="4"><result status="valid" time="0.09" steps="16578"/></proof>
+   <proof prover="4"><result status="valid" time="0.09" steps="16593"/></proof>
    </goal>
    <goal name="wmpn_sec_div_r&#39;VC.48.22" expl="VC for wmpn_sec_div_r" proved="true">
-   <proof prover="4"><result status="valid" time="0.14" steps="19797"/></proof>
+   <proof prover="4"><result status="valid" time="0.14" steps="19817"/></proof>
    </goal>
   </transf>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.49" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.09" steps="18772"/></proof>
+  <proof prover="4"><result status="valid" time="0.10" steps="18792"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.50" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.12" steps="19271"/></proof>
+  <proof prover="4"><result status="valid" time="0.14" steps="19291"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.51" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.10" steps="19235"/></proof>
+  <proof prover="4"><result status="valid" time="0.09" steps="19271"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.52" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.14" steps="19745"/></proof>
+  <proof prover="4"><result status="valid" time="0.12" steps="19781"/></proof>
   </goal>
   <goal name="wmpn_sec_div_r&#39;VC.53" expl="postcondition" proved="true">
   <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="1677566"/></proof>
   <proof prover="1" obsolete="true"><result status="timeout" time="5.00"/></proof>
   <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
   <proof prover="3" obsolete="true"><result status="timeout" time="1.00"/></proof>
-  <proof prover="4"><result status="valid" time="0.05" steps="17007"/></proof>
+  <proof prover="4"><result status="valid" time="0.05" steps="17046"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.54" expl="integer overflow" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.54" expl="postcondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.10" steps="20569"/></proof>
+  </goal>
+  <goal name="wmpn_sec_div_r&#39;VC.55" expl="integer overflow" proved="true">
   <proof prover="4"><result status="valid" time="0.10" steps="18322"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.55" expl="precondition" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.56" expl="precondition" proved="true">
   <proof prover="4"><result status="valid" time="0.16" steps="19156"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.56" expl="integer overflow" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.57" expl="integer overflow" proved="true">
   <proof prover="4"><result status="valid" time="0.16" steps="20352"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.57" expl="postcondition" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.58" expl="postcondition" proved="true">
   <proof prover="4"><result status="valid" time="0.19" steps="35771"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.58" expl="precondition" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.59" expl="precondition" proved="true">
   <proof prover="3"><result status="valid" time="0.08" steps="53"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.59" expl="precondition" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.60" expl="precondition" proved="true">
   <proof prover="4"><result status="valid" time="0.08" steps="14258"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.60" expl="precondition" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.61" expl="precondition" proved="true">
   <proof prover="4"><result status="valid" time="0.20" steps="25216"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.61" expl="precondition" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.62" expl="precondition" proved="true">
   <proof prover="3"><result status="valid" time="0.09" steps="55"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.62" expl="precondition" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.63" expl="precondition" proved="true">
   <proof prover="0" obsolete="true"><result status="timeout" time="1.00" steps="2606642"/></proof>
   <proof prover="1" obsolete="true"><result status="timeout" time="5.00"/></proof>
   <proof prover="2" obsolete="true"><result status="timeout" time="5.00"/></proof>
   <proof prover="3" timelimit="5" memlimit="2000"><result status="valid" time="0.03" steps="59"/></proof>
   <proof prover="4" timelimit="5" memlimit="2000"><result status="timeout" time="5.00" steps="317919"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.63" expl="precondition" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.64" expl="precondition" proved="true">
   <proof prover="4"><result status="valid" time="0.09" steps="14024"/></proof>
   </goal>
-  <goal name="wmpn_sec_div_r&#39;VC.64" expl="postcondition" proved="true">
+  <goal name="wmpn_sec_div_r&#39;VC.65" expl="postcondition" proved="true">
   <proof prover="1"><result status="valid" time="0.04"/></proof>
   <proof prover="2"><result status="valid" time="0.02"/></proof>
-  <proof prover="4"><result status="valid" time="0.05" steps="14243"/></proof>
+  <proof prover="4"><result status="valid" time="0.05" steps="14387"/></proof>
+  </goal>
+  <goal name="wmpn_sec_div_r&#39;VC.66" expl="postcondition" proved="true">
+  <proof prover="4"><result status="valid" time="0.08" steps="16541"/></proof>
   </goal>
  </transf>
  </goal>

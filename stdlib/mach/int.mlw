@@ -226,7 +226,6 @@ module UnsignedGMP
     ensures { b -> result = 1 }
     ensures { not b -> result = 0 }
 
-
 end
 
 module Int31
@@ -390,6 +389,10 @@ module UInt32GMP
   val of_int32(x:int32) : uint32
     requires { Int32.to_int x >= 0 }
     ensures { to_int result = Int32.to_int x }
+
+  val to_int32(x:uint32) : int32
+    requires { x <= max_int32 }
+    ensures  { Int32.to_int result = x }
 
 (*  use bv.BV32 as BV32
 

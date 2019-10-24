@@ -152,6 +152,8 @@ module Sec_div
     requires { valid tp (nn + 2 * dn + 2) }
     requires { (pelts dp)[offset dp + (dn-1)] > 0 }
     ensures  { value np dn = mod (old value np nn) (value dp dn) }
+    ensures  { min tp = old min tp /\ max tp = old max tp
+               /\ plength tp = old plength tp }
   =
     label Start in
     let d1 = get_ofs dp (dn - 1) in

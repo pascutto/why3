@@ -1,0 +1,53 @@
+module Sec_tabselect
+
+  use int.Int
+  use mach.int.Int32
+  use import mach.int.UInt64GMP as Limb
+  use int.Power
+  use ref.Ref
+  use mach.c.C
+  use array.Array
+  use map.Map
+  use types.Types
+  use lemmas.Lemmas
+
+  let wmpn_sec_tabselect (rp tab:t) (n nents which:int32) : unit
+    requires { valid rp n }
+    requires { valid tab (n*nents) }
+    requires { 0 <= which < nents }
+    ensures  { value rp n = value_sub (pelts tab) (offset tab + which * n)
+                                              (offset tab + which * n + n) }
+  =
+    for k = 0 to nents - 1 do
+      invariant { which < k ->
+                  value rp n = value_sub (pelts tab) (offset tab + which * n)
+                                                 (offset tab + which * n + n) }
+      invariant { 0 <= k <= nents }
+      let mask = minus_mod (of_bool (which = k)) in
+      assert { if which = k then mask = radix - 1 else mask = 0 };
+      let tp = C.incr tab (n*k) in
+      label Copy in
+      for i = 0 to n-1 do
+        invariant { which = k -> forall j. 0 <= j < i ->
+                    (pelts rp)[offset rp + j]
+                    = (pelts tab)[offset tab + k * n + j] }
+        invariant { which <> k -> pelts rp = pelts rp at Copy }
+        invariant { 0 <= i <= n }
+        let lr = C.get_ofs rp i in
+        assert { offset tp + i = offset tab + n * k + i
+                 < offset tab + n * nents <= max tab
+                 by n * k + i < n * k + n = n * (k+1) <= n * nents };
+        let lt = C.get_ofs tp i in
+        let l = bor (band lr (bnot mask)) (band lt mask) in
+        assert { if which = k then l = lt else l = lr };
+        C.set_ofs rp i l;
+      done;
+      ghost
+        (if which = k
+         then begin value_sub_frame_shift (pelts rp) (pelts tp)
+                          (offset rp) (offset tp) (int32'int n) end);
+    done;
+    ()
+
+
+end

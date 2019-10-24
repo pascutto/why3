@@ -221,6 +221,7 @@ struct __lsld32_result lsld32(uint32_t x, uint32_t cnt);
   syntax val count_trailing_zeros "__builtin_ctz(%1)" prec 1 15
 
   syntax val of_int32 "(uint32_t)%1" prec 2 2
+  syntax val to_int32 "(int32_t)%1" prec 2 2
 
 
 end
