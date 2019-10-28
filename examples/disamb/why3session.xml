@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
+"http://why3.lri.fr/why3session.dtd">
+<why3session shape_version="8">
+<prover id="0" name="CVC4" version="1.6" timelimit="5" steplimit="0" memlimit="1000"/>
+<prover id="1" name="Alt-Ergo" version="2.2.0" timelimit="5" steplimit="0" memlimit="1000"/>
+<file format="whyml">
+<path name=".."/><path name="disamb.mlw"/>
+<theory name="Top">
+ <goal name="pe1" proved="true">
+ <proof prover="0"><result status="valid" time="0.02" steps="10554"/></proof>
+ </goal>
+ <goal name="pe2" proved="true">
+ <proof prover="0"><result status="valid" time="0.25" steps="64927"/></proof>
+ </goal>
+ <goal name="pep1" proved="true">
+ <proof prover="0"><result status="valid" time="0.03" steps="11817"/></proof>
+ </goal>
+ <goal name="pep2" proved="true">
+ <proof prover="0"><result status="valid" time="0.24" steps="68292"/></proof>
+ </goal>
+ <goal name="di_str&#39;vc" expl="VC for di_str" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="di_str&#39;vc.0" expl="postcondition" proved="true">
+  <transf name="induction" proved="true" arg1="n">
+   <goal name="di_str&#39;vc.0.0" expl="base case (postcondition)" proved="true">
+   <proof prover="0"><result status="valid" time="0.05" steps="10663"/></proof>
+   </goal>
+   <goal name="di_str&#39;vc.0.1" expl="recursive case (postcondition)" proved="true">
+   <transf name="destruct" proved="true" arg1="Requires">
+    <goal name="di_str&#39;vc.0.1.0" expl="recursive case (postcondition)" proved="true">
+    <transf name="destruct" proved="true" arg1="Requires">
+     <goal name="di_str&#39;vc.0.1.0.0" expl="recursive case (postcondition)" proved="true">
+     <transf name="induction_arg_pr" proved="true" arg1="Requires">
+      <goal name="di_str&#39;vc.0.1.0.0.0" expl="recursive case (postcondition)" proved="true">
+      <transf name="split_vc" proved="true" >
+       <goal name="di_str&#39;vc.0.1.0.0.0.0" expl="recursive case (postcondition)" proved="true">
+       <transf name="assert" proved="true" arg1="(pe e)">
+        <goal name="di_str&#39;vc.0.1.0.0.0.0.0" expl="asserted formula" proved="true">
+        <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(length e + 1)">
+         <goal name="di_str&#39;vc.0.1.0.0.0.0.0.0" expl="apply premises" proved="true">
+         <proof prover="1"><result status="valid" time="0.00" steps="14"/></proof>
+         </goal>
+         <goal name="di_str&#39;vc.0.1.0.0.0.0.0.1" expl="apply premises (precondition)" proved="true">
+         <proof prover="0"><result status="valid" time="0.02" steps="9118"/></proof>
+         </goal>
+        </transf>
+        </goal>
+        <goal name="di_str&#39;vc.0.1.0.0.0.0.1" expl="recursive case (postcondition)" proved="true">
+        <proof prover="0"><result status="valid" time="0.04" steps="9245"/></proof>
+        </goal>
+       </transf>
+       </goal>
+      </transf>
+      </goal>
+      <goal name="di_str&#39;vc.0.1.0.0.1" expl="recursive case (postcondition)" proved="true">
+      <proof prover="0"><result status="valid" time="0.03" steps="12091"/></proof>
+      </goal>
+     </transf>
+     </goal>
+    </transf>
+    </goal>
+    <goal name="di_str&#39;vc.0.1.1" expl="recursive case (postcondition)" proved="true">
+    <transf name="destruct" proved="true" arg1="Requires">
+     <goal name="di_str&#39;vc.0.1.1.0" expl="recursive case (postcondition)" proved="true">
+     <transf name="induction_arg_pr" proved="true" arg1="Requires">
+      <goal name="di_str&#39;vc.0.1.1.0.0" expl="recursive case (postcondition)" proved="true">
+      <transf name="split_vc" proved="true" >
+       <goal name="di_str&#39;vc.0.1.1.0.0.0" expl="recursive case (postcondition)" proved="true">
+       <transf name="assert" proved="true" arg1="(length e1 &lt; n-1)">
+        <goal name="di_str&#39;vc.0.1.1.0.0.0.0" expl="asserted formula" proved="true">
+        <proof prover="1"><result status="valid" time="0.01" steps="59"/></proof>
+        </goal>
+        <goal name="di_str&#39;vc.0.1.1.0.0.0.1" expl="recursive case (postcondition)" proved="true">
+        <transf name="assert" proved="true" arg1="(pe e1)">
+         <goal name="di_str&#39;vc.0.1.1.0.0.0.1.0" expl="asserted formula" proved="true">
+         <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(n-1)">
+          <goal name="di_str&#39;vc.0.1.1.0.0.0.1.0.0" expl="apply premises" proved="true">
+          <proof prover="0"><result status="valid" time="0.02" steps="8790"/></proof>
+          </goal>
+          <goal name="di_str&#39;vc.0.1.1.0.0.0.1.0.1" expl="apply premises (precondition)" proved="true">
+          <proof prover="0"><result status="valid" time="0.02" steps="9191"/></proof>
+          <proof prover="1"><result status="valid" time="0.00" steps="16"/></proof>
+          </goal>
+         </transf>
+         </goal>
+         <goal name="di_str&#39;vc.0.1.1.0.0.0.1.1" expl="recursive case (postcondition)" proved="true">
+         <transf name="assert" proved="true" arg1="(length e2 &lt; n)">
+          <goal name="di_str&#39;vc.0.1.1.0.0.0.1.1.0" expl="asserted formula" proved="true">
+          <proof prover="1"><result status="valid" time="0.01" steps="21"/></proof>
+          </goal>
+          <goal name="di_str&#39;vc.0.1.1.0.0.0.1.1.1" expl="recursive case (postcondition)" proved="true">
+          <transf name="assert" proved="true" arg1="(pe e2)">
+           <goal name="di_str&#39;vc.0.1.1.0.0.0.1.1.1.0" expl="asserted formula" proved="true">
+           <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(length e2)">
+            <goal name="di_str&#39;vc.0.1.1.0.0.0.1.1.1.0.0" expl="apply premises" proved="true">
+            <proof prover="0"><result status="valid" time="0.05" steps="9199"/></proof>
+            </goal>
+            <goal name="di_str&#39;vc.0.1.1.0.0.0.1.1.1.0.1" expl="apply premises (precondition)" proved="true">
+            <proof prover="0"><result status="valid" time="0.02" steps="9238"/></proof>
+            </goal>
+           </transf>
+           </goal>
+           <goal name="di_str&#39;vc.0.1.1.0.0.0.1.1.1.1" expl="recursive case (postcondition)" proved="true">
+           <proof prover="0"><result status="valid" time="0.03" steps="9414"/></proof>
+           </goal>
+          </transf>
+          </goal>
+         </transf>
+         </goal>
+        </transf>
+        </goal>
+       </transf>
+       </goal>
+      </transf>
+      </goal>
+      <goal name="di_str&#39;vc.0.1.1.0.1" expl="recursive case (postcondition)" proved="true">
+      <transf name="split_vc" proved="true" >
+       <goal name="di_str&#39;vc.0.1.1.0.1.0" expl="recursive case (postcondition)" proved="true">
+       <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(length e)">
+        <goal name="di_str&#39;vc.0.1.1.0.1.0.0" expl="apply premises" proved="true">
+        <proof prover="0"><result status="valid" time="0.04" steps="9057"/></proof>
+        </goal>
+        <goal name="di_str&#39;vc.0.1.1.0.1.0.1" expl="apply premises (precondition)" proved="true">
+        <proof prover="0"><result status="valid" time="0.03" steps="9617"/></proof>
+        </goal>
+       </transf>
+       </goal>
+      </transf>
+      </goal>
+     </transf>
+     </goal>
+    </transf>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="disambiguation_included&#39;vc" expl="VC for disambiguation_included" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="disambiguation_included&#39;vc.0" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.02" steps="8929"/></proof>
+  </goal>
+  <goal name="disambiguation_included&#39;vc.1" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.01" steps="8495"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="e_last_plus">
+ </goal>
+ <goal name="oi_str" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="oi_str.0" proved="true">
+  <transf name="induction" proved="true" arg1="n">
+   <goal name="oi_str.0.0" expl="base case" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="37332"/></proof>
+   </goal>
+   <goal name="oi_str.0.1" expl="recursive case" proved="true">
+   <transf name="case" proved="true" arg1="(pt e)">
+    <goal name="oi_str.0.1.0" expl="true case (recursive case)" proved="true">
+    <proof prover="0"><result status="valid" time="0.05" steps="9463"/></proof>
+    </goal>
+    <goal name="oi_str.0.1.1" expl="false case (recursive case)" proved="true">
+    <transf name="assert" proved="true" arg1="(exists e1 e2. e = (e1 ++ Cons PLUS e2) /\ pe e1 /\ pt e2)">
+     <goal name="oi_str.0.1.1.0" expl="asserted formula" proved="true">
+     <proof prover="0"><result status="valid" time="0.05" steps="14570"/></proof>
+     </goal>
+     <goal name="oi_str.0.1.1.1" expl="false case (recursive case)" proved="true">
+     <transf name="destruct" proved="true" arg1="h">
+      <goal name="oi_str.0.1.1.1.0" expl="false case (recursive case)" proved="true">
+      <transf name="destruct" proved="true" arg1="h">
+       <goal name="oi_str.0.1.1.1.0.0" expl="false case (recursive case)" proved="true">
+       <transf name="assert" proved="true" arg1="(pe&#39; e1)">
+        <goal name="oi_str.0.1.1.1.0.0.0" expl="asserted formula" proved="true">
+        <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(length e1)">
+         <goal name="oi_str.0.1.1.1.0.0.0.0" expl="apply premises" proved="true">
+         <proof prover="1"><result status="valid" time="0.01" steps="72"/></proof>
+         </goal>
+         <goal name="oi_str.0.1.1.1.0.0.0.1" expl="apply premises" proved="true">
+         <proof prover="0"><result status="valid" time="0.02" steps="9373"/></proof>
+         </goal>
+         <goal name="oi_str.0.1.1.1.0.0.0.2" expl="apply premises" proved="true">
+         <proof prover="0"><result status="valid" time="0.02" steps="8990"/></proof>
+         </goal>
+        </transf>
+        </goal>
+        <goal name="oi_str.0.1.1.1.0.0.1" expl="false case (recursive case)" proved="true">
+        <proof prover="0"><result status="valid" time="0.06" steps="9583"/></proof>
+        </goal>
+       </transf>
+       </goal>
+      </transf>
+      </goal>
+     </transf>
+     </goal>
+    </transf>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="original_included" proved="true">
+ <proof prover="0"><result status="valid" time="0.03" steps="9288"/></proof>
+ </goal>
+ <goal name="equiv_disambiguation" proved="true">
+ <proof prover="0"><result status="valid" time="0.03" steps="9421"/></proof>
+ </goal>
+</theory>
+</file>
+</why3session>

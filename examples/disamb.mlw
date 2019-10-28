@@ -1,0 +1,51 @@
+use int.Int
+use list.ListRich
+
+type token = INT | LPAREN | RPAREN | PLUS
+
+inductive pe (e : list token) =
+    | Plus : forall e1 e2. pe e1 -> pe e2 -> pe (e1 ++ Cons PLUS e2)
+    | Paren : forall e. pe e -> pe (Cons LPAREN (e ++ (Cons RPAREN Nil)))
+    | Int : pe (Cons INT Nil)
+
+goal pe1 : pe (Cons INT Nil)
+goal pe2 : pe (Cons INT (Cons PLUS (Cons INT (Cons PLUS (Cons INT Nil)))))
+
+inductive pe' (e : list token) =
+    | Plus' : forall e1 e2. pe' e1 -> pt e2 -> pe' (e1 ++ Cons PLUS e2)
+    | T' : forall t. pt t -> pe' t
+
+with pt (e : list token) =
+    | Paren' : forall e. pe' e -> pt (Cons LPAREN (e ++ (Cons RPAREN Nil)))
+    | Int' : pt (Cons INT Nil)
+
+goal pep1 : pe' (Cons INT Nil)
+goal pep2 : pe' (Cons INT (Cons PLUS (Cons INT (Cons PLUS (Cons INT Nil)))))
+
+let rec lemma di_str (n : int) (e : list token)
+    variant { n }
+    requires { (length e <= n /\ pt e) \/ (length e < n /\ pe' e) }
+    ensures { pe e }
+    =
+    ()
+
+let lemma disambiguation_included (e : list token)
+    requires { pe' e }
+    ensures { pe e }
+    =
+    di_str (length e + 1) e
+
+
+
+
+lemma e_last_plus :
+      forall e. pe e -> not pt e -> exists e1 e2. e = e1 ++ Cons PLUS e2 /\ pe e1 /\ pt e2
+
+lemma oi_str :
+      forall n. forall e. length e <= n -> pe e -> pe' e
+
+lemma original_included :
+      forall e. pe e -> pe' e
+
+lemma equiv_disambiguation :
+	forall e. pe e <-> pe' e
