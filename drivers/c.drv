@@ -195,6 +195,7 @@ struct __lsld32_result lsld32(uint32_t x, uint32_t cnt);
   syntax val band    "%1 & %2"   prec 8 8 7
   syntax val bor     "%1 | %2"   prec 10 10 9
   syntax val bnot    "~%1"       prec 2 1
+  syntax val lnot    "!%1"       prec 2 1
   syntax val of_bool "(uint32_t)%1" prec 2 1
 
   syntax val add_with_carry "add32_with_carry"
@@ -422,6 +423,7 @@ static inline struct __lsld64_result lsld64(uint64_t x, uint64_t cnt)
   syntax val band    "%1 & %2"   prec 8 8 7
   syntax val bor     "%1 | %2"   prec 10 10 9
   syntax val bnot    "~%1"       prec 2 1
+  syntax val lnot    "!%1"       prec 2 1
   syntax val of_bool "(uint64_t)%1" prec 2 1
 
   syntax val add_with_carry "add64_with_carry"

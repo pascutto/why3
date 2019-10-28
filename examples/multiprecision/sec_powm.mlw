@@ -1,0 +1,641 @@
+module Sec_powm
+
+  use array.Array
+  use map.Map
+  use mach.c.C
+  use ref.Ref
+  use mach.int.Int32
+  use mach.int.UInt32GMP
+  use import mach.int.UInt64GMP as Limb
+  use int.Int
+  use int.Power
+  use types.Types
+  use lemmas.Lemmas
+  use compare.Compare
+  use valuation.Valuation
+  use util.Util
+  use add.Add
+  use sub.Sub
+  use mul.Mul
+  use logical.Logical
+  use sec_div.Sec_div
+  use toom.Toom
+  use int.EuclideanDivision
+  use cnd.Cnd
+  use powm.Powm
+  use sec_tabselect.Sec_tabselect
+
+  let wmpn_sec_redc_1 (rp up mp : t) (n: int32) (invm : limb)
+    requires { n > 0 }
+    requires { valid mp n /\ valid up (2 * n) /\ valid rp n }
+    requires { odd (value mp n) }
+    requires { mod ((value mp n) * invm) radix = radix - 1 }
+    ensures  { redc (value (old up) (2*n)) (value rp n) n (value mp n) }
+    ensures  { forall j. j < offset rp \/ j >= offset rp + n
+                         -> (pelts rp)[j] = (pelts (old rp))[j] }
+    ensures  { value (old up) (2*n) < power radix n * value mp n
+               -> value rp n < 2 * value mp n }
+  =
+    label Start in
+    let ref cy = 0 in
+    let ref u = C.incr up 0 in
+    let ghost vm = value mp (int32'int n) in
+    value_sub_head (pelts mp) (offset mp) (offset mp + int32'int n);
+    assert { mod ((pelts mp)[offset mp] * invm) radix = radix - 1
+             by radix - 1 = mod (vm * invm) radix
+                = mod (radix *
+                   (value_sub (pelts mp) (offset mp + 1) (offset mp + n) * invm)
+                       + (pelts mp)[offset mp] * invm) radix
+                = mod ((pelts mp)[offset mp] * invm) radix };
+    let ghost ref added : int = 0 in
+    for j = 0 to n-1 do
+      invariant { offset u = offset up + j }
+      invariant { pelts u = pelts up }
+      invariant { u.min = up.min }
+      invariant { u.max = up.max }
+      invariant { plength u = plength up }
+      (*invariant { mod (value u n + value up j) (power radix j) = 0 }*)
+      invariant { power radix j * value u (n+n-j) + power radix n * value up j
+                  = value (old up) (n+n) + vm * added }
+      invariant { 0 <= added < power radix j }
+      invariant { mod (power radix j * value u (n + n - j)
+                      + power radix n * value up j) vm =
+                  mod (value (old up) (n+n)) vm }
+      let m = mul_mod (C.get u) invm in
+      let ghost nnj = n + n - j in
+      let ghost m0 = uint64'int (pelts mp)[offset mp] in
+      let ghost u0 = uint64'int (pelts u)[offset u] in
+      mod_mul (uint64'int m) (u0 * uint64'int invm) m0 m0 radix;
+      assert { mod (m * m0) radix
+               = mod ((u0 * invm) * m0) radix };
+      assert { mod ((u0 * invm) * m0) radix
+               = mod (- u0) radix
+               by let d = div (invm * m0) radix in
+                  invm * m0 = d * radix + radix - 1
+               so mod ((u0 * invm) * m0) radix
+                  = mod (u0 * (d * radix + radix - 1)) radix
+                  = mod (radix * (u0 * d + u0) - u0) radix
+                  = mod (- u0) radix };
+      assert { mod (u0 + m * m0) radix = 0
+               by mod (m * m0) radix
+                  = mod (- u0) radix
+               so let dm = div (m * m0) radix in
+                  let du = div (-u0) radix in
+                  m * m0 = - u0 + radix * (dm - du)
+               so mod (u0 + m * m0) radix = mod (radix * (dm - du) + 0) radix
+                  = 0 };
+      label Addmul in
+      let ghost oup = pure { up } in
+      value_sub_head (pelts u) (offset u) (offset u + int32'int nnj);
+      assert { u0 = mod (value u nnj) radix
+               by value u nnj = radix *
+                   (value_sub (pelts u) (offset u + 1) (offset u + nnj)) + u0 };
+      value_concat u n nnj;
+      cy <- wmpn_addmul_1 u mp n m;
+      value_concat u n nnj;
+      value_sub_frame (pelts up) (pelts oup) (offset u + int32'int n)
+                                           (offset u + int32'int nnj);
+      assert { value u nnj + power radix n * cy = value u nnj at Addmul + vm * m
+               by value_sub (pelts u) (offset u + n) (offset u + nnj)
+                  = value_sub (pelts u) (offset u + n) (offset u + nnj)
+                    at Addmul
+               so value u nnj = value u n + power radix n * value_sub (pelts u)
+                                                (offset u + n) (offset u + nnj)
+               so value u nnj at Addmul
+                  = value u n at Addmul
+                    + power radix n * value_sub (pelts u)
+                                        (offset u + n) (offset u + nnj) };
+      value_sub_head (pelts u) (offset u) (offset u + int32'int nnj);
+      value_sub_head (pelts mp) (offset mp) (offset mp + int32'int n);
+      assert { vm = m0 + radix * value_sub (pelts mp) (offset mp + 1)
+                                                      (offset mp + n) };
+      assert { (pelts u)[offset u] = 0
+                by value u nnj = radix * (value_sub (pelts u) (offset u + 1)
+                                                  (offset u + nnj))
+                                 + (pelts u)[offset u]
+                so (pelts u)[offset u] = mod (value u nnj) radix
+                so value u nnj = value u nnj at Addmul + m * vm
+                               - power radix n * cy
+                             = radix * (power radix (n-1) *(- cy))
+                               + (value u nnj at Addmul + m * vm)
+                so mod (m * vm) radix
+                   = mod (radix * m * value_sub (pelts mp) (offset mp + 1)
+                                                           (offset mp + n)
+                          + m * m0) radix
+                   = mod (m * m0) radix
+                so mod (value u nnj) radix
+                   = mod (radix * (power radix (n-1) *(- cy))
+                          + (value u nnj at Addmul + m * vm)) radix
+                   = mod (value u nnj at Addmul + m * vm) radix
+                   = mod (mod (value u nnj at Addmul) radix
+                          + mod (m * vm) radix)radix
+                   = mod (u0 + mod (m * m0) radix) radix
+                   = mod (mod u0 radix + mod (m * m0) radix) radix
+                   = mod (mod (u0 + m * m0) radix) radix
+                   = 0 };
+      value_sub_head (pelts u) (offset u) (offset u + int32'int nnj);
+      assert { value u nnj = radix * value_sub (pelts u) (offset u + 1)
+                                                       (offset u + nnj) };
+      value_sub_frame (pelts up) (pelts oup) (offset up)
+                               (offset up + int32'int j);
+      assert { value up j = value up j at Addmul };
+      label Carry in
+      value_sub_update_no_change (pelts up) (up.offset + int32'int j) up.offset
+                                            (up.offset + int32'int j) cy;
+      value_sub_update_no_change (pelts up) (up.offset + int32'int j)
+                                        (up.offset + int32'int j + 1)
+                                      (up.offset + int32'int nnj) cy;
+      C.set u cy;
+      added <- added + uint64'int m * power radix (int32'int j);
+      assert { added < power radix (j+1)
+               by m <= radix - 1
+               so added at Carry < power radix j
+               so added <= added at Carry + (radix - 1) * power radix j
+                  < power radix j + (radix - 1) * power radix j
+                  = radix * power radix j = power radix (j+1) };
+      value_tail up j;
+      assert { value up (j+1) = value up j at Addmul + power radix j * cy };
+      label Incr in
+      u <- C.incr u 1;
+      assert { radix * value u (n + n - (j + 1))
+               = radix * (value_sub (pelts u) (offset u + 1)
+                                   (offset u + nnj) at Incr)
+               = radix * (value_sub (pelts u) (offset u + 1)
+                                   (offset u + nnj) at Carry)
+               = value (u at Carry) nnj };
+      assert {  power radix (j+1) * value u (n + n - (j + 1))
+                 + power radix n * value up (j+1)
+               = vm * (power radix j * m)
+                   + ((power radix j * value u nnj + power radix n * value up j)
+                    at Addmul)
+               by
+               power radix (j+1) * value u (n + n - (j + 1))
+                 + power radix n * value up (j+1)
+               = power radix j * (radix * value u (n + n - (j + 1)))
+                 + power radix n * value up (j+1)
+               = power radix j * (value u nnj at Addmul + vm * m
+                                 - power radix n * cy)
+                 + power radix n * (value up j at Addmul + power radix j * cy)
+               = (power radix j * value u nnj + power radix n * value up j)
+                    at Addmul
+                 + vm * (power radix j * m) };
+      assert { 0 <= added
+               by 0 <= added at Carry so 0 <= m
+               so 0 <= m * power radix j };
+      assert { mod (power radix (j+1) * value u (n + n - (j + 1))
+                    + power radix n * value up (j+1)) vm
+               = mod (vm * (power radix j * m)
+                      + ((power radix j * value u nnj
+                        + power radix n * value up j) at Addmul)) vm
+               = mod (power radix j * value u nnj
+                      + power radix n * value up j) vm at Addmul };
+    done;
+    let u' = C.incr u (-n) in
+    assert { pelts u' = pelts up /\ offset u' = offset up };
+    cy <- wmpn_add_n rp u (C.incr u (-n)) n;
+    assert { mod (power radix n * (value rp n + power radix n * cy)) vm
+             = mod (value (old up) (n+n)) vm
+             by power radix n * (value rp n + power radix n * cy)
+                = power radix n * value u n + power radix n * value up n
+             so mod (power radix n * value u n + power radix n * value up n) vm
+                = mod (value (old up) (n+n)) vm };
+    assert { redc (value (old up) (2 * n))
+                  (value rp n + power radix n * cy)
+                  n vm };
+    assert { power radix n * (value rp n + power radix n * cy)
+             = value (old up) (2*n) + vm * added };
+    assert { value rp n + power radix n * cy < vm + power radix n
+             by value (old up) (2 * n) < power radix n * power radix n
+             so added < power radix n
+             so vm * added < vm * power radix n
+             so power radix n * (value rp n + power radix n * cy)
+                = value (old up) (2 * n) + vm * added
+                < power radix n * power radix n + vm * power radix n
+                = power radix n * (vm + power radix n) };
+    assert { value (old up) (2 * n) < power radix n * vm
+             -> (value rp n + power radix n * cy < 2 * vm)
+             by value (old up) (2 * n) < power radix n * vm
+             so added < power radix n
+             so vm * added < vm * power radix n
+             so power radix n * (value rp n + power radix n * cy)
+                = value (old up) (2 * n) + vm * added
+                < vm * power radix n + vm * power radix n
+                = power radix n * (2 * vm) };
+    label Sub in
+    begin
+      ensures { mod (value rp n) vm
+                = old mod (value rp n + power radix n * cy) vm }
+      ensures { forall j. j < offset rp \/ j >= offset rp + n
+                           -> (pelts rp)[j] = (pelts (old rp))[j] }
+      ensures { value (up at Start) (2 * n) < power radix n * vm
+                -> (value rp n < 2 * vm) }
+    let ghost b = wmpn_cnd_sub_n_in_place cy rp mp n in
+    ghost (if cy <> 0
+      then begin
+        assert { cy = 1 };
+        assert { value rp n + power radix n * (cy - b)
+                 = (value rp n at Sub + power radix n * cy) - vm };
+        assert { b = 1
+                 by value rp n + power radix n * (cy - b)
+                 = (value rp n at Sub + power radix n * cy) - vm
+                 < power radix n
+                 so cy - b < 1 };
+        assert { mod (value rp n) vm
+                 = mod (value rp n at Sub + power radix n * cy) vm
+                 by value rp n = (value rp n at Sub + power radix n * cy) - vm
+                 so mod (value rp n) vm
+                  = mod (vm * -1 + (value rp n at Sub + power radix n * cy)) vm
+                  = mod (value rp n at Sub + power radix n * cy) vm }
+      end)
+    end;
+    assert { mod (power radix n * value rp n) vm
+             = mod (power radix n * (value rp n at Sub + power radix n * cy))
+                   vm };
+    assert { redc (value (old up) (2 * n))
+                  (value rp n) n vm }
+
+  let function sec_win_size [@extraction:c_static_inline] (eb:int32) : int32
+    requires { 0 <= eb }
+    ensures { 0 <= result <= 5 }
+    ensures { result <= eb }
+    ensures { eb > 0 -> result > 0 }
+  = if eb = 0 then 0
+    else if eb <= 2 then 1
+    else if eb <= 130 then 2
+    else if eb <= 524 then 3
+    else if eb <= 2578 then 4
+    else 5
+
+  let sec_redcify (rp up: t) (un: int32) (mp: t) (n: int32) (tp: t)
+    requires { valid rp n /\ valid up un /\ valid mp n }
+    requires { 1 <= n /\ 1 <= un }
+    requires { un + n < max_int32 }
+    requires { valid tp (2 * un + 4 * n + 2) }
+    requires { (pelts mp)[offset mp + n - 1] > 0 }
+    requires { un + n < power 2 31 }
+    ensures  { value rp n = mod (power radix n * value up un) (value mp n) }
+    ensures  { redc (value rp n) (value up un) n (value mp n) }
+    ensures  { min tp = old min tp /\ max tp = old max tp
+               /\ plength tp = old plength tp }
+
+  =
+    let tp2 = incr_split tp (un + n) in
+    wmpn_zero tp n;
+    label Copy in
+    wmpn_copyi (C.incr tp n) up un;
+    value_concat tp n (un+n);
+    value_sub_frame (pelts tp) (pure { pelts tp at Copy })
+                    (offset tp) (offset tp + int32'int n);
+    assert { value tp (un + n) = power radix n * value up un };
+    value_tail mp (n-1);
+    assert { value mp n > 0 };
+    let ghost q = div (value tp (int32'int (un + n)))
+                      (value mp (int32'int n)) in
+    let ghost otp = pure { tp } in
+    wmpn_sec_div_r tp (un + n) mp n tp2;
+    wmpn_copyi rp tp n;
+    assert { mod (power radix n * value up un) (value mp n)
+             = mod (value otp (un + n)) (value mp n)
+             = mod (value mp n * q + value rp n) (value mp n)
+             = mod (value rp n) (value mp n)
+             by value otp (un + n)
+                = value mp n * div (value otp (un + n)) (value mp n)
+                  + mod (value otp (un + n)) (value mp n)
+                = value mp n * q + value rp n};
+    assert { 0 <= value rp n < value mp n };
+    assert { mod (value rp n) (value mp n) = value rp n };
+    join tp tp2
+
+  let wmpn_sec_powm (rp bp: t) (bn: int32) (ep : t) (ghost en: int32)
+                    (enb : int32) (mp : t) (n : int32) (tp : t) : unit
+    requires { valid rp n /\ valid bp bn /\ valid ep en /\ valid mp n }
+    requires { valid tp (2 * bn + 6 * n + 2) }
+    requires { valid tp (n * power 2 (sec_win_size enb) + 4 * n) }
+    requires { odd (value mp n) }
+    requires { 1 <= value ep en < power 2 enb }
+    requires { en >= 1 }
+    requires { enb >= 1 }
+    requires { (pelts ep)[offset ep + en - 1] > 0 }
+    requires { (pelts mp)[offset mp + n - 1] > 0 }
+    requires { n >= 1 }
+    requires { bn >= 1 }
+    requires { bn + n < power 2 31 }
+    requires { n * 32 <= max_int32 }
+    requires { 64 * en < max_int32 - 64 }
+    requires { en = div (enb + 63) 64 }
+    ensures  { value rp n
+               = mod (power (value bp bn) (value ep en)) (value mp n) }
+  =
+    let ghost vb = value bp (int32'int bn) in
+    let ghost vm = value mp (int32'int n) in
+    let ghost ve = value ep (int32'int en) in
+    value_tail ep (en - 1);
+    let ghost el = (pelts ep)[offset ep + int32'int en - 1] in
+    assert { ve = valueb ep enb
+             by
+             if div enb 64 = en
+             then enb = 64 * en
+               so valueb ep enb
+                  = value ep en + power radix en
+                                * mod (pelts ep)[offset ep + en]
+                                      (power 2 (enb - 64 * en))
+                  = value ep en + power radix en * 0
+                  = value ep en
+             else div enb 64 = en - 1
+             so valueb ep enb = value ep (en - 1) + power radix (en - 1)
+                                      * mod el (power 2 (enb - 64 * (en - 1)))
+             so ve = value ep (en - 1) + power radix (en - 1) * el
+             so ve < power 2 enb
+             so power radix (en - 1) = power 2 (64 * (en - 1))
+             so ve >= power radix (en - 1) * el
+                   = power 2 (64 * (en - 1)) * el
+             so power 2 (64 * (en - 1)) * power 2 (enb - 64 * (en - 1))
+                = power 2 enb
+             so power 2 (64 * (en - 1)) * el
+                < power 2 (64 * (en - 1)) * power 2 (enb - 64 * (en - 1))
+             so el < power 2 (enb - 64 * (en- 1))
+             so mod el (power 2 (enb - 64 * (en - 1))) = el
+             so valueb ep enb = value ep (en - 1) + power radix (en - 1) * el
+                = ve };
+    let windowsize = sec_win_size enb in
+    let m0 = C.get mp in
+    value_concat mp 1 n;
+    assert { vm = m0 + radix *
+                  (value_sub (pelts mp) (offset mp + 1) (offset mp + n)) };
+    let im = binvert_limb m0 in
+    let mip = minus_mod im in
+    assert { mod (vm * mip) radix = radix - 1
+             by mod (im * m0) radix = 1
+             so (im <> 0
+                 by mod (0 * m0) radix = 0)
+             so mod (m0 * mip) radix
+                = mod (m0 * (mod (- im) radix)) radix
+             so mod (- im) radix
+                = mod (radix - im) radix
+                = radix - im
+             so mod (m0 * mip) radix
+                = mod (m0 * (radix - im)) radix
+                = mod (radix * m0 - im * m0) radix
+                = mod (- im * m0) radix
+                = mod ((-1)  * (im * m0)) radix
+                = mod ((mod (-1) radix)
+                       * (mod (im * m0) radix)) radix
+                = mod ((radix - 1) * 1) radix
+                = radix - 1
+             so mod (vm * mip) radix
+                = mod ((radix *
+                         (value_sub (pelts mp) (offset mp + 1) (offset mp + n))
+                       + m0) * mip) radix
+                = mod (radix *
+                         (value_sub (pelts mp) (offset mp + 1) (offset mp + n)
+                         * mip)
+                       + m0 * mip) radix
+                = mod (m0 * mip) radix };
+    let pp = tp in
+    let ppn = C.incr_split pp n in
+    let ppt = C.incr_split ppn n in
+    C.set ppn 1;
+   (* assert { offset tp + (2 * bn + 6 * n + 2) <= max tp };*)
+(*    assert { offset tp + (n * power 2 windowsize + 4 * n) }*)
+    sec_redcify pp ppn 1 mp n ppt;
+    assert { redc (value pp n) 1 n vm };
+    (* mod (value pp n) vm = mod (power radix n * vb^0) vm *)
+    sec_redcify ppn bp bn mp n ppt;
+    assert { redc (value ppn n) vb n vm };
+    let oppn = pure { ppn } in
+    join ppn ppt;
+    value_sub_frame (pelts ppn) (pelts oppn) (offset ppn)
+                               (offset ppn + int32'int n);
+    assert { redc (value ppn n) vb n vm };
+    let opp = pure { pp } in
+    let oppn = pure { ppn } in
+    join pp ppn;
+    value_sub_frame (pelts pp) (pelts opp) (offset pp)
+                             (offset pp + int32'int n);
+    value_sub_frame (pelts pp) (pelts oppn) (offset oppn)
+                              (offset oppn + int32'int n);
+    assert { power 2 windowsize * n <= max_int32
+             by windowsize <= 5 so power 2 windowsize
+                <= power 2 5 = 2 * 2 * 2 * 2 * 2 = 32
+             so 32 * n <= max_int32 };
+    let tp2 = C.incr_split tp (UInt32GMP.to_int32
+                                   (UInt32GMP.lsl (UInt32.of_int32 n)
+                                   (UInt32.of_int32 windowsize))) in
+    let ppn = C.incr pp n in
+    assert { redc (value pp n) (power vb 0) n vm /\
+             redc (value ppn n) (power vb 1) n vm };
+    let ref this_pp = C.incr pp n in
+    label Window in
+    let ghost ref j = 1 in
+    for i = UInt32GMP.lsl 1 (UInt32.of_int32 windowsize) - 2 downto 1 do
+      invariant { j = power 2 windowsize - 1 - i }
+      invariant { 1 <= j <= power 2 windowsize - 1 }
+      invariant { windowsize > 1 -> i > 1 ->
+                  j*n + n + n <= power 2 windowsize * n <= max pp }
+      invariant { offset this_pp = offset pp + j * n }
+      invariant { pelts this_pp = pelts pp }
+      invariant { min this_pp = min pp }
+      invariant { max this_pp = max pp }
+      invariant { plength this_pp = plength tp }
+      invariant { forall k. 0 <= k <= j ->
+                  redc (value_sub (pelts pp) (offset pp + k*n)
+                       (offset pp + k*n + n)) (power vb k) n vm }
+      assert { redc (value this_pp n) (power vb j) n vm
+               by value this_pp n
+                  = value_sub (pelts pp) (offset pp + j * n)
+                                     (offset pp + j * n + n) };
+      label Mul in
+      let ghost ovp = value this_pp (int32'int n) in
+      assert { valid this_pp n
+               by offset this_pp = offset pp + j * n
+                  >= offset pp >= min this_pp };
+      wmpn_mul_basecase tp2 this_pp n ppn n;
+      this_pp <- C.incr this_pp n;
+      assert { offset this_pp = offset pp + j * n + n };
+      label Redc in
+      let othis_pp = pure { this_pp } in
+      wmpn_sec_redc_1 this_pp tp2 mp n mip;
+      value_sub_frame (pelts this_pp) (pelts othis_pp) (offset ppn)
+                             (offset ppn + int32'int n);
+      assert { forall k. 0 <= k < j*n + n ->
+               (pelts pp)[offset pp + k] = (pelts pp at Redc)[offset pp + k]
+               by pelts pp = pelts this_pp
+               so pelts pp at Redc = pelts this_pp at Redc
+               so k < j*n + n
+               so (pelts this_pp)[offset pp + k]
+                  = (pelts this_pp)[offset pp + k] at Redc };
+      assert { redc (ovp * value ppn n) (value this_pp n) n vm
+               by value_sub (pelts pp) (offset ppn) (offset ppn + n)
+                  = value_sub (pelts pp at Redc) (offset ppn) (offset ppn + n)
+               so value ppn n = value ppn n at Redc
+               so value (tp2 at Redc) (2 * n) = ovp * value ppn n };
+      assert { forall k. 0 <= k <= j ->
+               redc (value_sub (pelts pp) (offset pp + k*n)
+                                          (offset pp + k*n + n))
+                    (power vb k) n vm
+               by (forall l. k*n <= l < k*n + n ->
+                   (pelts pp)[offset pp + l] = (pelts pp at Redc)[offset pp + l]
+                   by k*n <= j*n
+                   so l < j*n+n)
+               so (forall m. offset pp + k * n <= m < offset pp + k * n + n ->
+                   (pelts pp)[m] = (pelts pp at Redc)[m]
+                   by let l = m - offset pp in
+                      (pelts pp)[m] = (pelts pp)[offset pp + l])
+               so value_sub (pelts pp) (offset pp + k*n) (offset pp + k*n + n)
+                  = value_sub (pelts pp at Mul) (offset pp + k*n)
+                                                (offset pp + k*n + n) };
+      j <- j+1;
+      redc_mul ovp (value ppn (int32'int n))
+               (power vb (j-1)) (power vb 1)
+               (value this_pp (int32'int n)) (int32'int n) vm;
+      assert { redc (value this_pp n) (power vb j) n vm }
+    done;
+    assert RedcW { forall k. 0 <= k < power 2 (windowsize) ->
+                   redc (value_sub (pelts pp) (offset pp + k*n)
+                                          (offset pp + k*n + n))
+                        (power vb k) n vm };
+    let ref expbits = getbits ep en enb windowsize in
+    assert { enb >= windowsize };
+    let ref enb = enb - windowsize in
+    assert { ve = valueb ep enb + power 2 enb * expbits };
+    let nents = UInt32GMP.to_int32 (lsl 1 (UInt32.of_int32 windowsize)) in
+    assert { valid pp (n * nents) };
+    wmpn_sec_tabselect rp pp n nents (Limb.to_int32 expbits);
+    assert { redc (value rp n) (power vb expbits) n vm };
+    let ghost ref expdone = uint64'int expbits in
+    let ref this_windowsize = windowsize in
+    assert { offset tp2 + 4 * n <= max tp2 };
+    assert { valid tp2 (4*n) };
+    assert { valid tp2 (2*n) };
+    label Loop in
+    while (enb <> 0) do
+      variant { enb }
+      invariant { 0 <= enb <= enb at Loop }
+      invariant { 0 <= expdone }
+      invariant { en >= div (enb + 63) 64 }
+      invariant { redc (value rp n) (power vb expdone) n vm }
+      invariant { ve = valueb ep enb + power 2 enb * expdone }
+      invariant { min tp2 = min tp2 at Loop }
+      invariant { max tp2 = max tp2 at Loop }
+      invariant { plength tp2 = plength tp2 at Loop }
+      label StartLoop in
+      let ghost oenb = enb in
+      expbits <- getbits ep en enb windowsize;
+      this_windowsize <- windowsize;
+      begin ensures { 0 <= enb < oenb }
+            ensures { enb + this_windowsize = oenb }
+            ensures { 0 <= expbits < power 2 this_windowsize }
+            ensures { 0 < this_windowsize <= windowsize }
+            ensures { valueb ep oenb = valueb ep enb + power 2 enb * expbits }
+      if enb < windowsize
+      then begin
+        this_windowsize <- this_windowsize - (windowsize - enb);
+        enb <- 0;
+        assert { expbits = valueb ep oenb
+                 < power 2 oenb = power 2 (this_windowsize) };
+      end
+      else enb <- enb - windowsize
+      end;
+      assert { this_windowsize > 0 };
+      assert { ve = valueb ep enb + power 2 enb * expbits
+                    + power 2 enb * power 2 this_windowsize * expdone
+                  = valueb ep enb + power 2 enb *
+                           (expbits + power 2 this_windowsize * expdone)
+               by ve = valueb ep oenb + power 2 oenb * expdone
+               so power 2 oenb = power 2 enb * power 2 this_windowsize
+               so valueb ep oenb = valueb ep enb + power 2 enb * expbits };
+      label WLoop in
+      while (this_windowsize <> 0) do
+        variant { this_windowsize }
+        invariant { redc (value rp n) (power vb expdone) n vm }
+        invariant { ve = valueb ep enb + power 2 enb
+                       * (expbits + power 2 this_windowsize * expdone) }
+        invariant { 0 <= expdone }
+        invariant { 0 <= this_windowsize <= this_windowsize at WLoop }
+        let ghost orp = value rp (int32'int n) in
+        wmpn_mul_basecase tp2 rp n rp n;
+        wmpn_sec_redc_1 rp tp2 mp n mip;
+        redc_mul orp orp (power vb expdone) (power vb expdone)
+                 (value rp (int32'int n)) (int32'int n) vm;
+        assert { redc (value rp n) (power vb (2 * expdone)) n vm };
+        assert { power 2 (this_windowsize - 1) * (2 * expdone)
+                 = power 2 this_windowsize * expdone };
+        this_windowsize <- this_windowsize - 1;
+        expdone <- 2 * expdone;
+      done;
+      assert { ve = valueb ep enb + power 2 enb * (expbits + expdone) };
+      let tp3 = incr_split tp2 (2*n) in
+      wmpn_sec_tabselect tp3 pp n nents (Limb.to_int32 expbits);
+      assert { redc (value tp3 n) (power vb expbits) n vm };
+      let ghost orp = value rp (int32'int n) in
+      wmpn_mul_basecase tp2 rp n tp3 n;
+      wmpn_sec_redc_1 rp tp2 mp n mip;
+      redc_mul orp (value tp3 (int32'int n))
+               (power vb expdone) (power vb (uint64'int expbits))
+               (value rp (int32'int n)) (int32'int n) vm;
+      assert { redc (value rp n) (power vb (expdone + expbits)) n vm };
+      expdone <- expdone + uint64'int expbits;
+      join tp2 tp3;
+    done;
+    assert { redc (value rp n) (power vb ve) n vm };
+    wmpn_copyi tp2 rp n;
+    let ghost otp = pure { tp2 } in
+    wmpn_zero (C.incr tp2 n) n;
+    value_sub_frame (pelts tp2) (pelts otp)
+                    (offset tp2) (offset tp2 + int32'int n);
+    assert { value tp2 n = value rp n };
+    assert { value_sub (pelts tp2) (offset tp2 + n) (offset tp2 + (n+n)) = 0 };
+    value_concat tp2 n (2*n);
+    assert { value tp2 (2*n)
+             = value rp n + power radix n * 0
+             = value rp n };
+    assert { redc (value tp2 (2 * n)) (power vb ve) n vm };
+    label Reduce in
+    wmpn_sec_redc_1 rp tp2 mp n mip;
+    unredc (value rp (int32'int n))
+           (value (pure { rp at Reduce }) (int32'int n))
+           (power vb ve) (int32'int n) vm;
+    assert { mod (value rp n) vm = mod (power vb ve) vm };
+    assert { value rp n < 2 * vm
+             by value tp2 (2 * n) at Reduce
+                = value rp n at Reduce
+                < power radix n = power radix n * 1 <= power radix n * vm };
+    label Sub in
+    let ghost orp = pure { rp } in
+    let cnd = lnot (wmpn_sub_n tp2 rp mp n) in
+    assert { value rp n >= value mp n -> cnd <> 0
+             by value tp2 n < power radix n };
+    assert { value rp n < value mp n -> cnd = 0
+             by value tp2 n < power radix n };
+    let ghost _b = wmpn_cnd_sub_n_in_place cnd rp mp n in
+    assert { _b = 0
+             by if value orp n < vm
+                then cnd = 0 so _b = 0
+                else cnd <> 0
+                so value rp n - power radix n * _b = value orp n - vm >= 0
+                so value rp n < power radix n
+                so 0 <= power radix n - power radix n * _b
+                so _b < 1 };
+    assert { mod (value rp n) vm = mod (power vb ve) vm
+             by cnd <> 0 ->
+                value rp n - power radix n * _b
+                = value rp n = value orp n - vm
+                so mod (value rp n) vm
+                   = mod (vm * (-1) + value orp n) vm
+                   = mod (value orp n) vm };
+    assert { value rp n < vm
+             by if value orp n < vm
+                then cnd = 0
+                     so value rp n = value orp n < vm
+                else cnd <> 0
+                     so value rp n = value orp n - vm < vm };
+    assert { value rp n = mod (power vb ve) vm
+             by mod (value rp n) vm = value rp n };
+    join tp tp2;
+    ()
+
+
+
+
+
+end

@@ -534,7 +534,8 @@ module Powm
                                  = power 2 (64 * i + (nbits - 64 * i))
                                  = power 2 nbits }
 
-  let getbit [@extraction:c_static_inline] (p:t) (ghost pn:int32) (bi:int32) : limb
+  let getbit [@extraction:c_static_inline] (p:t) (ghost pn:int32) (bi:int32)
+             : limb
     requires { valid p pn }
     requires { 1 <= bi }
     requires { pn >= (div (bi + 63) 64) }

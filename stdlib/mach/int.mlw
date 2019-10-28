@@ -222,6 +222,10 @@ module UnsignedGMP
     ensures { x = 0 <-> result = max }
     ensures { x = max <-> result = 0 }
 
+  val lnot (x:t) : t
+    ensures { x = 0 <-> result <> 0 }
+    ensures { x <> 0 <-> result = 0 }
+
   val of_bool (b:bool) : t
     ensures { b -> result = 1 }
     ensures { not b -> result = 0 }
