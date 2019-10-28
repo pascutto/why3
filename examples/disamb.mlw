@@ -35,11 +35,26 @@ let lemma disambiguation_included (e : list token)
     =
     di_str (length e + 1) e
 
+predicate plus (e : list token) =
+	  exists e1 e2. pe e1 /\ pe e2 /\ e = e1 ++ Cons PLUS e2
 
+(*let decomp (acc : list token) (e : list token) : (e1 : list token, e2 : list token)
+   requires { pe acc }
+   requires { pe e }
+   ensures { pe e1 }
+   ensures { pe e2 /\ not plus e2 }
+   ensures { acc ++ Cons PLUS e = e1 ++ Cons PLUS e2 }
+   =
+   (acc, e)
+*)
 
+lemma elp_str :
+      forall n. forall e. length e <= n -> plus e ->
+      exists e1 e2. e = e1 ++ Cons PLUS e2 /\ pe e1 /\ pe e2 /\ not plus e2
 
 lemma e_last_plus :
-      forall e. pe e -> not pt e -> exists e1 e2. e = e1 ++ Cons PLUS e2 /\ pe e1 /\ pt e2
+      forall e. plus e ->
+      exists e1 e2. e = e1 ++ Cons PLUS e2 /\ pe e1 /\ pe e2 /\ not plus e2
 
 lemma oi_str :
       forall n. forall e. length e <= n -> pe e -> pe' e

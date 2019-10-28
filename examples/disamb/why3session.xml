@@ -4,9 +4,9 @@
 <why3session shape_version="8">
 <prover id="0" name="CVC4" version="1.6" timelimit="5" steplimit="0" memlimit="1000"/>
 <prover id="1" name="Alt-Ergo" version="2.2.0" timelimit="5" steplimit="0" memlimit="1000"/>
-<file format="whyml">
+<file format="whyml" proved="true">
 <path name=".."/><path name="disamb.mlw"/>
-<theory name="Top">
+<theory name="Top" proved="true">
  <goal name="pe1" proved="true">
  <proof prover="0"><result status="valid" time="0.02" steps="10554"/></proof>
  </goal>
@@ -148,46 +148,65 @@
   </goal>
  </transf>
  </goal>
- <goal name="e_last_plus">
- </goal>
- <goal name="oi_str" proved="true">
+ <goal name="elp_str" proved="true">
  <transf name="split_vc" proved="true" >
-  <goal name="oi_str.0" proved="true">
+  <goal name="elp_str.0" proved="true">
   <transf name="induction" proved="true" arg1="n">
-   <goal name="oi_str.0.0" expl="base case" proved="true">
-   <proof prover="0"><result status="valid" time="0.17" steps="37332"/></proof>
+   <goal name="elp_str.0.0" expl="base case" proved="true">
+   <proof prover="0"><result status="valid" time="0.13" steps="35926"/></proof>
    </goal>
-   <goal name="oi_str.0.1" expl="recursive case" proved="true">
-   <transf name="case" proved="true" arg1="(pt e)">
-    <goal name="oi_str.0.1.0" expl="true case (recursive case)" proved="true">
-    <proof prover="0"><result status="valid" time="0.05" steps="9463"/></proof>
-    </goal>
-    <goal name="oi_str.0.1.1" expl="false case (recursive case)" proved="true">
-    <transf name="assert" proved="true" arg1="(exists e1 e2. e = (e1 ++ Cons PLUS e2) /\ pe e1 /\ pt e2)">
-     <goal name="oi_str.0.1.1.0" expl="asserted formula" proved="true">
-     <proof prover="0"><result status="valid" time="0.05" steps="14570"/></proof>
-     </goal>
-     <goal name="oi_str.0.1.1.1" expl="false case (recursive case)" proved="true">
-     <transf name="destruct" proved="true" arg1="h">
-      <goal name="oi_str.0.1.1.1.0" expl="false case (recursive case)" proved="true">
-      <transf name="destruct" proved="true" arg1="h">
-       <goal name="oi_str.0.1.1.1.0.0" expl="false case (recursive case)" proved="true">
-       <transf name="assert" proved="true" arg1="(pe&#39; e1)">
-        <goal name="oi_str.0.1.1.1.0.0.0" expl="asserted formula" proved="true">
-        <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(length e1)">
-         <goal name="oi_str.0.1.1.1.0.0.0.0" expl="apply premises" proved="true">
-         <proof prover="1"><result status="valid" time="0.01" steps="72"/></proof>
+   <goal name="elp_str.0.1" expl="recursive case" proved="true">
+   <transf name="unfold" proved="true" arg1="plus" arg2="in" arg3="H">
+    <goal name="elp_str.0.1.0" expl="recursive case" proved="true">
+    <transf name="destruct" proved="true" arg1="H">
+     <goal name="elp_str.0.1.0.0" expl="recursive case" proved="true">
+     <transf name="destruct" proved="true" arg1="H">
+      <goal name="elp_str.0.1.0.0.0" expl="recursive case" proved="true">
+      <transf name="destruct" proved="true" arg1="H">
+       <goal name="elp_str.0.1.0.0.0.0" expl="recursive case" proved="true">
+       <transf name="destruct" proved="true" arg1="H">
+        <goal name="elp_str.0.1.0.0.0.0.0" expl="recursive case" proved="true">
+        <transf name="case" proved="true" arg1="(plus e2)">
+         <goal name="elp_str.0.1.0.0.0.0.0.0" expl="true case (recursive case)" proved="true">
+         <transf name="assert" proved="true" arg1="(exists a1 a2. e2 = a1 ++ Cons PLUS a2 /\ pe a1 /\ pe a2 /\ not plus a2)">
+          <goal name="elp_str.0.1.0.0.0.0.0.0.0" expl="asserted formula" proved="true">
+          <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(n-1)">
+           <goal name="elp_str.0.1.0.0.0.0.0.0.0.0" expl="apply premises" proved="true">
+           <proof prover="0"><result status="valid" time="0.01" steps="9091"/></proof>
+           </goal>
+           <goal name="elp_str.0.1.0.0.0.0.0.0.0.1" expl="apply premises" proved="true">
+           <proof prover="1"><result status="valid" time="0.01" steps="66"/></proof>
+           </goal>
+           <goal name="elp_str.0.1.0.0.0.0.0.0.0.2" expl="apply premises" proved="true">
+           <proof prover="0"><result status="valid" time="0.02" steps="9075"/></proof>
+           </goal>
+          </transf>
+          </goal>
+          <goal name="elp_str.0.1.0.0.0.0.0.0.1" expl="true case (recursive case)" proved="true">
+          <transf name="destruct" proved="true" arg1="h">
+           <goal name="elp_str.0.1.0.0.0.0.0.0.1.0" expl="true case (recursive case)" proved="true">
+           <transf name="destruct" proved="true" arg1="h">
+            <goal name="elp_str.0.1.0.0.0.0.0.0.1.0.0" expl="true case (recursive case)" proved="true">
+            <transf name="exists" proved="true" arg1="(e1 ++ Cons PLUS a1)">
+             <goal name="elp_str.0.1.0.0.0.0.0.0.1.0.0.0" proved="true">
+             <transf name="exists" proved="true" arg1="a2">
+              <goal name="elp_str.0.1.0.0.0.0.0.0.1.0.0.0.0" proved="true">
+              <proof prover="0"><result status="valid" time="0.06" steps="17014"/></proof>
+              </goal>
+             </transf>
+             </goal>
+            </transf>
+            </goal>
+           </transf>
+           </goal>
+          </transf>
+          </goal>
+         </transf>
          </goal>
-         <goal name="oi_str.0.1.1.1.0.0.0.1" expl="apply premises" proved="true">
-         <proof prover="0"><result status="valid" time="0.02" steps="9373"/></proof>
-         </goal>
-         <goal name="oi_str.0.1.1.1.0.0.0.2" expl="apply premises" proved="true">
-         <proof prover="0"><result status="valid" time="0.02" steps="8990"/></proof>
+         <goal name="elp_str.0.1.0.0.0.0.0.1" expl="false case (recursive case)" proved="true">
+         <proof prover="0"><result status="valid" time="0.04" steps="13050"/></proof>
          </goal>
         </transf>
-        </goal>
-        <goal name="oi_str.0.1.1.1.0.0.1" expl="false case (recursive case)" proved="true">
-        <proof prover="0"><result status="valid" time="0.06" steps="9583"/></proof>
         </goal>
        </transf>
        </goal>
@@ -203,11 +222,148 @@
   </goal>
  </transf>
  </goal>
+ <goal name="e_last_plus" proved="true">
+ <proof prover="0"><result status="valid" time="0.04" steps="12744"/></proof>
+ </goal>
+ <goal name="oi_str" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="oi_str.0" proved="true">
+  <transf name="induction" proved="true" arg1="n">
+   <goal name="oi_str.0.0" expl="base case" proved="true">
+   <proof prover="0"><result status="valid" time="0.29" steps="51131"/></proof>
+   </goal>
+   <goal name="oi_str.0.1" expl="recursive case" proved="true">
+   <transf name="case" proved="true" arg1="(plus e)">
+    <goal name="oi_str.0.1.0" expl="true case (recursive case)" proved="true">
+    <transf name="assert" proved="true" arg1="(exists e1 e2. e = e1 ++ Cons PLUS e2 /\ pe e1 /\ pe e2 /\ not plus e2)">
+     <goal name="oi_str.0.1.0.0" expl="asserted formula" proved="true">
+     <proof prover="0"><result status="valid" time="0.04" steps="14911"/></proof>
+     </goal>
+     <goal name="oi_str.0.1.0.1" expl="true case (recursive case)" proved="true">
+     <transf name="destruct" proved="true" arg1="h">
+      <goal name="oi_str.0.1.0.1.0" expl="true case (recursive case)" proved="true">
+      <transf name="destruct" proved="true" arg1="h">
+       <goal name="oi_str.0.1.0.1.0.0" expl="true case (recursive case)" proved="true">
+       <transf name="assert" proved="true" arg1="(pe&#39; e1)">
+        <goal name="oi_str.0.1.0.1.0.0.0" expl="asserted formula" proved="true">
+        <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(n-1)">
+         <goal name="oi_str.0.1.0.1.0.0.0.0" expl="apply premises" proved="true">
+         <proof prover="0"><result status="valid" time="0.02" steps="9358"/></proof>
+         </goal>
+         <goal name="oi_str.0.1.0.1.0.0.0.1" expl="apply premises" proved="true">
+         <proof prover="1"><result status="valid" time="0.01" steps="82"/></proof>
+         </goal>
+         <goal name="oi_str.0.1.0.1.0.0.0.2" expl="apply premises" proved="true">
+         <proof prover="0"><result status="valid" time="0.02" steps="9342"/></proof>
+         </goal>
+        </transf>
+        </goal>
+        <goal name="oi_str.0.1.0.1.0.0.1" expl="true case (recursive case)" proved="true">
+        <transf name="assert" proved="true" arg1="(pe&#39; e2)">
+         <goal name="oi_str.0.1.0.1.0.0.1.0" expl="asserted formula" proved="true">
+         <transf name="destruct" proved="true" arg1="h2">
+          <goal name="oi_str.0.1.0.1.0.0.1.0.0" expl="asserted formula" proved="true">
+          <transf name="destruct" proved="true" arg1="h2">
+           <goal name="oi_str.0.1.0.1.0.0.1.0.0.0" expl="asserted formula" proved="true">
+           <transf name="destruct" proved="true" arg1="h2">
+            <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0" expl="asserted formula" proved="true">
+            <transf name="induction_arg_pr" proved="true" arg1="h3">
+             <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0.0" expl="asserted formula" proved="true">
+             <proof prover="0"><result status="valid" time="0.04" steps="13663"/></proof>
+             </goal>
+             <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0.1" expl="asserted formula" proved="true">
+             <transf name="split_vc" proved="true" >
+              <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0.1.0" expl="asserted formula" proved="true">
+              <transf name="assert" proved="true" arg1="(pe&#39; e)">
+               <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0.1.0.0" expl="asserted formula" proved="true">
+               <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(n-1)">
+                <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0.1.0.0.0" expl="apply premises" proved="true">
+                <proof prover="0"><result status="valid" time="0.02" steps="9423"/></proof>
+                </goal>
+                <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0.1.0.0.1" expl="apply premises" proved="true">
+                <proof prover="1"><result status="valid" time="0.01" steps="117"/></proof>
+                </goal>
+                <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0.1.0.0.2" expl="apply premises" proved="true">
+                <proof prover="0"><result status="valid" time="0.02" steps="9407"/></proof>
+                </goal>
+               </transf>
+               </goal>
+               <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0.1.0.1" expl="asserted formula" proved="true">
+               <proof prover="0"><result status="valid" time="0.05" steps="13977"/></proof>
+               </goal>
+              </transf>
+              </goal>
+             </transf>
+             </goal>
+             <goal name="oi_str.0.1.0.1.0.0.1.0.0.0.0.2" expl="asserted formula" proved="true">
+             <proof prover="0"><result status="valid" time="0.03" steps="12911"/></proof>
+             </goal>
+            </transf>
+            </goal>
+           </transf>
+           </goal>
+          </transf>
+          </goal>
+         </transf>
+         </goal>
+         <goal name="oi_str.0.1.0.1.0.0.1.1" expl="true case (recursive case)" proved="true">
+         <proof prover="0"><result status="valid" time="0.08" steps="24859"/></proof>
+         </goal>
+        </transf>
+        </goal>
+       </transf>
+       </goal>
+      </transf>
+      </goal>
+     </transf>
+     </goal>
+    </transf>
+    </goal>
+    <goal name="oi_str.0.1.1" expl="false case (recursive case)" proved="true">
+    <transf name="induction_arg_pr" proved="true" arg1="H">
+     <goal name="oi_str.0.1.1.0" expl="false case (recursive case)" proved="true">
+     <proof prover="0"><result status="valid" time="0.04" steps="13556"/></proof>
+     </goal>
+     <goal name="oi_str.0.1.1.1" expl="false case (recursive case)" proved="true">
+     <transf name="split_vc" proved="true" >
+      <goal name="oi_str.0.1.1.1.0" expl="false case (recursive case)" proved="true">
+      <transf name="assert" proved="true" arg1="(pe&#39; e)">
+       <goal name="oi_str.0.1.1.1.0.0" expl="asserted formula" proved="true">
+       <transf name="apply" proved="true" arg1="Hrec" arg2="with" arg3="(n-1)">
+        <goal name="oi_str.0.1.1.1.0.0.0" expl="apply premises" proved="true">
+        <proof prover="0"><result status="valid" time="0.02" steps="9346"/></proof>
+        </goal>
+        <goal name="oi_str.0.1.1.1.0.0.1" expl="apply premises" proved="true">
+        <proof prover="1"><result status="valid" time="0.01" steps="17"/></proof>
+        </goal>
+        <goal name="oi_str.0.1.1.1.0.0.2" expl="apply premises" proved="true">
+        <proof prover="0"><result status="valid" time="0.01" steps="9330"/></proof>
+        </goal>
+       </transf>
+       </goal>
+       <goal name="oi_str.0.1.1.1.0.1" expl="false case (recursive case)" proved="true">
+       <proof prover="0"><result status="valid" time="0.04" steps="12241"/></proof>
+       </goal>
+      </transf>
+      </goal>
+     </transf>
+     </goal>
+     <goal name="oi_str.0.1.1.2" expl="false case (recursive case)" proved="true">
+     <proof prover="0"><result status="valid" time="0.04" steps="12811"/></proof>
+     </goal>
+    </transf>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
  <goal name="original_included" proved="true">
- <proof prover="0"><result status="valid" time="0.03" steps="9288"/></proof>
+ <proof prover="0"><result status="valid" time="0.03" steps="9658"/></proof>
  </goal>
  <goal name="equiv_disambiguation" proved="true">
- <proof prover="0"><result status="valid" time="0.03" steps="9421"/></proof>
+ <proof prover="0"><result status="valid" time="0.03" steps="9791"/></proof>
  </goal>
 </theory>
 </file>
