@@ -2,7 +2,7 @@ theory Why3_BV
 imports
   Why3_Int
   "HOL-Word.Word"
-(*  "HOL-Word.Bit_Comparison"*)
+  "HOL-Word.Bit_Comparison"
 begin
 
 abbreviation (input) pow2 :: "int \<Rightarrow> int"
