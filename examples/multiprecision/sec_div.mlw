@@ -29,17 +29,43 @@ module Sec_div
     writes   { n.data.elts, tp.data.elts }
   =
     let ghost vn = value n (int32'int nn) in
+    let ghost vd = value dp (int32'int dn) in
+    assert { 2 * vd >= power radix dn
+             by normalized dp dn
+             so 2 * (pelts dp)[offset dp + dn - 1] >= radix
+             so 2 * vd
+                = 2 * (value dp (dn - 1)
+                       + power radix (dn - 1) * (pelts dp)[offset dp + dn - 1])
+                >= power radix (dn - 1) * 2 * (pelts dp)[offset dp + dn - 1]
+                >= power radix (dn - 1) * radix = power radix dn };
     if nn = dn
     then begin
       (* TODO sub_n_rx *)
+      assert { vn < 2 * vd by 2 * vd >= power radix dn > vn };
       let cy = wmpn_sub_in_place n dn dp dn in
+      assert { cy <> 0 <-> vn < vd };
+      label Add in
       let ghost _c = wmpn_cnd_add_n_in_place cy n dp dn in
-      assert { _c = 0 };
+      assert { value n dn = mod vn vd
+               by if cy = 0
+               then value n dn = value n dn at Add = vn - vd
+               so 0 <= value n dn < vd
+               so mod vn vd = mod (vd * (-1) + vn) vd
+                  = mod (value n dn) vd
+                  = value n dn
+               else 0 <= vn < vd
+               so cy = 1
+               so value n dn at Add - power radix dn * cy = vn - vd
+               so value n dn + power radix dn * _c
+                  = value n dn at Add + vd
+                  = vn + power radix dn * cy
+               so _c = 1
+               so value n dn = vn
+               so mod vn vd = vn };
       return;
     end;
     (* computing the quotient simplifies the proof: do it in ghost code *)
     let ghost ref vq:int = 0 in
-    let ghost vd = value dp (int32'int dn) in
     let ref hp = C.incr tp 0 in
     assert { valid hp (dn+1) };
     let ghost gamma : int = power 2 32 in
@@ -50,15 +76,33 @@ module Sec_div
     let ref np = C.incr n (nn - dn) in
     let ref nh:limb = 0 in
     value_tail dp (dn - 1);
-    assert { 2 * vd >= power radix dn
-             by normalized dp dn
-             so 2 * (pelts dp)[offset dp + dn - 1] >= radix
-             so 2 * vd
-                = 2 * (value dp (dn - 1)
-                       + power radix (dn - 1) * (pelts dp)[offset dp + dn - 1])
-                >= power radix (dn - 1) * 2 * (pelts dp)[offset dp + dn - 1]
-                >= power radix (dn - 1) * radix = power radix dn };
-    (*let ghost d = (pelts dp)[dn-1] in*)
+    let ghost d = (pelts dp)[offset dp + int32'int dn - 1] in
+    assert { vd = value dp (dn - 1) + power radix (dn - 1) * d };
+    assert { (d = radix - 1 /\ dinv = 1)
+             \/ d < radix - 1 /\ reciprocal dinv (d+1) };
+    (*assert { d * (radix + dinv) <= radix * radix -1
+             by if d = radix - 1
+                then dinv = 1
+                     so d * (radix + dinv) = (radix - 1) * (radix + 1)
+                        = radix * radix - 1
+                else radix + dinv = div (radix * radix - 1) (d + 1)
+                so radix * radix - 1
+                   = (d+1) * (radix + dinv) + mod (radix * radix - 1) (d + 1)
+                   >= (d+1) * (radix + dinv)
+                   > d * (radix + dinv) }; *)
+    assert { d = radix - 1 \/ (d+1) * (radix + dinv) <= radix * radix
+             by d <> radix - 1 ->
+                radix + dinv = div (radix * radix - 1) (d + 1)
+                so radix * radix - 1
+                   = (d+1) * (radix + dinv) + mod (radix * radix - 1) (d + 1)
+                   >= (d+1) * (radix + dinv)
+                   > d * (radix + dinv) };
+    assert { d <> radix - 1 -> radix * radix - (radix + dinv) * (d + 1) < d + 2
+             by radix + dinv = div (radix * radix - 1) (d+1)
+             so radix * radix - 1
+                = (d+1) * (radix + dinv) + mod (radix * radix - 1) (d+1)
+                < (d+1) * (radix + dinv) + d + 1
+             so radix * radix - (d+1) * (radix + dinv) < d + 2 };
     for i = nn - dn - 1 downto 0 do
       invariant { i < nn - dn }
       invariant { offset np = offset n + i + 1 }
@@ -69,25 +113,115 @@ module Sec_div
       invariant { pelts np = pelts n }
       invariant { vn = vq * vd
                   + value n (dn + i + 1) + power radix (dn + i + 1) * nh }
-      invariant { (* vd *) 0 <= value np dn + power radix dn * nh < 4 * vd
-                  \/ (nh = 0 /\ vq = 0) }
+      invariant { (* vd *) 0 <= value np dn + power radix dn * nh < 4 * vd }
       invariant { 0 <= nh <= 1 }
       label StartLoop in
       np <- C.incr np (-1);
-      assert { radix * vd <= value np (dn+1) + power radix (dn+1) * nh
+      value_concat np 1 (dn + 1);
+      assert { value np (dn + 1) = value np 1 + radix
+               * value (np at StartLoop) dn };
+      assert { 0 <= value np (dn+1) + power radix (dn+1) * nh
                < 4 * radix * vd
-               \/ (nh = 0 /\ vq = 0) };
+               by 0 <= radix * value (np at StartLoop) dn <= value np (dn + 1)
+                  <= radix * value (np at StartLoop) dn + radix - 1
+               so power radix (dn + 1) * nh = radix * power radix dn * nh
+               so value (np at StartLoop) dn + power radix dn * nh <= 4 * vd - 1
+               so value np (dn + 1) + power radix (dn + 1) * nh
+                  <= radix * (value np at StartLoop) dn + radix - 1
+                    + radix * power radix dn * nh
+                  <= radix * (4 * vd - 1) + radix - 1
+                  = 4 * radix * vd - 1 };
       let ndn = get_ofs np dn in
-      nh <- lsl nh 32 + lsr_mod ndn 32;
+      let nhl = lsl nh 32 in
+      let ndr = lsr_mod ndn 32 in
+      assert { nhl <= power 2 32 };
+      assert { ndr < power 2 32
+               by ndr = div ndn (power 2 32)
+               so ndn = power 2 32 * ndr + mod ndn (power 2 32)
+               so ndr * power 2 32 <= ndn < radix = power 2 32 * power 2 32 };
+      nh <- nhl + ndr;
+      assert { nh < power 2 33 };
       let (ghost _d1, q1h) = mul_double nh dinv in
+      assert { d = radix - 1 -> q1h = 0
+               by dinv = 1 so nh * dinv < radix };
+      assert { q1h < power 2 33
+               by radix * q1h <= nh * dinv <= nh * radix
+                  so q1h <= nh < power 2 33 };
       let q1h =  q1h + nh in
-      assert { radix * q1h <= nh * (radix + dinv) < radix * (q1h + 1) };
+      assert { nh * (radix + dinv) - radix < radix * q1h <= nh * (radix + dinv)
+               < radix * (q1h + 1) };
       vq <- vq + gamma * power radix (int32'int i) * uint64'int q1h;
+      let ghost nl = mod (uint64'int ndn) (power 2 32) in
+      assert { ndn = nl + gamma * ndr };
+      value_tail np dn;
+      assert { value np (dn + 1) + power radix (dn + 1) * (nh at StartLoop)
+               = value np dn + power radix dn * (nl + gamma * nh)
+               by value np (dn+1) = value np dn + power radix dn * ndn
+               so power radix (dn + 1) = power radix dn * (gamma * gamma)
+               so value np (dn + 1) + power radix (dn +1) * (nh at StartLoop)
+                  = value np dn + power radix dn
+                          * (ndn + gamma * gamma * (nh at StartLoop))
+                  = value np dn + power radix dn
+                          * (nl + gamma * (ndr + gamma * nh at StartLoop))};
+      let ghost r' = pure { value np dn + power radix dn * (nl + gamma * nh)
+                            - q1h * vd * gamma } in
+      assert { 0 <= r'
+               by 0 <= value np dn
+               so 0 <= nl
+               so vd = value dp (dn - 1) + power radix (dn - 1) * d
+                     < power radix (dn - 1) + power radix (dn - 1) * d
+                     = power radix (dn - 1) * (d + 1)
+               so vd * gamma < (power radix (dn - 1) * (d + 1)) * gamma
+               so q1h * vd * gamma
+                  <= q1h * (power radix (dn - 1) * (d + 1)) * gamma
+               so value np dn >= 0
+               so power radix dn * (gamma * nh)
+                  <= power radix dn * (nl + gamma * nh)
+               so r'
+                  = value np dn + power radix dn * (nl + gamma * nh)
+                            - q1h * vd * gamma
+                  >= power radix dn * (nl + gamma * nh)
+                     - q1h * vd * gamma
+                  >= power radix dn * (gamma * nh)
+                     - q1h * vd * gamma
+                  >= power radix dn * (gamma * nh)
+                     - q1h * (power radix (dn - 1) * (d+1) * gamma)
+                  = power radix (dn - 1) * gamma * (radix * nh - q1h * (d+1))
+               so if d = radix - 1
+               then q1h = nh
+                    so d+1 = radix
+                    so radix * nh - q1h * (d+1) = 0
+               else (d+1) * (radix * q1h) <= (d+1) * (nh * (radix + dinv))
+               so (radix + dinv) * (d+1) <= radix * radix
+               so nh * ((radix + dinv) * (d+1)) <= nh * (radix * radix)
+               so radix * q1h * (d+1) <= radix * radix * nh
+               so q1h * (d+1) <= radix * nh
+               so r' >= 0 };
+      let ghost r = pure { value np dn + power radix dn * (nl + gamma * nh) } in
+      assert { r' = r - q1h * vd * gamma };
+(*      assert { radix * r - gamma * nh * vd * (radix + dinv)
+                 < 2 * gamma * vd * radix
+               by r < power radix dn + power radix dn * (nl + gamma * nh)
+                    < power radix dn * (1 + nl + gamma * nh)
+                    <= power radix dn * (gamma + gamma * nh)
+                    = power radix dn * gamma * (1 + nh)
+               }; *)
+      assert { r' < 4 * gamma * vd };
+      assert { r' < power radix (dn + 1) };
+      label Sub in
       let ghost _b1 = wmpn_submul_1 np hp (dn+1) q1h in
-      assert { _b1 = nh at StartLoop }; (*?*)
-      assert { gamma * vd <= value np dn < 4 * gamma * vd
-                  \/ (nh = 0 /\ vq = 0) };
-      assert { 0 <= nh <= 3 };
+      assert { _b1 = nh at StartLoop
+               by value np (dn + 1) - power radix (dn + 1) * _b1
+               = value np (dn + 1) at Sub - q1h * value hp (dn + 1)
+               = (value np dn + power radix dn * (nl + gamma * nh)) at Sub
+                 - q1h * vd * gamma - power radix (dn + 1) * (nh at StartLoop)
+               = r' - power radix (dn + 1) * (nh at StartLoop)
+               so value np (dn + 1)
+                  = r'+ power radix (dn + 1) * (_b1 - nh at StartLoop)
+               so 0 <= value np (dn + 1) < power radix (dn + 1)
+               so 0 <= r' < power radix (dn + 1)
+               so _b1 - nh at StartLoop = 0 };
+      assert { value np (dn +1) = r' };
       nh <- get_ofs np dn;
       let (ghost _d0, q0h) = mul_double nh dinv in
       let q0h = q0h + nh in
