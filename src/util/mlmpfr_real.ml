@@ -27,22 +27,22 @@ let get_one prec =
 
 (* TBI: use the erange flag in comparison functions ? *)
 let less_p a b =
-  cmp a b < 0 && not (nan_p a) && not (nan_p b)
+  not (nan_p a) && not (nan_p b) && cmp a b < 0
 
 let greater_p a b =
-  cmp a b > 0 && not (nan_p a) && not (nan_p b)
+  not (nan_p a) && not (nan_p b) && cmp a b > 0
 
 let lessequal_p a b =
-  cmp a b <= 0 && not (nan_p a) && not (nan_p b)
+  not (nan_p a) && not (nan_p b) && cmp a b <= 0
 
 let greaterequal_p a b =
-  cmp a b >= 0 && not (nan_p a) && not (nan_p b)
+  not (nan_p a) && not (nan_p b) && cmp a b >= 0
 
 let equal_p a b =
-  cmp a b = 0 && not (nan_p a) && not (nan_p b)
+  not (nan_p a) && not (nan_p b) && cmp a b = 0
 
 let lessgreater_p a b =
-  cmp a b <> 0 && not (nan_p a) && not (nan_p b)
+  not (nan_p a) && not (nan_p b) && cmp a b <> 0
 
 (* Function used for printing *)
 let convert_string ~base f =
