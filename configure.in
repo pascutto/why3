@@ -1040,15 +1040,12 @@ dnl AC_SUBST(PDFVIEWER)
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_FILES(src/config.sh doc/version.tex)
 AC_CONFIG_FILES(dune-workspace)
-AC_CONFIG_FILES(.merlin)
 AC_CONFIG_FILES(src/jessie/Makefile)
-AC_CONFIG_FILES(src/jessie/.merlin)
 AC_CONFIG_FILES(lib/coq/version lib/pvs/version)
 AC_CONFIG_COMMANDS([chmod],
 chmod a-w Makefile src/jessie/Makefile;
 chmod a-w src/config.sh doc/version.tex;
 chmod a-w lib/why3/META;
-chmod a-w .merlin;
 chmod a-w src/jessie/Makefile;
 chmod a-w src/jessie/.merlin;
 chmod a-w lib/coq/version lib/pvs/version;

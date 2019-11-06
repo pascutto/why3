@@ -1,16 +1,32 @@
 (executables
-        (names why3config why3execute why3extract why3prove why3realize why3wc)
+        (names why3config why3execute why3extract why3prove why3realize why3wc why3pp)
         (libraries why3)
-        (modules why3config why3execute why3extract why3prove why3realize why3wc)
-        (flags -linkall)
+        (modules why3config why3execute why3extract why3prove why3realize why3wc why3pp)
+        (flags  -w A-4-9-41-44-45-50-52@5@8@48)
 )
+
+(install
+ (files
+  (why3config.exe as commands/why3config.exe)
+  (why3execute.exe as commands/why3execute.exe)
+  (why3extract.exe  as commands/why3extract.exe)
+  (why3prove.exe  as commands/why3prove.exe)
+  (why3realize.exe  as commands/why3realize.exe)
+  (why3wc.exe  as commands/why3wc.exe)
+  (why3pp.exe  as commands/why3pp.exe)
+ )
+ (section lib)
+ (package why3)
+)
+
+
+(rule (with-stdout-to why3extract_checksum (run md5sum %{bin:why3} %{dep:why3extract.exe} %{dep:why3realize.exe})))
 
 (executable
         (name main)
         (public_name why3)
         (libraries why3)
         (modules main)
-        (flags -linkall)
         (package why3)
 )
 
@@ -40,5 +56,3 @@
         (package why3)
 )
 
-
-(rule (with-stdout-to why3extract_checksum (run md5sum %{bin:why3} %{dep:why3extract.exe})))

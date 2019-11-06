@@ -1425,22 +1425,12 @@ bin/why3pp.byte: $(WHY3CMA) $(PRETTYPRINTCMO)
 	$(SHOW) 'Linking  $@'
 	$(HIDE)$(OCAMLC) $(BFLAGS) -o $@ $(BLINKFLAGS) $^
 
-# depend and clean targets
-
-ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
--include $(PRETTYPRINTDEP)
-endif
-
-depend: $(PRETTYPRINTDEP)
-
 uninstall-bin::
 	rm -f $(TOOLDIR)/why3pp(EXE)
 
 install-bin::
 	$(MKDIR_P) $(TOOLDIR)
 	$(INSTALL) bin/why3pp.@OCAMLBEST@ $(TOOLDIR)/why3pp$(EXE)
-
-install_local:: bin/why3pp
 
 #########
 # why3doc
@@ -2168,7 +2158,6 @@ AUTOCONF_FILES = \
 	Makefile \
 	src/jessie/Makefile \
 	src/config.sh \
-	.merlin \
 	src/jessie/.merlin \
 	dune-workspace \
 	lib/coq/version \
