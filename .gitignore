@@ -21,6 +21,7 @@ why3.conf
 .*.aux
 *.elc
 *.summary
+.merlin
 \#*\#
 
 # /
@@ -29,7 +30,6 @@ why3.conf
 /autom4te.cache
 /Makefile
 /configure
-/install-sh
 /semantic.cache
 /TAGS
 /output_why3
@@ -41,6 +41,7 @@ why3.conf
 .merlin
 /src/jessie/.merlin
 /why3*.install
+/_build
 
 # /bench/
 /bench/programs/good/booleans/
@@ -54,6 +55,7 @@ why3.conf
 /bench/programs/good/po/
 /bench/valid/list/
 /bench/ce/*.out
+/bench/parsing/bad/*.out
 
 # /doc/
 /doc/version.tex
@@ -153,6 +155,8 @@ pvsbin/
 /src/parser/parser.ml
 /src/parser/parser.mli
 /src/parser/parser.conflicts
+/src/parser/handcrafted.messages.temp
+/src/parser/parser_messages.ml
 
 # /src/why3doc/
 /src/why3doc/doc_lexer.ml
@@ -165,6 +169,8 @@ pvsbin/
 /src/util/json_parser.mli
 /src/util/json_parser.ml
 /src/util/json_parser.conflicts
+/src/util/mlmpfr_wrapper.ml
+/src/util/ppx_debug_optim
 
 # /src/session
 /src/session/xml.ml

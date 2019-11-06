@@ -43,6 +43,7 @@ INSTALL_DATA = @INSTALL_DATA@
 OCAMLC    = @OCAMLC@
 OCAMLOPT  = @OCAMLOPT@
 OCAMLDEP  = @OCAMLDEP@
+OCAMLFIND = @OCAMLFIND@
 OCAMLLEX  = @OCAMLLEX@
 OCAMLYACC = @OCAMLYACC@
 OCAMLDOC  = @OCAMLDOC@
@@ -197,6 +198,7 @@ LIBGENERATED = src/util/config.ml \
 	       src/util/json_lexer.ml src/util/mlmpfr_wrapper.ml \
 	       src/parser/lexer.ml \
 	       src/parser/parser.mli src/parser/parser.ml \
+	       src/parser/parser_messages.ml \
 	       src/driver/driver_parser.mli src/driver/driver_parser.ml \
 	       src/driver/driver_lexer.ml \
 	       src/driver/parse_smtv2_model_parser.mli src/driver/parse_smtv2_model_parser.ml \
@@ -209,7 +211,7 @@ LIB_UTIL = config bigInt mlmpfr_wrapper util opt lists strings \
 	   hashcons wstdlib exn_printer \
 	   json_base json_parser json_lexer \
 	   debug loc lexlib print_tree \
-	   cmdline warning sysutil rc plugin bigInt number vector pqueue
+	   cmdline warning sysutil rc plugin bigInt number constant vector pqueue
 
 LIB_CORE = ident ty term pattern decl coercion theory \
 	   task pretty dterm env trans printer model_parser
@@ -221,10 +223,12 @@ LIB_DRIVER = prove_client call_provers driver_ast driver_parser driver_lexer dri
 		parse_smtv2_model
 
 LIB_MLW = ity expr pdecl eval_match typeinv vc pmodule dexpr big_real \
-          pinterp mltree compile mlinterp pdriver cprinter ml_printer \
-	  ocaml_printer cakeml_printer
+          pinterp
 
-LIB_PARSER = ptree glob typing parser typing lexer
+LIB_EXTRACT = mltree compile mlinterp pdriver ml_printer \
+              c ocaml cakeml
+
+LIB_PARSER = ptree glob typing parser_messages parser typing report lexer mlw_printer
 
 LIB_TRANSFORM = simplify_formula inlining split_goal \
 		args_wrapper detect_polymorphism reduction_engine compute \
@@ -258,12 +262,13 @@ LIBMODULES =  $(addprefix src/util/, $(LIB_UTIL)) \
 	      $(addprefix src/core/, $(LIB_CORE)) \
 	      $(addprefix src/driver/, $(LIB_DRIVER)) \
 	      $(addprefix src/mlw/, $(LIB_MLW)) \
+	      $(addprefix src/extract/, $(LIB_EXTRACT)) \
 	      $(addprefix src/parser/, $(LIB_PARSER)) \
 	      $(addprefix src/transform/, $(LIB_TRANSFORM)) \
 	      $(addprefix src/printer/, $(LIB_PRINTER)) \
 	      $(addprefix src/session/, $(LIB_SESSION))
 
-LIBDIRS = util core driver mlw parser transform printer session
+LIBDIRS = util core driver mlw extract parser transform printer session
 LIBINCLUDES = $(addprefix -I src/, $(LIBDIRS))
 
 LIBDEP = $(addsuffix .dep, $(LIBMODULES))
@@ -296,21 +301,41 @@ src/session/compress.ml: config.status src/session/compress_none.ml
 	cp src/session/compress_none.ml $@
 endif
 
-# hide deprecated warnings for strings
+.PHONY: initialize_messages update-parsing-error-handling
 
-src/util/strings.cmo: WARNINGS:=$(WARNINGS)-3
-src/util/strings.cmx: WARNINGS:=$(WARNINGS)-3
+src/parser/parser_messages.ml: src/parser/parser.mly src/parser/handcrafted.messages
+	rm -f src/parser/parser_messages.ml src/parser/parser_messages.ml.tmp
+	$(MENHIR) --explain --strict src/parser/parser.mly --update-errors \
+	src/parser/handcrafted.messages > src/parser/handcrafted.messages.temp
+	diff -b src/parser/handcrafted.messages src/parser/handcrafted.messages.temp > /dev/null; \
+	RET_CODE=$$?; \
+	if [ $$RET_CODE -ne 0 ]; then \
+		echo "Parsing error handling must be updated, the file 'src/parser/handcrafted.messages.temp' \
+contains an updated version that must be checked before replacing 'src/parser/handcrafted.messages'"; \
+		exit 1; \
+	fi
+	rm -f src/parser/handcrafted.messages.temp
+	$(MENHIR) --explain --strict src/parser/parser.mly --compile-errors \
+	src/parser/handcrafted.messages > src/parser/parser_messages.ml.tmp
+	mv src/parser/parser_messages.ml.tmp src/parser/parser_messages.ml
 
-# compiler plugins
+clean::
+	rm -f src/parser/parser_messages.ml.tmp src/parser/handcrafted.messages.temp
 
-ifeq (@enable_compiler_plugins@,yes)
-src/util/debug_optim.cmxs: src/util/debug_optim.ml
+# debug optimisation ppx
+
+ifeq (@enable_ppx@,yes)
+src/util/ppx_debug_optim: src/util/debug_optim.ml
 	$(SHOW) 'Linking $@'
-	$(HIDE)$(OCAMLOPT) -I @COMPILERLIBS@ -shared src/util/debug_optim.ml -o $@
-src/transform/reflection.cmx: src/util/debug_optim.cmxs
-src/transform/reflection.cmx: OFLAGS += -plugin debug_optim.cmxs
-src/mlw/mlinterp.cmx: src/util/debug_optim.cmxs
-src/mlw/mlinterp.cmx: OFLAGS += -plugin debug_optim.cmxs
+	$(HIDE) $(OCAMLFIND) opt -package compiler-libs.common -linkpkg src/util/debug_optim.ml -o $@
+
+src/transform/reflection.cmx: src/util/ppx_debug_optim
+src/transform/reflection.cmx: OFLAGS += -ppx src/util/ppx_debug_optim
+src/extract/mlinterp.cmx: src/util/ppx_debug_optim
+src/extract/mlinterp.cmx: OFLAGS += -ppx src/util/ppx_debug_optim
+
+clean::
+	rm -f src/util/ppx_debug_optim
 endif
 
 # build targets
@@ -356,6 +381,7 @@ install-data::
 	$(INSTALL_DATA) share/vim/ftdetect/why3.vim $(DATADIR)/why3/vim/ftdetect/why3.vim
 	$(INSTALL_DATA) share/vim/syntax/why3.vim $(DATADIR)/why3/vim/syntax/why3.vim
 	$(INSTALL_DATA) share/lang/why3.lang $(DATADIR)/why3/lang/why3.lang
+	$(INSTALL_DATA) share/lang/why3py.lang $(DATADIR)/why3/lang/why3py.lang
 
 ifeq (@enable_local@,yes)
 else
@@ -1371,6 +1397,51 @@ clean::
 
 endif
 
+###############
+# Why3 pp
+###############
+
+PRETTYPRINT_FILES = why3pp
+
+PRETTYPRINTMODULES = $(addprefix src/tools/, $(PRETTYPRINT_FILES))
+
+PRETTYPRINTDEP = $(addsuffix .dep, $(PRETTYPRINTMODULES))
+PRETTYPRINTCMO = $(addsuffix .cmo, $(PRETTYPRINTMODULES))
+PRETTYPRINTCMX = $(addsuffix .cmx, $(PRETTYPRINTMODULES))
+
+$(PRETTYPRINTDEP): DEPFLAGS += -I src/tools
+$(PRETTYPRINTCMO) $(PRETTYPRINTCMX): INCLUDES += -I src/tools
+
+# build targets
+
+byte: bin/why3pp.byte
+opt:  bin/why3pp.opt
+
+bin/why3pp.opt: $(WHY3CMXA) $(PRETTYPRINTCMX)
+	$(SHOW) 'Linking  $@'
+	$(HIDE)$(OCAMLOPT) $(OFLAGS) -o $@ $(OLINKFLAGS) $^
+
+bin/why3pp.byte: $(WHY3CMA) $(PRETTYPRINTCMO)
+	$(SHOW) 'Linking  $@'
+	$(HIDE)$(OCAMLC) $(BFLAGS) -o $@ $(BLINKFLAGS) $^
+
+# depend and clean targets
+
+ifneq "$(MAKECMDGOALS:clean%=clean)" "clean"
+-include $(PRETTYPRINTDEP)
+endif
+
+depend: $(PRETTYPRINTDEP)
+
+uninstall-bin::
+	rm -f $(TOOLDIR)/why3pp(EXE)
+
+install-bin::
+	$(MKDIR_P) $(TOOLDIR)
+	$(INSTALL) bin/why3pp.@OCAMLBEST@ $(TOOLDIR)/why3pp$(EXE)
+
+install_local:: bin/why3pp
+
 #########
 # why3doc
 #########
@@ -1587,6 +1658,8 @@ endif
 
 bench:: dune_done plugins $(TOOLS) share/Makefile.config
 	bash bench/bench
+	@echo "=== Check parsing message ==="
+	bench/parsing-bench
 	$(MAKE) bench-api
 	@echo ""
 	@echo "=== Checking extraction ==="
@@ -2063,7 +2136,7 @@ wc:
 
 NAME = why3-@VERSION@
 # see .gitattributes for the list of files that are not distributed
-MORE_DIST = configure install-sh doc/manual.pdf
+MORE_DIST = configure doc/manual.pdf
 
 dist: $(MORE_DIST)
 	rm -rf distrib/$(NAME)/ distrib/$(NAME).tar.gz
