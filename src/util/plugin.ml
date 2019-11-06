@@ -66,3 +66,31 @@ let () =
       | Dynlink.Error (error) ->
         Format.fprintf fmt "Dynlink error: %s" (Dynlink.error_message error)
       | _ -> raise exn)
+
+
+
+let autoload_plugins () =
+  (** lazy_init *)
+  let pkgs = match Config.localdir with
+    | None ->
+        List.filter (fun name ->
+           Strings.has_prefix "why3.plugin." name ||
+           Strings.has_prefix "why3-plugin-" name
+          )
+          (Findlib.list_packages' ~prefix:"why3" ())
+    | Some local_dir ->
+        let dir = Filename.concat local_dir "_build/install/default/lib/why3" in
+        let meta_file = Filename.concat dir "META" in
+        let pkgs = Fl_package_base.packages_in_meta_file
+            ~name:"why3"
+            ~dir
+            ~meta_file
+            ()
+        in
+        Lists.map_filter (fun pkg ->
+            if Strings.has_prefix "why3.plugin." pkg.Fl_package_base.package_name
+            then Some pkg.Fl_package_base.package_name
+            else None
+          ) pkgs
+  in
+  Fl_dynload.load_packages pkgs

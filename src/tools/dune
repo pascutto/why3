@@ -1,9 +1,8 @@
 (executables
-        (public_names why3config why3execute why3extract why3prove why3realize why3wc)
+        (names why3config why3execute why3extract why3prove why3realize why3wc)
         (libraries why3)
-        (modules  why3config why3execute why3extract why3prove why3realize why3wc)
-        (flags -linkall -open Why3.V1)
-        (package why3)
+        (modules why3config why3execute why3extract why3prove why3realize why3wc)
+        (flags -linkall)
 )
 
 (executable
@@ -11,7 +10,7 @@
         (public_name why3)
         (libraries why3)
         (modules main)
-        (flags -linkall -open Why3.V1)
+        (flags -linkall)
         (package why3)
 )
 
@@ -22,14 +21,14 @@
         (name why3_unix_scheduler)
         (modules unix_scheduler)
         (libraries why3)
-        (flags -linkall -open Why3.V1)
+        (flags -linkall)
 )
 
 (executable
         (public_name why3replay)
         (libraries why3 why3_unix_scheduler)
         (modules why3replay)
-        (flags -linkall -open Why3.V1 -open Why3_unix_scheduler)
+        (flags -linkall -open Why3_unix_scheduler)
         (package why3)
 )
 
@@ -37,6 +36,9 @@
         (public_name why3shell)
         (modules why3shell)
         (libraries why3 why3_unix_scheduler)
-        (flags -linkall -open Why3.V1 -open Why3_unix_scheduler)
+        (flags -linkall -open Why3_unix_scheduler)
         (package why3)
 )
+
+
+(rule (with-stdout-to why3extract_checksum (run md5sum %{bin:why3} %{dep:why3extract.exe})))

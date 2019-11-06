@@ -49,26 +49,33 @@ let option_list = [
       " print version information";
 ]
 
-let command_path = match Config.localdir with
-  | Some p -> Filename.concat p "bin"
-  | None -> Filename.concat Config.libdir "commands"
+let command_paths = match Config.localdir with
+  | Some s ->
+      List.map (Filename.concat s)
+        ["_build/install/default/bin";
+         "_build/default/src/tools"
+        ]
+  | None -> [Filename.concat Config.libdir "commands"]
+
+let command_path = List.hd command_paths
 
 let extra_help fmt commands =
   fprintf fmt "@\nAvailable commands:@.";
   List.iter (fun (v,_) -> fprintf fmt "  %s@." v) commands
 
-let available_commands () =
+let available_commands_in acc command_path =
   let commands = Sys.readdir command_path in
-  Array.sort String.compare commands;
-  let re = Str.regexp "^why3\\([^.]+\\)\\([.].*\\)?" in
-  let commands = Array.fold_left (fun acc v ->
+  let re = Str.regexp "^why3\\([^.]+\\)[.]exe" in
+  Array.fold_left (fun acc v ->
     if Str.string_match re v 0 then
       let w = Str.matched_group 1 v in
-      match acc with
-      | (h,_)::_ when h = w -> acc
-      | _ -> (w, v) :: acc
-    else acc) [] commands in
-  List.rev commands
+      (w, Filename.concat command_path v) :: acc
+    else acc) acc commands
+
+let available_commands () =
+  List.sort (fun (x,_) (y,_) -> String.compare x y)
+    (List.fold_left available_commands_in [] command_paths)
+
 
 let command sscmd =
   let sscmd,args =
@@ -100,7 +107,7 @@ let command sscmd =
           eprintf "'%s' is not a Why3 command.@\n%a"
             sscmd extra_help commands;
           exit 1 in
-      Filename.concat command_path scmd
+      scmd
     end in
   let scmd = "why3 " ^ sscmd in
   Unix.execv cmd (Array.of_list (scmd :: args))

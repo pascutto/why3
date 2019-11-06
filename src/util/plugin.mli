@@ -35,3 +35,5 @@ type plu =
   | Pluother
 
 val check_plugin : plugin -> plu
+
+val autoload_plugins: unit -> unit

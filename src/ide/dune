@@ -7,7 +7,7 @@
                   (lablgtk2 lablgtk2.sourceview2 -> gtkcompat2.ml )
                 )
        )
-       (flags -open Why3.V1 -linkall)
+       (flags -linkall)
        (package why3-ide)
 )
 
@@ -22,6 +22,6 @@
        (public_name why3webserver)
        (modules wserver why3web)
        (libraries why3)
-       (flags -open Why3.V1 -linkall)
+       (flags -linkall)
        (package why3)
 )

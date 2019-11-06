@@ -3,7 +3,6 @@
 config=src/util/config.ml
 makefileconfig=share/Makefile.config
 
-bindir="$BINDIR"
 libdir="$LIBDIR/why3"
 datadir="$DATADIR/why3"
 ocamllib="@OCAMLINSTALLLIB@/why3"
@@ -15,21 +14,21 @@ if [ "@enable_relocation@" = "yes" ]; then
     datadir='Filename.concat (Filename.concat (Filename.dirname
         (Filename.dirname Sys.executable_name)) "share") "why3"'
     localdir="None"
-elif [ "@enable_local@" = "yes" ]; then
-    bindir="@LOCALDIR@/bin"
-    libdir="@LOCALDIR@/lib"
-    datadir="@LOCALDIR@/share"
-    ocamllib="$libdir/why3"
-    localdir="Some \"@LOCALDIR@\""
 fi
 
-echo "
-let version   = \"@VERSION@\"
+cat - > $config <<EOF
+let version   = "@VERSION@"
 
-let libdir    = \"$libdir\"
-let datadir   = \"$datadir\"
-let localdir  = $localdir
-" > $config
+let localdir = try Some (Sys.getenv "WHY3_LOCALDIR") with Not_found -> None
+
+let iflocal local ext =
+   match localdir with
+   | Some s -> Filename.concat s local
+   | None -> ext
+
+let libdir    = iflocal "lib" "$libdir"
+let datadir   = iflocal "share" "$datadir"
+EOF
 
 echo "
 OCAMLBEST   = @OCAMLBEST@

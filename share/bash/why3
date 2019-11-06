@@ -127,4 +127,4 @@ _why3()
             ;;
     esac
 
-} && complete -F _why3 why3 why3.opt why3.byte
+} && complete -F _why3 why3 why3.exe

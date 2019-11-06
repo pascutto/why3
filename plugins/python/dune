@@ -1,0 +1,9 @@
+(ocamllex py_lexer)
+(menhir (modules py_parser))
+
+(library
+ (public_name why3.plugin.python)
+ (name why3_plugin_python)
+ (libraries why3)
+ (flags -w A-4-9-41-44-45-50-52@5@8@48)
+)

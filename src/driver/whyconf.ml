@@ -909,6 +909,7 @@ module Args = struct
     let config = List.fold_left merge_config base_config !opt_extra in
     let main = get_main config in
     load_plugins main;
+    Plugin.autoload_plugins ();
     Debug.Args.set_flags_selected ();
     if Debug.Args.option_list () then exit 0;
     let lp = List.rev_append !opt_loadpath (loadpath main) in

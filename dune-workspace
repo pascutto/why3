@@ -1,0 +1,5 @@
+(lang dune 1.6)
+
+(env (_ (env-vars
+    ("WHY3_LOCALDIR" "/volatile/home/fb236650/Sources/why3")
+)))

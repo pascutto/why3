@@ -12,7 +12,6 @@
 open Format
 open Term
 
-
 let debug = Debug.register_info_flag "trace_exec"
   ~desc:"trace execution of code given by --exec or --eval"
 
@@ -54,7 +53,7 @@ let mode_to_string m =
   | Toward_Plus_Infinity  -> "RTP"
   | Toward_Minus_Infinity -> "RTN"
   | Toward_Zero           -> "RTZ"
-  | Faithful              -> assert false
+  | Faithful -> assert false
 
 let rec print_value fmt v =
   match v with

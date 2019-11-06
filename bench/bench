@@ -11,11 +11,9 @@ has_mpfr=`sed -n -e 's/MPFRLIB *= *\([^ ]\+\)/\1/p' share/Makefile.config`
 
 shopt -s nullglob
 
-suffix=$1
-
 # TODO: remove the hack about int.mlw once it has become builtin
 goods () {
-    pgm="bin/why3prove$suffix"
+    pgm="bin/why3 prove"
     ERROR=
     test -d $1 || exit 1
     rm -f bench_errors
@@ -47,7 +45,7 @@ goods () {
 }
 
 plugins () {
-    pgm="bin/why3prove$suffix"
+    pgm="bin/why3 prove"
     test -d $1 || exit 1
     for f in $1/*.$3 ; do
 	printf "  $f... "
@@ -61,7 +59,7 @@ plugins () {
 }
 
 bads () {
-    pgm="bin/why3prove$suffix"
+    pgm="bin/why3 prove"
     test -d $1 || exit 1
     for f in $1/*.[wm][hl][yw] ; do
 	printf "  $f... "
@@ -76,7 +74,7 @@ bads () {
 }
 
 warns () {
-    pgm="bin/why3prove$suffix"
+    pgm="bin/why3 prove"
     test -d $1 || exit 1
     rm -f bench_errors
     for f in $1/*.[wm][hl][yw] ; do
@@ -96,7 +94,7 @@ warns () {
 }
 
 drivers () {
-    pgm="bin/why3prove$suffix"
+    pgm="bin/why3 prove"
     test -d $1 || exit 1
     for f in $1/*.drv; do
         if [[ $f == drivers/ocaml*.drv ]]; then continue; fi
@@ -114,8 +112,8 @@ drivers () {
 }
 
 valid_goals () {
-    bin/why3$suffix --list-provers | grep -q Alt-Ergo || return 0
-    pgm="bin/why3prove$suffix"
+    bin/why3  --list-provers | grep -q Alt-Ergo || return 0
+    pgm="bin/why3 prove"
     test -d $1 || exit 1
     for f in $1/*.mlw; do
 	printf "  $f... "
@@ -130,8 +128,8 @@ valid_goals () {
 }
 
 invalid_goals () {
-    bin/why3$suffix --list-provers | grep -q Alt-Ergo || return 0
-    pgm="bin/why3prove$suffix"
+    bin/why3  --list-provers | grep -q Alt-Ergo || return 0
+    pgm="bin/why3 prove"
     test -d $1 || exit 1
     for f in $1/*.mlw; do
 	printf "  $f... "
@@ -147,7 +145,7 @@ invalid_goals () {
 }
 
 replay () {
-    pgm="bin/why3replay$suffix"
+    pgm="bin/why3 replay"
     test -d $1 || exit 1
     for f in $1/*/; do
         printf "  $f... "
@@ -163,7 +161,7 @@ replay () {
 }
 
 execute () {
-    pgm="bin/why3execute$suffix"
+    pgm="bin/why3 execute"
     printf "  $1 $2... "
     if $pgm $1 $2 > /dev/null; then
         echo "ok"
@@ -176,7 +174,7 @@ execute () {
 }
 
 extract () {
-    pgm="bin/why3extract$suffix"
+    pgm="bin/why3 extract"
     dir=$1
     shift
     for f in $dir/*.mlw; do
@@ -285,7 +283,7 @@ extract_and_test_wmp () {
 }
 
 list_stuff () {
-    pgm="bin/why3$suffix"
+    pgm="bin/why3 "
     printf '  %s ' "$1"
     if $pgm $1 > /dev/null; then
         echo "ok"

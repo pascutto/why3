@@ -1,7 +1,9 @@
 (ocamllex lexer)
 (menhir (modules parser)
-        (infer false)
-        )
+ (infer false)
+ (flags --table --explain --strict)
+  ;table is needed otherwise we have a segfault
+)
 
 (library
      (name why3_parser)
