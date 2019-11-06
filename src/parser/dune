@@ -11,3 +11,23 @@
      (flags -open Why3_util -open Why3_core -open Why3_mlw -w A-4-9-41-44-45-50-52@5@8@48)
      (libraries why3.util why3.core why3.mlw num menhirLib)
 )
+
+(rule
+ (targets handcrafted.messages.updated)
+ (action (progn
+          (with-stdout-to handcrafted.messages.new
+           (run %{bin:menhir} --explain --strict %{dep:parser.mly} --update-errors %{dep:handcrafted.messages}))
+          (with-stdout-to handcrafted.messages.updated
+            (run %{dep:tidy_menhir/tidy_menhir.exe} handcrafted.messages.new)
+          )
+          (diff handcrafted.messages handcrafted.messages.updated)
+ ))
+)
+
+(rule
+ (with-stdout-to parser_messages.ml
+  (run
+    %{bin:menhir} --explain --strict %{dep:parser.mly} --compile-errors
+    %{dep:handcrafted.messages.updated}
+ ))
+)
