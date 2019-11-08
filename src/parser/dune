@@ -13,21 +13,24 @@
 )
 
 (rule
- (targets handcrafted.messages.updated)
- (action (progn
-          (with-stdout-to handcrafted.messages.new
-           (run %{bin:menhir} --explain --strict %{dep:parser.mly} --update-errors %{dep:handcrafted.messages}))
-          (with-stdout-to handcrafted.messages.updated
-            (run %{dep:tidy_menhir/tidy_menhir.exe} handcrafted.messages.new)
-          )
-          (diff handcrafted.messages handcrafted.messages.updated)
- ))
-)
+  (with-stdout-to handcrafted.messages.new
+           (run %{bin:menhir} --explain --strict %{dep:parser.mly} --update-errors %{dep:handcrafted.messages})))
 
 (rule
- (with-stdout-to parser_messages.ml
-  (run
-    %{bin:menhir} --explain --strict %{dep:parser.mly} --compile-errors
-    %{dep:handcrafted.messages.updated}
- ))
+ (with-stdout-to handcrafted.messages.updated
+  (run %{dep:tidy_menhir/tidy_menhir.exe} %{dep:handcrafted.messages.new})
+))
+
+(rule
+ (target parser_messages.ml)
+ (action
+  (progn
+   (diff handcrafted.messages handcrafted.messages.updated)
+   (with-stdout-to parser_messages.ml
+    (run
+      %{bin:menhir} --explain --strict %{dep:parser.mly} --compile-errors
+      %{dep:handcrafted.messages.updated}
+   ))
+  )
+ )
 )
