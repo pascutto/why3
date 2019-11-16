@@ -50,7 +50,9 @@ Proof.
   - exact (eq_refl _).
 Qed.
 
-(* Why3 goal *)
+(* If length is defined this way, I could not manage to simplify length
+  in the following proofs.
+
 Definition length : BuiltIn.string -> Numbers.BinNums.Z.
 Proof.
   Print int. Print Z.
@@ -59,9 +61,9 @@ Proof.
   About Z.
   apply Z_of_nat.
   exact string.
-Defined.
+Defined. *)
 
-(* (* Why3 goal *)
+(* Why3 goal *)
 Definition length : BuiltIn.string -> Numbers.BinNums.Z :=
   fix length s := match s with
   | EmptyString => 0%Z
@@ -76,7 +78,7 @@ Proof.
   About "+"%Z. Print Z.add.
   rewrite Z.add_1_l.
   reflexivity.
-Qed. 
+Qed.
 
 Lemma length_coq_eq_length_why3: forall (s: BuiltIn.string), (Z.of_nat (String.length s) = length s).
 Proof.
@@ -90,7 +92,7 @@ Proof.
     case xs.
     - simpl. reflexivity.
     - auto.
-Qed. *)
+Qed.
 
 (* Why3 goal *)
 Lemma length_empty : ((length rliteral) = 0%Z).
@@ -102,70 +104,32 @@ Qed.
 Lemma length_nonnegative : forall (s:BuiltIn.string), (0%Z <= (length s))%Z.
 Proof.
   intros.
+  rewrite <- length_coq_eq_length_why3.
   Print "<=".
   induction s as [| x xs IH].
-  + unfold Z.le. simpl. unfold not. intros. discriminate H.
+  + unfold Z.le. simpl. discriminate.
   + unfold Z.le. unfold not. intros. simpl in H. discriminate H.
 Qed.
-
-Lemma coq_length_eq_why3_length: forall (s:BuiltIn.string),
-  (length s = Z_of_nat (Strings.String.length s)).
-Proof.
-  intros s.
-  induction s as [| x xs IH].
-  - simpl. exact (eq_refl _).
-  - simpl String.length.
-    rewrite aux.
-    rewrite <- IH.
-    simpl.
-    case xs.
-    + simpl. apply length.
-Admitted. 
-
-Lemma length_app: forall (s:BuiltIn.string) (a: Ascii.ascii), (length (String a s) = 1 + length s)%Z.
-Proof.
-  intros s a.
-  induction s as [| x xs IH].
-  - auto.
-  - simpl.
 
 (* Why3 goal *)
 Lemma length_concat :
   forall (s1:BuiltIn.string) (s2:BuiltIn.string),
   ((length (concat s1 s2)) = ((length s1) + (length s2))%Z).
 Proof.
-  intros s1.
+  intros s1 s2.
+  rewrite <- length_coq_eq_length_why3.
+  rewrite <- length_coq_eq_length_why3.
+  rewrite <- length_coq_eq_length_why3.
   induction s1 as [| x xs IH].
-  - intros s2. simpl. reflexivity.
-  - intros s2. simpl concat.
+  - simpl. reflexivity.
+  - simpl concat.
+    simpl String.length.
+    rewrite of_nat_succ_add_1.
+    rewrite IH.
+    rewrite of_nat_succ_add_1.
+    rewrite Z.add_assoc.
+    reflexivity.
 Qed.
-
-(* (* Why3 goal *)
-Lemma length_concat :
-  forall (s1:BuiltIn.string) (s2:BuiltIn.string),
-  ((length (concat s1 s2)) = ((length s1) + (length s2))%Z).
-Proof.
-  intros s1.
-  elim s1.
-  + intros s2. simpl. exact (eq_refl _).
-  + intros a s.
-    intros IH.
-    intros s2.
-    elim s2.
-    - simpl.
-      replace (concat s "") with s.
-      reflexivity.
-      symmetry.
-      apply concat_empty.
-    - intros a0 s0.
-      intros IHs2.
-      simpl concat.
-      replace (length (String a (concat s (String a0 s0))))
-        with ((length (concat s (String a0 s0))) + 1)%Z.
-      * rewrite IH. replace (length (String a s)) with (1 + (length s))%Z.
-        ** rewrite Z.add_comm. rewrite Z.add_assoc. reflexivity.
-        **
-*)
 
 (* Why3 goal *)
 Definition lt : BuiltIn.string -> BuiltIn.string -> Prop.
