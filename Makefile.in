@@ -1035,6 +1035,9 @@ COQLIBS_INT = $(addprefix lib/coq/int/, $(COQLIBS_INT_ALL_FILES))
 COQLIBS_BOOL_FILES = Bool
 COQLIBS_BOOL = $(addprefix lib/coq/bool/, $(COQLIBS_BOOL_FILES))
 
+COQLIBS_STRING_FILES = String
+COQLIBS_STRING = $(addprefix lib/coq/string/, $(COQLIBS_STRING_FILES))
+
 ifeq (@enable_coq_fp_libs@,yes)
 COQLIBS_REAL_FILES = Abs ExpLog FromInt MinMax PowerInt PowerReal Real RealInfix Square Trigonometry Truncate
 else
@@ -1072,7 +1075,7 @@ endif
 COQLIBS_FOR_DRIVERS_FILES = ComputerOfEuclideanDivision
 COQLIBS_FOR_DRIVERS = $(addprefix lib/coq/for_drivers/, $(COQLIBS_FOR_DRIVERS_FILES))
 
-COQLIBS_FILES = lib/coq/BuiltIn lib/coq/HighOrd $(COQLIBS_INT) $(COQLIBS_BOOL) $(COQLIBS_REAL) $(COQLIBS_NUMBER) $(COQLIBS_SET) $(COQLIBS_MAP) $(COQLIBS_LIST) $(COQLIBS_OPTION) $(COQLIBS_FP)  $(COQLIBS_BV) $(COQLIBS_IEEEFLOAT) $(COQLIBS_FOR_DRIVERS)
+COQLIBS_FILES = lib/coq/BuiltIn lib/coq/HighOrd $(COQLIBS_INT) $(COQLIBS_BOOL) $(COQLIBS_STRING) $(COQLIBS_REAL) $(COQLIBS_NUMBER) $(COQLIBS_SET) $(COQLIBS_MAP) $(COQLIBS_LIST) $(COQLIBS_OPTION) $(COQLIBS_FP)  $(COQLIBS_BV) $(COQLIBS_IEEEFLOAT) $(COQLIBS_FOR_DRIVERS)
 
 %.vo: %.v
 	$(SHOW) 'Coqc     $<'
@@ -1102,6 +1105,8 @@ drivers/coq-realizations.aux: Makefile
 	echo 'theory int.'"$$f"' meta "realized_theory" "int.'"$$f"'", "" end'; done; \
 	for f in $(COQLIBS_BOOL_FILES); do \
 	echo 'theory bool.'"$$f"' meta "realized_theory" "bool.'"$$f"'", "" end'; done; \
+	for f in $(COQLIBS_STRING_FILES); do \
+	echo 'theory string.'"$$f"' meta "realized_theory" "string.'"$$f"'", "" end'; done; \
 	for f in $(COQLIBS_REAL_FILES); do \
 	echo 'theory real.'"$$f"' meta "realized_theory" "real.'"$$f"'", "" end'; done; \
 	for f in $(COQLIBS_NUMBER_FILES); do \
@@ -1124,7 +1129,7 @@ drivers/coq-realizations.aux: Makefile
 	echo 'theory for_drivers.'"$$f"' meta "realized_theory" "for_drivers.'"$$f"'", "" end'; done; \
 	) > $@
 
-update-coq: update-coq-int update-coq-bool update-coq-real update-coq-number update-coq-set update-coq-map update-coq-list update-coq-option update-coq-fp update-coq-bv update-coq-ieee_float update-coq-for-drivers
+update-coq: update-coq-int update-coq-bool update-coq-string update-coq-real update-coq-number update-coq-set update-coq-map update-coq-list update-coq-option update-coq-fp update-coq-bv update-coq-ieee_float update-coq-for-drivers
 
 LOCAL_STDLIB=-L stdlib --no-stdlib --no-load-default-plugins
 
@@ -1133,6 +1138,9 @@ update-coq-int: bin/why3realize.@OCAMLBEST@ drivers/coq-realizations.aux stdlib/
 
 update-coq-bool: bin/why3realize.@OCAMLBEST@ drivers/coq-realizations.aux stdlib/bool.mlw
 	for f in $(COQLIBS_BOOL_FILES); do WHY3CONFIG="" bin/why3realize.@OCAMLBEST@ $(LOCAL_STDLIB) -D drivers/coq-realize.drv -T bool.$$f -o $(GENERATED_PREFIX_COQ)/bool/; done
+
+update-coq-string: bin/why3realize.@OCAMLBEST@ drivers/coq-realizations.aux stdlib/string.mlw
+	for f in $(COQLIBS_STRING_FILES); do WHY3CONFIG="" bin/why3realize.@OCAMLBEST@ -L stdlib -D drivers/coq-realize.drv -T string.$$f -o $(GENERATED_PREFIX_COQ)/string/; done
 
 update-coq-real: bin/why3realize.@OCAMLBEST@ drivers/coq-realizations.aux stdlib/real.mlw
 	for f in $(COQLIBS_REAL_FILES); do WHY3CONFIG="" bin/why3realize.@OCAMLBEST@ $(LOCAL_STDLIB) -D drivers/coq-realize.drv -T real.$$f -o $(GENERATED_PREFIX_COQ)/real/; done

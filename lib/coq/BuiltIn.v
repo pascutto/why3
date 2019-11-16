@@ -81,3 +81,8 @@ exact (fun _ => why_inhabitant).
 intros x y.
 apply excluded_middle_informative.
 Qed.
+
+(* Strings *)
+
+Require Export Strings.String.
+Notation string := String.string.

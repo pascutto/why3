@@ -86,7 +86,9 @@ module String
   function length string : int
   (** `length s` is the length of the string `s`. *)
 
-  axiom length_empty: length "" = 0
+  axiom length_empty: length empty = 0
+
+  axiom length_nonnegative: forall s. length s >= 0
 
   axiom length_concat: forall s1 s2.
     length (concat s1 s2) = length s1 + length s2
@@ -155,10 +157,10 @@ module String
     i < 0 || i >= length s -> substring s i x = empty
 
   axiom substring_of_length_zero_or_less: forall s i x.
-    x <= 0 -> substring s i x = ""
+    x <= 0 -> substring s i x = empty
 
   axiom substring_of_empty: forall i x.
-    substring "" i x = ""
+    substring empty i x = empty
 
   axiom substring_smaller: forall s i x.
     length (substring s i x) <= length s
@@ -185,10 +187,10 @@ module String
     prefixof s1 (concat s1 s2)
 
   axiom prefixof_empty: forall s2.
-    prefixof "" s2
+    prefixof empty s2
 
   axiom prefixof_empty2: forall s1.
-    s1 <> empty -> not (prefixof s1 "")
+    s1 <> empty -> not (prefixof s1 empty)
 
   predicate suffixof string string
   (** `suffixof s1 s2` is `True` iff `s1` is a suffix of `s2`. *)
@@ -200,10 +202,10 @@ module String
     suffixof s2 (concat s1 s2)
 
   axiom suffixof_empty: forall s2.
-    suffixof "" s2
+    suffixof empty s2
 
   axiom suffixof_empty2: forall s1.
-    s1 <> empty -> not (suffixof s1 "")
+    s1 <> empty -> not (suffixof s1 empty)
 
   predicate contains string string
   (** `contains s1 s2` is `True` iff `s1` contains `s2`. *)
@@ -215,10 +217,10 @@ module String
     suffixof s1 s2 -> contains s2 s1
 
   axiom contains_empty: forall s2.
-    contains "" s2 <-> s2 = empty
+    contains empty s2 <-> s2 = empty
 
   axiom contains_empty2: forall s1.
-    contains s1 ""
+    contains s1 empty
 
   axiom contains_substring: forall s1 s2 i.
     substring s1 i (length s2) = s2 -> contains s1 s2
@@ -248,11 +250,11 @@ module String
           and `s2` does not occur in `s1` after `i`.  *)
 
   axiom indexof_empty: forall s i.
-    0 <= i <= length s -> indexof s "" i = i
+    0 <= i <= length s -> indexof s empty i = i
 
   axiom indexof_empty1: forall s i.
-    let j = indexof "" s i in
-    j = -1 || (s = "" && i = j = 0)
+    let j = indexof empty s i in
+    j = -1 || (s = empty && i = j = 0)
 
   axiom indexof_contains: forall s1 s2.
     let j = indexof s1 s2 0 in
@@ -289,7 +291,7 @@ module String
           (if any) by `s3` in `s1`. *)
 
   axiom replace_empty: forall s1 s3.
-    replace s1 "" s3 = concat s3 s1
+    replace s1 empty s3 = concat s3 s1
 
   axiom replace_not_contains: forall s1 s2 s3.
     not (contains s1 s2) -> replace s1 s2 s3 = s1
@@ -315,7 +317,7 @@ module String
           `s3` in `s1`. *)
 
   axiom replaceall_empty1: forall s1 s3.
-    replaceall s1 "" s3 = s1
+    replaceall s1 empty s3 = s1
 
   axiom not_contains_replaceall: forall s1 s2 s3.
     not (contains s1 s2) -> replaceall s1 s2 s3 = s1
@@ -331,7 +333,7 @@ module String
 
   axiom to_int_gt_minus_1: forall s. to_int s >= -1
 
-  axiom to_int_empty: to_int "" = -1
+  axiom to_int_empty: to_int empty = -1
 
   (*** The following lemmas should hold, but CVC4 is not able to prove them *)
   (*** axiom to_int_only_digits: forall s.
@@ -457,7 +459,7 @@ module RegExpr
 
   function opt re : re
   (** regular expression option *)
-  (*** forall re. opt re = union re (to_re "") *)
+  (*** forall re. opt re = union re (to_re empty) *)
 
   function range string string : re
   (** `range s1 s2` is the set of singleton strings such that all
@@ -467,7 +469,7 @@ module RegExpr
   function power int re : re
   (** `power n r` is the `n`th power of `r`; `n` must be an
       integer literal. *)
-  (*** power 0 e = to_re ""
+  (*** power 0 e = to_re empty
      power n e = concat e (power (n-1) e) *)
 
   function loop int int re : re

@@ -47,6 +47,11 @@ theory bool.Bool
 
 end
 
+theory string.String
+
+  syntax function empty "EmptyString"
+
+end
 
 theory int.Int
 
