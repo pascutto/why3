@@ -77,7 +77,7 @@ type term = {
 and term_desc =
   | Ttrue
   | Tfalse
-  | Tconst of Number.constant
+  | Tconst of Constant.constant
   | Tident of qualid
   | Tasref of qualid
   | Tidapp of qualid * term list
@@ -133,8 +133,8 @@ and expr_desc =
   (** literal `true` *)
   | Efalse
   (** literal `false` *)
-  | Econst of Number.constant
-  (** numeric literals *)
+  | Econst of Constant.constant
+  (** constant literals *)
   | Eident of qualid
   (** variable identifier *)
   | Easref of qualid
@@ -151,10 +151,11 @@ and expr_desc =
   (** `let ... in ...` expression *)
   | Erec of fundef list * expr
   (** local definition of function, possibly mutually recursive *)
-  | Efun of binder list * pty option * Ity.mask * spec * expr
+  | Efun of binder list * pty option * pattern * Ity.mask * spec * expr
   (** anonymous function *)
-  | Eany of param list * Expr.rs_kind * pty option * Ity.mask * spec
-  (** `any`: abstract expression with a specification, generating of VC for existence *)
+  | Eany of param list * Expr.rs_kind * pty option * pattern * Ity.mask * spec
+  (** `any`: abstract expression with a specification,
+       generating of VC for existence *)
   | Etuple of expr list
   (** tuple of expressions *)
   | Erecord of (qualid * expr) list
@@ -210,7 +211,7 @@ and reg_branch = pattern * expr
 and exn_branch = qualid * pattern option * expr
 
 and fundef = ident * ghost * Expr.rs_kind *
-               binder list * pty option * Ity.mask * spec * expr
+               binder list * pty option * pattern * Ity.mask * spec * expr
 
 (** {2 Declarations} *)
 

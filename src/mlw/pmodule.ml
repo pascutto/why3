@@ -383,6 +383,7 @@ let builtin_module =
   let uc = empty_module dummy_env (id_fresh "BuiltIn") ["why3";"BuiltIn"] in
   let uc = add_pdecl_no_logic uc pd_int in
   let uc = add_pdecl_no_logic uc pd_real in
+  let uc = add_pdecl_no_logic uc pd_str in
   let uc = add_pdecl_no_logic uc pd_equ in
   let m = close_module uc in
   { m with mod_theory = builtin_theory }
@@ -671,11 +672,12 @@ let clone_decl inst cl uc d = match d.d_node with
         | Paxiom, Some k -> false, k
         | Paxiom, None -> false, inst.mi_df in
       if skip then uc else
-      let pr' = create_prsymbol (id_clone pr.pr_name) in
+      let attr = Sattr.remove Ident.useraxiom_attr pr.pr_name.id_attrs in
+      let pr' = create_prsymbol (id_attr pr.pr_name attr) in
       cl.pr_table <- Mpr.add pr pr' cl.pr_table;
       let d = create_prop_decl k' pr' (clone_fmla cl f) in
       add_pdecl ~warn:false ~vc:false uc (create_pure_decl d)
-
+        
 let cl_save_ls cl s s' =
   cl.ls_table <- Mls.add_new (CannotInstantiate s.ls_name) s s' cl.ls_table
 
@@ -1048,7 +1050,7 @@ let clone_type_decl inst cl tdl kn =
 let add_vc uc (its, f) =
   let {id_string = nm; id_loc = loc} = its.its_ts.ts_name in
   let attrs = Sattr.singleton (Ident.create_attribute ("expl:VC for " ^ nm)) in
-  let pr = create_prsymbol (id_fresh ~attrs ?loc (nm ^ "'VC")) in
+  let pr = create_prsymbol (id_fresh ~attrs ?loc (nm ^ "'vc")) in
   let d = create_pure_decl (create_prop_decl Pgoal pr f) in
   add_pdecl ~warn:false ~vc:false uc d
 
