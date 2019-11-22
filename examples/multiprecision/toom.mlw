@@ -31,7 +31,7 @@ let lemma no_borrow (x y r b m:int)
   ensures  { b = 0 }
 = assert { b <= 0 by m * b < m * 1 }
 
-let lemma no_borrow_ptr (x y r: ptr limb) (nx ny:int) (b:limb)
+let lemma no_borrow_ptr (x:s 'wx) (y:s 'wy) (r:s 'wr) (nx ny:int) (b:limb)
   requires { 0 < ny <= nx }
   requires { value y ny <= value x nx }
   requires { value r nx - (power radix nx) * b = value x nx - value y ny }
@@ -39,8 +39,8 @@ let lemma no_borrow_ptr (x y r: ptr limb) (nx ny:int) (b:limb)
   ensures  { b = 0 }
 = no_borrow (value x nx) (value y ny) (value r nx) (l2i b) (power radix nx)
 
-let rec wmpn_toom22_mul (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32)
-                        (scratch: ptr limb) (ghost k: int) : unit
+let rec wmpn_toom22_mul (r:t) (x:s 'wx) (sx:int32) (y:s 'wy) (sy:int32)
+                        (scratch:t) (ghost k: int) : unit
   requires { valid x sx }
   requires { valid y sy }
   requires { valid r (sx + sy) }
@@ -48,7 +48,6 @@ let rec wmpn_toom22_mul (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32)
   requires { 0 < k <= 64 }
   requires { sx <= toom22_threshold * power 2 k }
   requires { valid scratch (2 * (sx + k)) } (*TODO faire en fonction de sy *)
-  requires { writable r /\ writable scratch }
   requires { 8 * sx < max_int32 }
   requires { 2 < sy <= sx < sy + sy - 1 }
   requires { 4 * sx < 5 * sy }
@@ -230,7 +229,7 @@ let rec wmpn_toom22_mul (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32)
       requires { 0 <= s <= n }
       ensures  { valid s_out (2*(s+(k-1))) }
     = assert { 0 <= 2*(s+(k-1)) <= 2*(n+(k-1)) };
-      assert { forall p: ptr limb, n1 n2. 0 <= n1 <= n2 -> valid p n2 -> valid p n1 } in
+      assert { forall p:s 'wp, n1 n2. 0 <= n1 <= n2 -> valid p n2 -> valid p n1 } in
     valid_monotonous s n;
     valid_monotonous t n;
     (if s > t
@@ -780,13 +779,12 @@ let rec wmpn_toom22_mul (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32)
   (* Choose which multiplication algorithm is called recursively.
      Equivalent to the macros WMPN_TOOM22_MUL_REC and WMPN_TOOM22_MUL_N_REC
      respectively, in wmpn_toom22_mul.c *)
-with wmpn_toom22_mul_rec (r x: ptr limb) (sx:int32) (y:ptr limb) (sy: int32)
-                         (scratch:ptr limb) (ghost k: int)
+with wmpn_toom22_mul_rec (r:t) (x:s 'wx) (sx:int32) (y:s 'wy) (sy: int32)
+                         (scratch:t) (ghost k: int)
      : unit
   requires { valid x sx }
   requires { valid y sy }
   requires { valid r (sx + sy) }
-  requires { writable r /\ writable scratch }
   requires { 0 < sy <= sx <= sy + sy }
   requires { 8 * sx < max_int32 }
   requires { 0 <= k <= 64 }
@@ -812,11 +810,10 @@ with wmpn_toom22_mul_rec (r x: ptr limb) (sx:int32) (y:ptr limb) (sy: int32)
     then wmpn_toom22_mul r x sx y sy scratch k
     else wmpn_toom32_mul r x sx y sy scratch k
 
-with wmpn_toom22_mul_n_rec (r x y scratch: ptr limb) (sz:int32) (ghost k: int) : unit
+with wmpn_toom22_mul_n_rec (r:t) (x:s 'wx) (y:s 'wy) (scratch:t) (sz:int32) (ghost k: int) : unit
   requires { valid x sz }
   requires { valid y sz }
   requires { valid r (sz + sz) }
-  requires { writable r /\ writable scratch }
   requires { 0 < sz }
   requires { 8 * sz < max_int32 }
   requires { 0 <= k <= 64 }
@@ -839,12 +836,11 @@ with wmpn_toom22_mul_n_rec (r x y scratch: ptr limb) (sz:int32) (ghost k: int) :
   then wmpn_mul_basecase r x sz y sz
   else wmpn_toom22_mul r x sz y sz scratch k
 
-with wmpn_toom32_mul (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32)
-                     (scratch: ptr limb) (ghost k: int) : unit
+with wmpn_toom32_mul (r:t) (x:s 'wx) (sx:int32) (y:s 'wy) (sy:int32)
+                     (scratch:t) (ghost k: int) : unit
   requires { valid x sx }
   requires { valid y sy }
   requires { valid r (sx + sy) }
-  requires { writable r /\ writable scratch }
   requires { toom22_threshold < sy }
   requires { 0 < k <= 64 }
   requires { sx <= toom22_threshold * power 2 k }
@@ -1763,11 +1759,10 @@ with wmpn_toom32_mul (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32)
            by value r (sx + sy) = value r (sx + sy) at JoinL
               = value r (sx + sy) at JoinR }
 
-  with wmpn_mul (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32) (ghost k: int) : unit
+  with wmpn_mul (r:t) (x:s 'wx) (sx:int32) (y:s 'wy) (sy:int32) (ghost k: int) : unit
     requires { valid x sx }
     requires { valid y sy }
     requires { valid r (sx + sy) }
-    requires { writable r }
     requires { 0 < sy <= sx }
     requires { 8 * sx < max_int32 }
     requires { sx <= toom22_threshold * power 2 k }
@@ -1819,7 +1814,6 @@ with wmpn_toom32_mul (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32)
           invariant { plength !up = plength x }
           invariant { min !rp = min r /\ max !rp = max r }
           invariant { plength !rp = plength r }
-          invariant { writable !rp }
           invariant { min ws = 0 /\ max ws = plength ws = 4 * sy }
           invariant { min scratch = 0 /\ max scratch = plength scratch }
           invariant { plength scratch = 5 * sy + 128 }
@@ -2101,12 +2095,11 @@ with wmpn_toom32_mul (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32)
   (** `wmpn_mul_n r x y sz` multiplies `(x, sz)` and `(y, sz)` and
   writes the result to `(r, 2*sz)`. `r` must not overlap with either
   `x` or `y`. Corresponds to `mpn_mul_n`.  *)
-  let wmpn_mul_n (r x y:t) (sz:int32) (ghost k: int) : unit
+  let wmpn_mul_n (r:t) (x:s 'wx) (y:s 'wy) (sz:int32) (ghost k: int) : unit
     requires { sz > 0 }
     requires { valid x sz }
     requires { valid y sz }
     requires { valid r (sz + sz) }
-    requires { writable r }
     requires { 8 * sz < max_int32 }
     requires { sz <= toom22_threshold * power 2 k }
     requires { 0 <= k <= 64 }

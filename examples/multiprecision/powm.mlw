@@ -133,13 +133,11 @@ module Powm
   meta remove_prop axiom unredc_inv
   meta remove_prop axiom unredc
 
-  let wmpn_redc_1 (rp up mp : t) (n: int32) (invm : limb)
+  let wmpn_redc_1 (rp up: t) (mp: s 'w) (n: int32) (invm: limb)
     requires { n > 0 }
     requires { valid mp n /\ valid up (2 * n) /\ valid rp n }
     requires { odd (value mp n) }
     requires { mod ((value mp n) * invm) radix = radix - 1 }
-    requires { writable up }
-    requires { writable rp }
     ensures  { redc (value (old up) (2*n)) (value rp n) n (value mp n) }
     ensures  { forall j. j < offset rp \/ j >= offset rp + n
                          -> (pelts rp)[j] = (pelts (old rp))[j] }
@@ -164,7 +162,6 @@ module Powm
       invariant { u.min = up.min }
       invariant { u.max = up.max }
       invariant { plength u = plength up }
-      invariant { writable u }
       (*invariant { mod (value u n + value up j) (power radix j) = 0 }*)
       invariant { power radix j * value u (n+n-j) + power radix n * value up j
                   = value (old up) (n+n) + vm * added }
@@ -478,12 +475,11 @@ module Powm
     else 10
 
   let redcify [@extraction:c_static_inline]
-              (rp up: t) (un: int32) (mp: t) (n: int32)
+              (rp: t) (up: s 'wu) (un: int32) (mp: s 'wm) (n: int32)
     requires { valid rp n /\ valid up un /\ valid mp n }
     requires { 1 <= n /\ 1 <= un }
     requires { un + n < max_int32 }
     requires { (pelts mp)[offset mp + n - 1] > 0 }
-    requires { writable rp }
     ensures { value rp n = mod (power radix n * value up un) (value mp n) }
     ensures { redc (value rp n) (value up un) n (value mp n) }
   =
@@ -505,21 +501,21 @@ module Powm
     assert { 0 <= value rp n < value mp n };
     assert { mod (value rp n) (value mp n) = value rp n };
 
-  function valueb (p:t) (nbits:int) : int
+  function valueb (p:s 'w) (nbits:int) : int
   =
     if nbits < 0 then 0 else
     let i = div nbits 64 in
     value p i
       + power radix i * mod ((pelts p)[offset p + i]) (power 2 (nbits - 64*i))
 
-  let lemma valueb_lower_bound (p:t) (nbits:int)
+  let lemma valueb_lower_bound (p:s 'w) (nbits:int)
     ensures { 0 <= valueb p nbits }
   = if nbits < 0 then ()
     else
       let i = div nbits 64 in
       value_sub_lower_bound (pelts p) (offset p) (offset p + i)
 
-  let lemma valueb_upper_bound (p:t) (nbits:int)
+  let lemma valueb_upper_bound (p:s 'w) (nbits:int)
     requires { 0 <= nbits }
     ensures { valueb p nbits < power 2 nbits }
   = if nbits < 0 then ()
@@ -540,7 +536,7 @@ module Powm
                                  = power 2 (64 * i + (nbits - 64 * i))
                                  = power 2 nbits }
 
-  let getbit [@extraction:c_static_inline] (p:t) (ghost pn:int32) (bi:int32) : limb
+  let getbit [@extraction:c_static_inline] (p:s 'w) (ghost pn:int32) (bi:int32) : limb
     requires { valid p pn }
     requires { 1 <= bi }
     requires { pn >= (div (bi + 63) 64) }
@@ -649,7 +645,7 @@ module Powm
              = mod (2 * d + res) 2 = mod res 2 = res };
     lps % 2
 
-  let getbits [@extraction:c_static_inline] (p: t) (ghost pn: int32) (bi:int32)
+  let getbits [@extraction:c_static_inline] (p: s 'w) (ghost pn: int32) (bi:int32)
                                                            (nbits:int32) : limb
     requires { 1 <= nbits < 64 }
     requires { 0 <= bi }
@@ -969,7 +965,7 @@ module Powm
       end;
       r % (lsl 1 (Limb.of_int32 nbits))
 
-  let lemma valueb_mod (p:t) (nbits:int) (n:int32)
+  let lemma valueb_mod (p:s 'w) (nbits:int) (n:int32)
     requires { nbits >= 0 }
     requires { 64 * n >= nbits }
     ensures  { valueb p nbits = mod (value p n) (power 2 nbits) }
@@ -1033,7 +1029,7 @@ module Powm
              = mod (value p (i+1)) (power 2 nbits)
              = valueb p nbits }
 
-  let lemma valueb_mon (p:t) (pn:int32) (bi1 bi2:int32)
+  let lemma valueb_mon (p:s 'w) (pn:int32) (bi1 bi2:int32)
     requires { 0 <= bi1 <= bi2 }
     requires { valid p pn }
     requires { pn >= div (bi2 + 63) 64 }
@@ -1088,11 +1084,10 @@ module Powm
              = mod (power radix n * (power radix n * a * b)) m };
     unredc c (p * q) (power radix n * (a * b)) n m
 
-  let wmpn_powm (rp bp : t) (bn : int32) (ep : t) (en : int32) (mp : t)
+  let wmpn_powm (rp: t) (bp: s 'wb) (bn: int32) (ep: s 'we) (en: int32) (mp: s 'wm)
                 (n : int32) (tp : t) : unit
     requires { valid rp n /\ valid bp bn /\ valid ep en /\ valid mp n }
     requires { valid tp (2*n) }
-    requires { writable tp /\ writable rp }
     requires { odd (value mp n) }
     requires { value ep en > 1 }
     requires { en >= 1 }
@@ -1226,7 +1221,6 @@ module Powm
       invariant { min this_pp = min pp }
       invariant { max this_pp = max pp }
       invariant { plength this_pp = plength pp }
-      invariant { writable this_pp }
       invariant { plength tp = plength (tp at Window) }
       invariant { min tp = min (tp at Window) }
       invariant { max tp = max (tp at Window) }

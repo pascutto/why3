@@ -318,12 +318,11 @@ module Div
 
 (** `wmpn_divrem_1 q x sz y` divides `(x, sz)` by `y`, writes the quotient
     in `(q, sz)` and returns the remainder. Corresponds to
-    `mpn_wmpn_divrem_1`. *)
+    `mpn_divrem_1`. *)
 (* TODO develop further decimal points (qxn) *)
-let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
+let wmpn_divrem_1 (q:t) (x:s 'w) (sz:int32) (y:limb) : limb
     requires { valid x sz }
     requires { valid q sz }
-    requires { writable q }
     requires { 0 < sz }
     requires { 0 < y }
     ensures { value x sz
@@ -1187,10 +1186,9 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
       least significant limbs from `(r, sz)` and writes the result in `(r, sz)`.
       Returns the most significant limb of the product plus the borrow
       of the subtraction. Corresponds to `mpn_submul_1`.*)
-  let wmpn_submul_1 (r x:t) (sz:int32) (y:limb):limb
+  let wmpn_submul_1 (r:t) (x:s 'w) (sz:int32) (y:limb):limb
     requires { valid x sz }
     requires { valid r sz }
-    requires { writable r }
     ensures { value r sz - (power radix sz) * result
             = value (old r) sz
               - value x sz * y }
@@ -1307,17 +1305,15 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
     !b
 
   (* `(x, sz)` is normalized if its most significant bit is set. *)
-  predicate normalized (x:t) (sz:int32) =
+  predicate normalized (x:s 'w) (sz:int32) =
     valid x sz
     /\ (pelts x)[x.offset + sz - 1] >= div radix 2
 
-  let div_sb_qr (q x:t) (sx:int32) (y:t) (sy:int32) : limb
+  let div_sb_qr (q x:t) (sx:int32) (y:s 'w) (sy:int32) : limb
     requires { 3 <= sy <= sx }
     requires { valid x sx }
     requires { valid y sy }
     requires { valid q (sx - sy) }
-    requires { writable q }
-    requires { writable x }
     requires { normalized y sy }
     ensures { value (old x) sx =
               (value q (sx - sy)
@@ -1552,7 +1548,6 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
       invariant { !xp.max = x.max }
       invariant { pelts !qp = pelts q }
       invariant { pelts !xp = pelts x }
-      invariant { writable !qp /\ writable !xp }
       invariant { value (old x) sx =
                   (value !qp (sx - sy - !i)
                    + qh * power radix (sx - sy - !i))
@@ -3109,13 +3104,12 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
                   + value x sy };
     qh
 
-  let wmpn_divrem_2 (q x y:t) (sx:int32) : limb
+  let wmpn_divrem_2 (q x:t) (y:s 'w) (sx:int32) : limb
     requires { 2 <= sx }
     requires { valid x sx }
     requires { valid y 2 }
     requires { valid q (sx - 2) }
     requires { (pelts y)[y.offset + 1] >= div radix 2 }
-    requires { writable q /\ writable x }
     ensures { value (old x) sx =
               (value q (sx - 2)
                + power radix (sx - 2) * result)
@@ -3202,7 +3196,6 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
       invariant { !xp.min = x.min }
       invariant { !xp.max = x.max }
       invariant { pelts !xp = pelts x }
-      invariant { writable !xp }
       invariant { value x sx
                   = (value_sub (pelts q) (q.offset + !i) (q.offset + sx - 2)
                       + !qh * power radix (sx - 2 - !i))
@@ -3349,7 +3342,7 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
   (** `div_qr q r x y sx sy` divides `(x, sx)` by `(y, sy)`, writes the quotient
     in `(q, (sx-sy))` and the remainder in `(r, sy)`. Corresponds to
     `mpn_tdiv_qr`. *)
-  let div_qr (q r x y nx ny:t) (sx sy:int32) : unit
+  let div_qr (q r:t) (x:s 'wx) (y:s 'wy) (nx ny:t) (sx sy:int32) : unit
     requires { 1 <= sy <= sx <= (Int32.max_int32 - 1) }
     requires { valid x sx }
     requires { valid y sy }
@@ -3357,9 +3350,7 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
     requires { valid r sy }
     requires { valid nx (sx + 1) }
     requires { valid ny sy }
-    requires { writable nx /\ writable ny }
     requires { (pelts y)[y.offset + sy - 1] > 0 }
-    requires { writable q /\ writable r }
     ensures { value x sx
               = value q (sx - sy + 1) * value y sy
                 + value r sy }
@@ -3978,13 +3969,12 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
         end
         end
 
-  let wmpn_tdiv_qr (q r x:t) (sx:int32) (y:t) (sy:int32) : unit
+  let wmpn_tdiv_qr (q r:t) (x:s 'wx) (sx:int32) (y:s 'wy) (sy:int32) : unit
     requires { 1 <= sy <= sx <= (Int32.max_int32 - 1) }
     requires { valid x sx }
     requires { valid y sy }
     requires { valid q (sx - sy + 1) }
     requires { valid r sy }
-    requires { writable q /\ writable r }
     requires { (pelts y)[y.offset + sy - 1] > 0 }
     ensures { value x sx
               = value q (sx - sy + 1) * value y sy
@@ -3999,15 +3989,13 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
     free nx;
     free ny
 
-  let div_qr_in_place (q x y nx ny:t) (sx sy:int32) : unit
+  let div_qr_in_place (q x:t) (y:s 'w) (nx ny:t) (sx sy:int32) : unit
     requires { 1 <= sy <= sx <= (Int32.max_int32 - 1) }
     requires { valid x sx }
     requires { valid y sy }
     requires { valid q (sx - sy + 1) }
     requires { valid nx (sx + 1) }
     requires { valid ny sy }
-    requires { writable q /\ writable x }
-    requires { writable nx /\ writable ny }
     requires { (pelts y)[y.offset + sy - 1] > 0 }
     ensures { value (old x) sx
               = value q (sx - sy + 1) * value y sy
@@ -4628,12 +4616,11 @@ let wmpn_divrem_1 (q x:t) (sz:int32) (y:limb) : limb
         end
         end
 
-  let wmpn_tdiv_qr_in_place (q x:t) (sx:int32) (y:t) (sy:int32) : unit
+  let wmpn_tdiv_qr_in_place (q x:t) (sx:int32) (y:s 'w) (sy:int32) : unit
     requires { 1 <= sy <= sx <= (Int32.max_int32 - 1) }
     requires { valid x sx }
     requires { valid y sy }
     requires { valid q (sx - sy + 1) }
-    requires { writable x /\ writable q }
     requires { (pelts y)[y.offset + sy - 1] > 0 }
     ensures { value (old x) sx
               = value q (sx - sy + 1) * value y sy

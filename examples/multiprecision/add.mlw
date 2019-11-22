@@ -15,13 +15,12 @@ module Add
   (** `wmpn_add_n r x y sz` adds `x[0..sz-1]` and `y[0..sz-1]` and writes the
       result in `r`. Returns the carry, either `0` or `1`.
       Corresponds to the function `mpn_add_n`. *)
-  let wmpn_add_n (r x y:ptr limb) (sz:int32) : limb
+  let wmpn_add_n (r:t) (x:s 'wx) (y:s 'wy) (sz:int32) : limb
     requires { 0 <= sz }
     requires { valid r sz /\ valid x sz /\ valid y sz }
     requires { offset r = offset x \/ offset r + sz <= offset x }
     requires { offset r = offset y \/ offset r + sz <= offset y }
     requires { r.data = x.data = y.data }
-    requires { writable r }
     alias    { r.data with x.data }
     alias    { r.data with y.data }
     alias    { x.data with y.data }
@@ -82,13 +81,12 @@ module Add
   (** `wmpn_add r x sx y sy` adds `(x, sx)` to `(y, sy)` and writes the
       result in `(r, sx)`.  `sx` must be greater than or equal to
       `sy`. Returns carry, either 0 or 1. Corresponds to `mpn_add`. *)
-  let wmpn_add (r x:ptr limb) (sx:int32) (y:ptr limb) (sy:int32) : limb
+  let wmpn_add (r:t) (x:s 'wx) (sx:int32) (y:s 'wy) (sy:int32) : limb
     requires { 0 <= sy <= sx }
     requires { valid r sx /\ valid x sx /\ valid y sy }
     requires { offset r = offset x \/ offset r + sx <= offset x }
     requires { offset r = offset y \/ offset r + sx <= offset y }
     requires { r.data = x.data = y.data }
-    requires { writable r }
     alias    { r.data with x.data }
     alias    { r.data with y.data }
     alias    { x.data with y.data }
@@ -188,10 +186,9 @@ module Add
      done;
      c
 
-  let add_n [@extraction:inline] (r x y:ptr limb) (sz:int32) : limb
+  let add_n [@extraction:inline] (r:t) (x:s 'wx) (y:s 'wy) (sz:int32) : limb
     requires { 0 <= sz }
     requires { valid r sz /\ valid x sz /\ valid y sz }
-    requires { writable r }
     ensures  { value r sz + power radix sz * result
                = old (value x sz + value y sz) }
     ensures  { 0 <= result <= 1 }
@@ -230,10 +227,9 @@ module Add
                 = (pelts oy)[offset y + j] };
     res
 
-  let add_n_rx [@extraction:inline] (x y:ptr limb) (sz:int32) : limb
+  let add_n_rx [@extraction:inline] (x:t) (y:s 'w) (sz:int32) : limb
     requires { 0 <= sz }
     requires { valid x sz /\ valid y sz }
-    requires { writable x }
     ensures  { value x sz + power radix sz * result
                = old (value x sz + value y sz) }
     ensures  { 0 <= result <= 1 }
@@ -259,11 +255,9 @@ module Add
                 = (pelts oy)[offset y + j] };
     res
 
-  let add [@extraction:inline] (r x:ptr limb) (sx:int32)
-                                      (y:ptr limb) (sy:int32) : limb
+  let add [@extraction:inline] (r:t) (x:s 'wx) (sx:int32) (y:s 'wy) (sy:int32) : limb
     requires { 0 <= sy <= sx }
     requires { valid r sx /\ valid x sx /\ valid y sy }
-    requires { writable r }
     ensures  { value r sx + power radix sx * result
                = old (value x sx + value y sy) }
     ensures  { 0 <= result <= 1 }
@@ -302,11 +296,9 @@ module Add
                 = (pelts oy)[offset y + j] };
     res
 
-  let add_rx [@extraction:inline] (x:ptr limb) (sx:int32)
-                                  (y:ptr limb) (sy:int32) : limb
+  let add_rx [@extraction:inline] (x:t) (sx:int32) (y:s 'w) (sy:int32) : limb
     requires { 0 <= sy <= sx }
     requires { valid x sx /\ valid y sy }
-    requires { writable x }
     ensures  { value x sx + power radix sx * result
                = old (value x sx + value y sy) }
     ensures  { 0 <= result <= 1 }
@@ -333,11 +325,9 @@ module Add
                 = (pelts oy)[offset y + j] };
     res
 
-  let add_ry [@extraction:inline] (x:ptr limb) (sx:int32)
-                                  (y:ptr limb) (sy:int32) : limb
+  let add_ry [@extraction:inline] (x:s 'w) (sx:int32) (y:t) (sy:int32) : limb
     requires { 0 <= sy <= sx }
     requires { valid x sx /\ valid y sx }
-    requires { writable y }
     ensures  { value y sx + power radix sx * result
                = old (value x sx + value y sy) }
     ensures  { 0 <= result <= 1 }
@@ -364,9 +354,8 @@ module Add
                 = (pelts ox)[offset x + j] };
     res
 
-  let add_n_rxy [@extraction:inline] (x:ptr limb) (sx:int32) : limb
+  let add_n_rxy [@extraction:inline] (x:t) (sx:int32) : limb
     requires { 0 <= sx }
-    requires { writable x }
     requires { valid x sx }
     ensures  { value x sx + power radix sx * result
                = old (value x sx + value x sx) }
@@ -400,11 +389,10 @@ module AddOld
   use ptralias.Alias
   use ref.Ref
 
-  let wmpn_add_n (r x y:t) (sz:int32) : limb
+  let wmpn_add_n (r:t) (x:s 'wx) (y:s 'wy) (sz:int32) : limb
     requires { valid x sz }
     requires { valid y sz }
     requires { valid r sz }
-    requires { writable r }
     ensures { 0 <= result <= 1 }
     ensures { value r sz + (power radix sz) * result =
             value x sz + value y sz }
@@ -445,12 +433,11 @@ module AddOld
   (** `wmpn_add r x sx y sy` adds `(x, sx)` to `(y, sy)` and writes the
       result in `(r, sx)`.  `sx` must be greater than or equal to
       `sy`. Returns carry, either 0 or 1. Corresponds to `mpn_add`. *)
-  let wmpn_add (r x:t) (sx:int32) (y:t) (sy:int32) : limb
+  let wmpn_add (r:t) (x:s 'wx) (sx:int32) (y:s 'wy) (sy:int32) : limb
     requires { 0 <= sy <= sx }
     requires { valid x sx }
     requires { valid y sy }
     requires { valid r sx }
-    requires { writable r }
     ensures { value r sx + (power radix sx) * result =
               value x sx + value y sy }
     ensures { forall j. (j < offset r \/ offset r + sx <= j)
@@ -514,10 +501,9 @@ module AddOld
     done;
     c
 
-  let wmpn_add_n_in_place (x y:t) (sz:int32) : limb
+  let wmpn_add_n_in_place (x:t) (y:s 'w) (sz:int32) : limb
     requires { valid x sz }
     requires { valid y sz }
-    requires { writable x }
     ensures  { 0 <= result <= 1 }
     ensures  { value x sz + (power radix sz) * result
                = value (old x) sz + value y sz }
@@ -563,11 +549,10 @@ module AddOld
     done;
     c
 
-  let wmpn_add_in_place (x:t) (sx:int32) (y:t) (sy:int32) : limb
+  let wmpn_add_in_place (x:t) (sx:int32) (y:s 'w) (sy:int32) : limb
     requires { 0 <= sy <= sx }
     requires { valid x sx }
     requires { valid y sy }
-    requires { writable x }
     ensures  { value x sx + (power radix sx) * result
                = value (old x) sx + value y sy }
     ensures  { 0 <= result <= 1 }

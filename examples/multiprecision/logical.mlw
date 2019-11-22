@@ -28,7 +28,8 @@ module Logical
     ensures { mod (x * y + z) x = mod z x }
   =
     ()
-let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
+
+  let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
     requires { 0 <= cnt < Limb.length }
     ensures  { result = mod (x * power 2 cnt) radix }
     ensures  { result <= radix - power 2 cnt }
@@ -145,11 +146,10 @@ let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
       writes the result in `(r, sz)`. Returns the `cnt` most significant
       bits of `(x, sz)`. Corresponds to `mpn_wmpn_lshift`. *)
   (*TODO overlapping allowed if r >= x*)
-  let wmpn_lshift (r x:t) (sz:int32) (cnt:limb) : limb
+  let wmpn_lshift (r:t) (x:s 'w) (sz:int32) (cnt:limb) : limb
     requires { 0 < cnt < Limb.length }
     requires { valid r sz }
     requires { valid x sz }
-    requires { writable r }
     requires { 0 < sz }
     ensures { value r sz + (power radix sz) * result =
               value x sz * (power 2 (cnt)) }
@@ -173,7 +173,6 @@ let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
       invariant { plength !rp = plength r }
       invariant { !rp.min = r.min }
       invariant { !rp.max = r.max }
-      invariant { writable !rp }
       invariant { pelts !rp = pelts r }
       invariant { plength !xp = plength x }
       invariant { !xp.min = x.min }
@@ -282,12 +281,11 @@ let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
       writes the result in `(r, sz)`. Returns the `cnt` least significant
       bits of `(x, sz)`. Corresponds to `mpn_wmpn_rshift`. *)
   (*TODO overlapping allowed if r <= x*)
-  let wmpn_rshift (r x:t) (sz:int32) (cnt:limb) : limb
+  let wmpn_rshift (r:t) (x:s 'w) (sz:int32) (cnt:limb) : limb
     requires { valid x sz }
     requires { valid r sz }
     requires { 0 < cnt < Limb.length }
     requires { 0 < sz }
-    requires { writable r }
     ensures { result + radix * value r sz
               = value x sz * (power 2 (Limb.length - cnt)) }
   =
@@ -312,7 +310,6 @@ let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
       invariant { plength !rp = plength r }
       invariant { !rp.min = r.min }
       invariant { !rp.max = r.max }
-      invariant { writable !rp }
       invariant { plength !xp = plength x }
       invariant { !xp.min = x.min }
       invariant { !xp.max = x.max }
@@ -371,7 +368,6 @@ let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
   let wmpn_lshift_in_place (x:t) (sz:int32) (cnt:limb) : limb
     requires { 0 < cnt < Limb.length }
     requires { valid x sz }
-    requires { writable x }
     requires { 0 < sz }
     ensures  { value x sz + (power radix sz) * result =
                value (old x) sz * power 2 cnt }
@@ -402,7 +398,6 @@ let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
       invariant { plength !xp = plength x }
       invariant { !xp.min = x.min }
       invariant { !xp.max = x.max }
-      invariant { writable !xp }
       invariant { pelts !xp = pelts x }
       invariant { !high <= radix - c }
       invariant { forall j. 0 <= j <= !i ->
@@ -475,7 +470,6 @@ let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
 
   let wmpn_rshift_in_place (x:t) (sz:int32) (cnt:limb) : limb
     requires { valid x sz }
-    requires { writable x }
     requires { 0 < cnt < Limb.length }
     requires { 0 < sz }
     ensures  { result + radix * value x sz
@@ -505,7 +499,6 @@ let lsl_mod_ext [@extraction:inline] (x cnt: limb) : limb
       invariant { plength !xp = plength x }
       invariant { !xp.min = x.min }
       invariant { !xp.max = x.max }
-      invariant { writable !xp }
       invariant { pelts !xp = pelts x }
       invariant { !low < c }
       invariant { forall j. !i <= j < sz ->

@@ -16,11 +16,10 @@ module Add_1
       writes the result in `r` and returns the carry. `r` and `x`
       have size `sz`. This corresponds to the function `mpn_add_1` *)
   (* r and x must be separated. This is enforced by Why3 regions in typing *)
-  let wmpn_add_1 (r x:t) (sz:int32) (y:limb) : limb
+  let wmpn_add_1 (r:t) (x:s 'w) (sz:int32) (y:limb) : limb
     requires { valid x sz }
     requires { valid r sz }
     requires { sz > 0 } (* ? GMP does the same for 0 and 1*)
-    requires { writable r }
     ensures { value r sz + (power radix sz) * result =
               value x sz + y }
     ensures { 0 <= result <= 1 }
@@ -92,7 +91,6 @@ module Add_1
     requires { valid x sz }
     requires { sz > 0 }
     requires { value x sz + y < power radix sz }
-    requires { writable x }
     ensures  { value x sz = value (old x) sz + y }
     ensures { forall j. j < x.offset \/ x.offset + sz <= j ->
               (pelts x)[j] = (pelts (old x))[j] }
@@ -117,7 +115,6 @@ module Add_1
         invariant { min xp = min x /\ max xp = max x }
         invariant { i = sz -> c = 0 }
         invariant { 0 <= c <= 1 }
-        invariant { writable xp }
         invariant { value x i + (power radix i) * c
                     = value ox i + y }
         invariant { forall j. i <= j < sz ->
@@ -176,7 +173,6 @@ module Add_1
     requires { valid x sz }
     requires { sz > 0 }
     requires { value x sz + 1 < power radix sz }
-    requires { writable x }
     ensures  { value x sz = value (old x) sz + 1 }
     ensures { forall j. j < x.offset \/ x.offset + sz <= j ->
               (pelts x)[j] = (pelts (old x))[j] }
@@ -197,7 +193,6 @@ module Add_1
       invariant { min xp = min x /\ max xp = max x }
       invariant { r <> 0 <-> c = 0 }
       invariant { 0 <= c <= 1 }
-      invariant { writable xp }
       invariant { value x i + (power radix i) * c
                   = value ox i + 1 }
       invariant { forall j. i <= j < sz ->
@@ -243,7 +238,6 @@ module Add_1
   let wmpn_add_1_in_place (x:t) (sz:int32) (y:limb) : limb
     requires { valid x sz }
     requires { sz > 0 }
-    requires { writable x }
     ensures  { value x sz + (power radix sz) * result = value (old x) sz + y }
     ensures  { 0 <= result <= 1 }
     ensures  { forall j. (j < offset x \/ offset x + sz <= j)

@@ -15,11 +15,10 @@ module Sub_1
   (** `wmpn_sub_1 r x sz y` subtracts `y` from `(x, sz)` and writes
       the result to `(r, sz)`. Returns borrow, either 0 or
       1. Corresponds to `mpn_sub_1`. *)
-  let wmpn_sub_1 (r x:t) (sz:int32) (y:limb) : limb
+  let wmpn_sub_1 (r:t) (x:s 'w) (sz:int32) (y:limb) : limb
     requires { valid x sz }
     requires { valid r sz }
     requires { 0 < sz }
-    requires { writable r }
     ensures { value r sz - power radix sz * result
               = value x sz - y }
     ensures { forall j. (j < offset r \/ offset r + sz <= j)
@@ -91,7 +90,6 @@ module Sub_1
     requires { valid x sz }
     requires { sz > 0 }
     requires { 0 <= value x sz - y }
-    requires { writable x }
     ensures  { value x sz = value (old x) sz - y }
     ensures { forall j. j < x.offset \/ x.offset + sz <= j ->
               (pelts x)[j] = (pelts (old x))[j] }
@@ -116,7 +114,6 @@ module Sub_1
         invariant { min xp = min x /\ max xp = max x }
         invariant { i = sz -> b = 0 }
         invariant { 0 <= b <= 1 }
-        invariant { writable xp }
         invariant { value x i - (power radix i) * b
                     = value ox i - y }
         invariant { forall j. i <= j < sz ->
@@ -177,7 +174,6 @@ module Sub_1
     requires { valid x sz }
     requires { sz > 0 }
     requires { 0 <= value x sz - 1 }
-    requires { writable x }
     ensures  { value x sz = value (old x) sz - 1 }
     ensures { forall j. j < x.offset \/ x.offset + sz <= j ->
               (pelts x)[j] = (pelts (old x))[j] }
@@ -199,7 +195,6 @@ module Sub_1
       invariant { 0 <= b <= 1 }
       invariant { value x i - (power radix i) * b
                   = value ox i - 1 }
-      invariant { writable xp }
       invariant { forall j. i <= j < sz ->
                   (pelts x)[x.offset + j] = (pelts ox)[x.offset + j] }
       invariant { forall j. j < x.offset \/ x.offset + sz <= j ->
@@ -244,7 +239,6 @@ module Sub_1
   let wmpn_sub_1_in_place (x:t) (sz:int32) (y:limb) : limb
     requires { valid x sz }
     requires { sz > 0 }
-    requires { writable x }
     ensures  { value x sz - (power radix sz) * result = value (old x) sz - y }
     ensures  { 0 <= result <= 1 }
     ensures  { forall j. (j < offset x \/ offset x + sz <= j)

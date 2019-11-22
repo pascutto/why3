@@ -17,10 +17,9 @@ module Mul
   (** `wmpn_mul_1 r x sz y` multiplies `x[0..sz-1]` by the limb `y` and
        writes the n least significant limbs in `r`, and returns the most
        significant limb. It corresponds to `mpn_mul_1`. *)
-  let wmpn_mul_1 (r x:t) (sz:int32) (y:limb) : limb
+  let wmpn_mul_1 (r:t) (x:s 'w) (sz:int32) (y:limb) : limb
     requires { valid x sz }
     requires { valid r sz }
-    requires { writable r }
     ensures { value r sz + (power radix sz) * result
                 = value x sz * y }
     ensures { forall j. (j < offset r \/ offset r + sz <= j)
@@ -42,7 +41,6 @@ module Mul
       invariant { plength rp = plength r }
       invariant { rp.min = r.min }
       invariant { rp.max = r.max }
-      invariant { writable rp }
       invariant { pelts rp = pelts r }
       invariant { up.offset = x.offset + i }
       invariant { plength up = plength x }
@@ -84,10 +82,9 @@ module Mul
       least significant limbs to `(r, sz)` and writes the result in `(r, sz)`.
       Returns the most significant limb of the product plus the carry
       of the addition. Corresponds to `mpn_addmul_1`.*)
-  let wmpn_addmul_1 (r x:t) (sz: int32) (y:limb) : limb
+  let wmpn_addmul_1 (r:t) (x:s 'w) (sz: int32) (y:limb) : limb
     requires { valid x sz }
     requires { valid r sz }
-    requires { writable r }
     ensures { value r sz + (power radix sz) * result
             = value (old r) sz
               + value x sz * y }
@@ -111,7 +108,6 @@ module Mul
       invariant { (rp).offset = r.offset + i }
       invariant { rp.min = r.min }
       invariant { rp.max = r.max }
-      invariant { writable rp }
       invariant { pelts rp = pelts r }
       invariant { up.offset = x.offset + i }
       invariant { plength up = plength x }
@@ -164,12 +160,11 @@ module Mul
     done;
     cl
 
- let wmpn_addmul_n (r x y:t) (sz:int32) : limb
+ let wmpn_addmul_n (r:t) (x:s 'wx) (y:s 'wy) (sz:int32) : limb
     requires { sz > 0 }
     requires { valid x sz }
     requires { valid y sz }
     requires { valid r (sz + sz) }
-    requires { writable r }
     writes { r.data.elts }
     ensures { value r (sz + sz)
                 + power radix (sz + sz) * result
@@ -192,7 +187,6 @@ module Mul
       invariant { rp.offset = r.offset + i }
       invariant { rp.min = r.min }
       invariant { rp.max = r.max }
-      invariant { writable rp }
       invariant { pelts rp = pelts r }
       invariant { plength rp = plength r }
       invariant { vp.offset = y.offset + i }
@@ -267,12 +261,11 @@ module Mul
   (** `wmpn_mul_basecase r x sx y sy` multiplies `(x, sx)` and `(y,sy)` and writes
   the result in `(r, sx+sy)`. `sx` must be greater than or equal to
   `sy`. Corresponds to `mpn_mul`. *)
-  let wmpn_mul_basecase (r x:t) (sx:int32) (y:t) (sy:int32) : unit
+  let wmpn_mul_basecase (r:t) (x:s 'wx) (sx:int32) (y:s 'wy) (sy:int32) : unit
     requires { 0 < sy <= sx }
     requires { valid x sx }
     requires { valid y sy }
     requires { valid r (sy + sx) }
-    requires { writable r }
     writes   { r.data.elts }
     ensures  { value r (sy + sx) = value x sx * value y sy }
     ensures { forall j. (j < offset r \/ offset r + (sy + sx) <= j)
@@ -300,7 +293,6 @@ module Mul
       invariant { rp.min = r.min }
       invariant { rp.max = r.max }
       invariant { pelts rp = pelts r }
-      invariant { writable rp }
       invariant { vp.offset = y.offset + i }
       invariant { plength vp = plength y }
       invariant { vp.min = y.min }

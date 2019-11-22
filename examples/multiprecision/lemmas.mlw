@@ -211,17 +211,17 @@ module Lemmas
     ensures  { value_sub x x1 x2 < power radix (x2-x1-1) *  (l2i (Map.get x (x2-1)) + 1) }
   = value_sub_upper_bound x x1 (x2-1)
 
-  function value (x:t) (sz:int) : int =
+  function value (x:s 'w) (sz:int) : int =
      value_sub (pelts x) x.offset (x.offset + sz)
 
-  let lemma value_tail (x:t) (sz:int32)
+  let lemma value_tail (x:s 'w) (sz:int32)
     requires { 0 <= sz }
     ensures  { value x (sz+1) = value x sz + (pelts x)[x.offset + sz] * power radix sz }
   = value_sub_tail (pelts x) x.offset (x.offset + p2i sz)
 
   meta remove_prop axiom value_tail
 
-  let lemma value_concat (x:t) (n m:int32)
+  let lemma value_concat (x:s 'w) (n m:int32)
     requires { 0 <= n <= m }
     ensures  { value x m
              = value x n + power radix n

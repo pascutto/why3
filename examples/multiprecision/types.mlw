@@ -5,7 +5,8 @@ module Types
   use import mach.int.UInt64GMP as Limb
 
   type limb = uint64
-  type t = ptr limb
+  type s 'w = ptr limb 'w
+  type t = ptr limb writable
 
   exception Break
   exception Return32 int32

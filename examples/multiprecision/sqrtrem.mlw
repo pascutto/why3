@@ -34,12 +34,11 @@ module Sqrt
 
   meta remove_prop axiom same_mod
 
-  let wmpn_sqrtrem2 (sp rp np: ptr limb) : limb
+  let wmpn_sqrtrem2 (sp rp: t) (np: s 'w): limb
     requires { valid rp 1 }
     requires { valid sp 1 }
     requires { valid np 2 }
     requires { (pelts np)[offset np + 1] >= power 2 (Limb.length - 2) }
-    requires { writable sp /\ writable rp }
     ensures  { value np 2
                = (pelts sp)[offset sp] * (pelts sp)[offset sp]
                   + result * radix + (pelts rp)[offset rp] }
@@ -242,13 +241,12 @@ module Sqrt
 
   use toom.Toom
 
-  let rec wmpn_dc_sqrtrem (sp np: ptr limb) (n:int32) (scratch: ptr limb) : limb
+  let rec wmpn_dc_sqrtrem (sp np: t) (n:int32) (scratch: t): limb
     requires { valid np (n+n) }
     requires { valid sp n }
     requires { 1 <= n }
     requires { valid scratch (1 + div n 2) }
     requires { (pelts np)[offset np + n + n - 1] >= power 2 (Limb.length - 2) }
-    requires { writable sp /\ writable scratch /\ writable np }
     requires { 4 * n < max_int32 }
 (*    writes   { np, sp, scratch }*)
     ensures  { (value sp n) * (value sp n)
@@ -853,11 +851,10 @@ module Sqrt
              so 0 < power 2 (2 * c) so 0 < (s + 1) * (s + 1) so 0 < n
              so n < (s + 1) * (s + 1) }
 
-  let rec wmpn_sqrtrem (sp rp np: ptr limb) (n: int32) : int32
+  let rec wmpn_sqrtrem (sp rp: t) (np: s 'w) (n: int32) : int32
     requires { valid sp (ceilhalf n) }
     requires { valid rp n }
     requires { valid np n }
-    requires { writable sp /\ writable rp /\ writable np }
     requires { 1 <= n }
     requires { 4 * n < max_int32 }
     requires { (pelts np)[offset np + n - 1] > 0 }

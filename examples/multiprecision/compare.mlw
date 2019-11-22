@@ -15,7 +15,7 @@ module Compare
 
   (** `wmpn_cmp` compares `x[0..sz-1]` and `y[0..sz-1]` as unsigned integers.
       It corresponds to `GMPN_CMP`. *)
-  let wmpn_cmp (x y:t) (sz:int32) : int32
+  let wmpn_cmp (x:s 'wx) (y:s 'wy) (sz:int32) : int32
     requires { valid x sz }
     requires { valid y sz }
     ensures { result = compare_int (value x sz) (value y sz) }
