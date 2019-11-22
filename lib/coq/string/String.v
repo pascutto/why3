@@ -43,27 +43,18 @@ Proof.
   intros s.
   simpl.
   refine (conj _ _).
-  - Print String.
-    induction s as [| h t IH].
+  - induction s as [| h t IH].
     + simpl. exact (eq_refl rliteral).
     + simpl. rewrite IH. exact (eq_refl _).
   - exact (eq_refl _).
 Qed.
 
-(* If length is defined this way, I could not manage to simplify length
-  in the following proofs.
-
 Definition length : BuiltIn.string -> Numbers.BinNums.Z.
 Proof.
-  Print int. Print Z.
-  intros string.
-  apply length in string.
-  About Z.
-  apply Z_of_nat.
-  exact string.
-Defined. *)
+  exact (fun s => Z_of_nat (Strings.String.length s)).
+Defined.
 
-(* Why3 goal *)
+(* (* Why3 goal *)
 Definition length : BuiltIn.string -> Numbers.BinNums.Z :=
   fix length s := match s with
   | EmptyString => 0%Z
@@ -75,12 +66,11 @@ Lemma of_nat_succ_add_1: forall (n:nat), (Z.of_nat (S n)) = (1 + (Z.of_nat n))%Z
 Proof.
   intros n.
   rewrite Nat2Z.inj_succ.
-  About "+"%Z. Print Z.add.
   rewrite Z.add_1_l.
   reflexivity.
-Qed.
+Qed. 
 
-Lemma length_coq_eq_length_why3: forall (s: BuiltIn.string), (Z.of_nat (String.length s) = length s).
+Lemma length_coq_eq_length_why3: forall (s: BuiltIn.string), (Z.of_nat (Strings.String.length s) = length s).
 Proof.
   intros s.
   induction s as [| x xs IH].
@@ -92,7 +82,7 @@ Proof.
     case xs.
     - simpl. reflexivity.
     - auto.
-Qed.
+Qed. *)
 
 (* Why3 goal *)
 Lemma length_empty : ((length rliteral) = 0%Z).
@@ -104,11 +94,9 @@ Qed.
 Lemma length_nonnegative : forall (s:BuiltIn.string), (0%Z <= (length s))%Z.
 Proof.
   intros.
-  rewrite <- length_coq_eq_length_why3.
-  Print "<=".
-  induction s as [| x xs IH].
-  + unfold Z.le. simpl. discriminate.
-  + unfold Z.le. unfold not. intros. simpl in H. discriminate H.
+  unfold length.
+  (* SearchAbout Z.of_nat. *)
+  apply Nat2Z.is_nonneg.
 Qed.
 
 (* Why3 goal *)
@@ -116,26 +104,21 @@ Lemma length_concat :
   forall (s1:BuiltIn.string) (s2:BuiltIn.string),
   ((length (concat s1 s2)) = ((length s1) + (length s2))%Z).
 Proof.
+  unfold length, concat.
   intros s1 s2.
-  rewrite <- length_coq_eq_length_why3.
-  rewrite <- length_coq_eq_length_why3.
-  rewrite <- length_coq_eq_length_why3.
   induction s1 as [| x xs IH].
-  - simpl. reflexivity.
-  - simpl concat.
-    simpl String.length.
-    rewrite of_nat_succ_add_1.
+  - auto.
+  - simpl Strings.String.length.
+    repeat rewrite Nat2Z.inj_succ.
     rewrite IH.
-    rewrite of_nat_succ_add_1.
-    rewrite Z.add_assoc.
-    reflexivity.
+    auto with zarith.
 Qed.
 
 (* Why3 goal *)
 Definition lt : BuiltIn.string -> BuiltIn.string -> Prop.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma lt_empty :
@@ -143,22 +126,22 @@ Lemma lt_empty :
 Proof.
 intros s h1.
 
-Qed.
+Admitted.
 
 (* Why3 goal *)
 Lemma lt_not_com :
   forall (s1:BuiltIn.string) (s2:BuiltIn.string), lt s1 s2 -> ~ lt s2 s1.
 Proof.
 intros s1 s2 h1.
-
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma lt_ref : forall (s1:BuiltIn.string), ~ lt s1 s1.
 Proof.
-intros s1.
+  intros s1.
 
-Qed.
+Admitted.
 
 (* Why3 goal *)
 Lemma lt_trans :
@@ -167,35 +150,36 @@ Lemma lt_trans :
 Proof.
 intros s1 s2 s3 (h1,h2).
 
-Qed.
+Admitted.
 
 (* Why3 goal *)
 Definition le : BuiltIn.string -> BuiltIn.string -> Prop.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma le_empty : forall (s:BuiltIn.string), le rliteral s.
 Proof.
 intros s.
-
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma le_ref : forall (s1:BuiltIn.string), le s1 s1.
 Proof.
 intros s1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma lt_le :
   forall (s1:BuiltIn.string) (s2:BuiltIn.string), lt s1 s2 -> le s1 s2.
 Proof.
 intros s1 s2 h1.
-
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma lt_le_eq :
@@ -204,7 +188,8 @@ Lemma lt_le_eq :
 Proof.
 intros s1 s2 h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma le_trans :
@@ -213,23 +198,83 @@ Lemma le_trans :
 Proof.
 intros s1 s2 s3 (h1,h2).
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
-Definition mixfix_lbrb :
-  BuiltIn.string -> Numbers.BinNums.Z -> BuiltIn.string.
-Proof.
+Definition mixfix_lbrb (s: BuiltIn.string) (n: Numbers.BinNums.Z): BuiltIn.string :=
+  match n with
+  | Z0 => match String.get 0 s with
+          | None => EmptyString
+          | Some a => String a EmptyString
+          end
+  | Zpos p => match String.get (nat_of_N (Npos p)) s with
+              | None => EmptyString
+              | Some a => String a EmptyString
+              end
+  | Zneg p => EmptyString
+  end.
 
-Defined.
+(* TODO Shall we show that mixfix_lbrb and String.get are somewhat equivalent? *)
 
 (* Why3 goal *)
 Lemma at_out_of_range :
   forall (s:BuiltIn.string) (i:Numbers.BinNums.Z),
   (i < 0%Z)%Z \/ ((length s) <= i)%Z -> ((mixfix_lbrb s i) = rliteral).
 Proof.
-intros s i h1.
+  intros s i.
+  generalize s.
+  destruct i.
+  * intros s0 H. destruct H.
+    + discriminate H.
+    + destruct s0.
+      - auto.
+      - simpl.
+        unfold Z.le in H.
+        unfold not in H.
+        simpl in H.
+        destruct s0 in H.
+        --  simpl in H.
+            contradiction.
+        --  rewrite <- length_coq_eq_length_why3 in H.
+            simpl in H.
+            contradiction.
+  * intros s0.
+    intros.
+    destruct H.
+    + discriminate H.
+    + simpl.
+      destruct s0.
+      - simpl. auto.
+      - admit.
+  * intros s0.
+    intros.
+    destruct H.
+    + simpl. auto.
+    + simpl. auto.
 
-Qed.
+
+  (*intros s i.
+  intros H.
+  destruct H.
+  + destruct i.
+    - simpl.
+      discriminate H.
+    - discriminate H.
+    - simpl. exact (eq_refl _).
+  + case s.
+    - unfold mixfix_lbrb.
+      destruct i.
+      * simpl. auto.
+      * simpl. auto.
+      * auto.
+    - intros a s0.
+      destruct i.
+      ** simpl.
+         contradiction.*)
+
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma at_empty :
@@ -237,7 +282,8 @@ Lemma at_empty :
 Proof.
 intros i.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma at_length :
@@ -248,14 +294,15 @@ Lemma at_length :
 Proof.
 intros s i j.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Definition substring :
   BuiltIn.string -> Numbers.BinNums.Z -> Numbers.BinNums.Z -> BuiltIn.string.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma substring_out_of_range :
@@ -264,7 +311,8 @@ Lemma substring_out_of_range :
 Proof.
 intros s i x h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma substring_of_length_zero_or_less :
@@ -273,7 +321,8 @@ Lemma substring_of_length_zero_or_less :
 Proof.
 intros s i x h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma substring_of_empty :
@@ -282,7 +331,8 @@ Lemma substring_of_empty :
 Proof.
 intros i x.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma substring_smaller :
@@ -291,7 +341,8 @@ Lemma substring_smaller :
 Proof.
 intros s i x.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma substring_smaller_x :
@@ -300,7 +351,8 @@ Lemma substring_smaller_x :
 Proof.
 intros s i x h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma substring_length :
@@ -312,7 +364,8 @@ Lemma substring_length :
 Proof.
 intros s i x (h1,(h2,h3)).
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma substring_at :
@@ -321,13 +374,14 @@ Lemma substring_at :
 Proof.
 intros s i.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Definition prefixof : BuiltIn.string -> BuiltIn.string -> Prop.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma prefixof_substring :
@@ -336,7 +390,8 @@ Lemma prefixof_substring :
 Proof.
 intros s1 s2.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma prefixof_concat :
@@ -344,14 +399,16 @@ Lemma prefixof_concat :
 Proof.
 intros s1 s2.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma prefixof_empty : forall (s2:BuiltIn.string), prefixof rliteral s2.
 Proof.
 intros s2.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma prefixof_empty2 :
@@ -359,13 +416,14 @@ Lemma prefixof_empty2 :
 Proof.
 intros s1 h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Definition suffixof : BuiltIn.string -> BuiltIn.string -> Prop.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma suffixof_substring :
@@ -375,7 +433,8 @@ Lemma suffixof_substring :
 Proof.
 intros s1 s2.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma suffixof_concat :
@@ -383,14 +442,16 @@ Lemma suffixof_concat :
 Proof.
 intros s1 s2.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma suffixof_empty : forall (s2:BuiltIn.string), suffixof rliteral s2.
 Proof.
 intros s2.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma suffiof_empty2 :
@@ -398,13 +459,14 @@ Lemma suffiof_empty2 :
 Proof.
 intros s1 h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Definition contains : BuiltIn.string -> BuiltIn.string -> Prop.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma contains_prefixof :
@@ -413,7 +475,8 @@ Lemma contains_prefixof :
 Proof.
 intros s1 s2 h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma contains_suffixof :
@@ -422,7 +485,8 @@ Lemma contains_suffixof :
 Proof.
 intros s1 s2 h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma contains_empty :
@@ -430,14 +494,16 @@ Lemma contains_empty :
 Proof.
 intros s2.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma contains_empty2 : forall (s1:BuiltIn.string), contains s1 rliteral.
 Proof.
 intros s1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma contains_substring :
@@ -446,7 +512,8 @@ Lemma contains_substring :
 Proof.
 intros s1 s2 i h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma contains_concat :
@@ -455,7 +522,8 @@ Lemma contains_concat :
 Proof.
 intros s1 s2.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma contains_at :
@@ -464,14 +532,15 @@ Lemma contains_at :
 Proof.
 intros s1 s2 i h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Definition indexof :
   BuiltIn.string -> BuiltIn.string -> Numbers.BinNums.Z -> Numbers.BinNums.Z.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma indexof_empty :
@@ -480,7 +549,8 @@ Lemma indexof_empty :
 Proof.
 intros s i (h1,h2).
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma indexof_empty1 :
@@ -490,7 +560,8 @@ Lemma indexof_empty1 :
 Proof.
 intros s i j.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma indexof_contains :
@@ -502,7 +573,8 @@ Lemma indexof_contains :
 Proof.
 intros s1 s2 j h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma contains_indexof :
@@ -511,7 +583,8 @@ Lemma contains_indexof :
 Proof.
 intros s1 s2 i h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma not_contains_indexof :
@@ -520,7 +593,8 @@ Lemma not_contains_indexof :
 Proof.
 intros s1 s2 i h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma substring_indexof :
@@ -530,7 +604,8 @@ Lemma substring_indexof :
 Proof.
 intros s1 s2 i j h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma indexof_out_of_range :
@@ -539,7 +614,8 @@ Lemma indexof_out_of_range :
 Proof.
 intros i s1 s2 h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma indexof_in_range :
@@ -550,7 +626,8 @@ Lemma indexof_in_range :
 Proof.
 intros s1 s2 i j (h1,h2).
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma indexof_contains_substring :
@@ -561,14 +638,15 @@ Lemma indexof_contains_substring :
 Proof.
 intros s1 s2 i ((h1,h2),h3).
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Definition replace :
   BuiltIn.string -> BuiltIn.string -> BuiltIn.string -> BuiltIn.string.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma replace_empty :
@@ -577,7 +655,8 @@ Lemma replace_empty :
 Proof.
 intros s1 s3.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma replace_not_contains :
@@ -586,7 +665,8 @@ Lemma replace_not_contains :
 Proof.
 intros s1 s2 s3 h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma replace_empty2 :
@@ -596,7 +676,8 @@ Lemma replace_empty2 :
 Proof.
 intros s2 s3 s4.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma replace_substring_indexof :
@@ -610,14 +691,15 @@ Lemma replace_substring_indexof :
 Proof.
 intros s1 s2 s3 j.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Definition replaceall :
   BuiltIn.string -> BuiltIn.string -> BuiltIn.string -> BuiltIn.string.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma replaceall_empty1 :
@@ -626,7 +708,8 @@ Lemma replaceall_empty1 :
 Proof.
 intros s1 s3.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma not_contains_replaceall :
@@ -635,13 +718,15 @@ Lemma not_contains_replaceall :
 Proof.
 intros s1 s2 s3 h1.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Definition to_int : BuiltIn.string -> Numbers.BinNums.Z.
 Proof.
 
-Defined.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma to_int_gt_minus_1 :
@@ -649,14 +734,16 @@ Lemma to_int_gt_minus_1 :
 Proof.
 intros s.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma to_int_empty : ((to_int rliteral) = (-1%Z)%Z).
 Proof.
 
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 assumption *)
 Definition is_digit (s:BuiltIn.string) : Prop :=
@@ -666,7 +753,7 @@ Definition is_digit (s:BuiltIn.string) : Prop :=
 Definition from_int : Numbers.BinNums.Z -> BuiltIn.string.
 Proof.
 
-Defined.
+Admitted.
 
 (* Why3 goal *)
 Lemma from_int_negative :
@@ -674,7 +761,8 @@ Lemma from_int_negative :
 Proof.
 intros i.
 
-Qed.
+admit.
+Admitted.
 
 (* Why3 goal *)
 Lemma from_int_to_int :
@@ -684,5 +772,5 @@ Lemma from_int_to_int :
 Proof.
 intros i.
 
-Qed.
-
+admit.
+Admitted.
