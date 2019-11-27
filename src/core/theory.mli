@@ -234,6 +234,9 @@ val tuple_theory_name : string -> int option
 
 val add_decl_with_tuples : theory_uc -> decl -> theory_uc
 
+val well_formed: lsymbol
+(* Symbol for the well_formed predicate *)
+
 (* {2 Exceptions} *)
 
 type badinstance_error =

@@ -604,9 +604,10 @@ let pd_func, pd_func_app = match highord_theory.th_decls with
       mk_decl (PDlet ld_func_app) [da]
   | _ -> assert false
 
-let pd_bool = match bool_theory.th_decls with
-  | [{td_node = Decl db}] ->
-      mk_decl (PDtype [mk_itd its_bool [] [rs_true; rs_false] [] []]) [db]
+let pd_bool, pd_wf = match bool_theory.th_decls with
+  | [{td_node = Decl db}; { td_node = Decl dw}] ->
+      mk_decl (PDtype [mk_itd its_bool [] [rs_true; rs_false] [] []]) [db],
+      mk_decl (PDlet Expr.wf_app)  [dw]
   | _ -> assert false
 
 let pd_tuple = Wstdlib.Hint.memo 17 (fun n ->

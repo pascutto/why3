@@ -926,6 +926,11 @@ let clone_meta tdt th sm = match tdt.td_node with
       with Not_found -> None end
   | _ -> invalid_arg "Theory.clone_meta"
 
+let well_formed =
+  let preid =
+    { pre_name = "well_formed"; pre_attrs = Sattr.empty; pre_loc = None } in
+  Term.create_lsymbol ~constr:0 preid [Ty.ty_var (Ty.tv_of_string "a")] None
+
 (** Base theories *)
 
 let builtin_theory =
@@ -942,6 +947,13 @@ let create_theory ?(path=[]) n =
 let bool_theory =
   let uc = empty_theory (id_fresh "Bool") ["why3";"Bool"] in
   let uc = add_data_decl uc [ts_bool, [fs_bool_true,[]; fs_bool_false,[]]] in
+  let uc =
+    let vs = Term.create_vsymbol
+        {pre_name = "a"; pre_attrs = Sattr.empty; pre_loc = None}
+        (Ty.ty_var (Ty.tv_of_string "a")) in
+    let d = Decl.make_ls_defn well_formed [vs] Term.t_true in
+    add_logic_decl uc [d]
+  in
   close_theory uc
 
 let highord_theory =

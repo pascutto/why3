@@ -878,6 +878,14 @@ let e_func_app fn e =
 
 let e_func_app_l fn el = List.fold_left e_func_app fn el
 
+let wf_app = rs_of_ls Theory.well_formed
+
+let wf_app =
+  let v_args = wf_app.rs_cty.cty_args in
+  let ity = wf_app.rs_cty.cty_result in
+  let c = create_cty v_args [] [] Mxs.empty Mpv.empty eff_empty ity in
+  LDsym (wf_app, c_any c)
+
 (* boolean constructors *)
 
 let e_if e0 e1 e2 =

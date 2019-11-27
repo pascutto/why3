@@ -391,6 +391,7 @@ let builtin_module =
 let bool_module =
   let uc = empty_module dummy_env (id_fresh "Bool") ["why3";"Bool"] in
   let uc = add_pdecl_no_logic uc pd_bool in
+  let uc = add_pdecl_no_logic uc pd_wf in
   let m = close_module uc in
   { m with mod_theory = bool_theory }
 

@@ -24,6 +24,8 @@ Language
   * identifiers used for record constructor `mk foo` have been renamed to `foo'mk` :x:
   * the `alias` clause can now be used in program functions to force the aliasing
     of function parameters and/or named returns
+  * the `well_formed` predicate is now available for manual triggering of type
+    invariants :x:
 
 Tools
   * counterexamples given by `why3prove` are no longer printed using JSON

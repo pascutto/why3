@@ -117,6 +117,7 @@ val pd_str : pdecl
 val pd_tuple : int -> pdecl
 val pd_func : pdecl
 val pd_func_app : pdecl
+val pd_wf : pdecl
 
 (** {2 Known identifiers} *)
 
