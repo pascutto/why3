@@ -593,6 +593,13 @@ if test "$enable_ide" = retry; then
    fi
    AC_CHECK_FILE($DIR/gtkButton.cmi,,enable_ide=no)
    if test "$enable_ide" = yes; then
+      # Test for lablgtk version greater than 2.18.7: most recent version
+      # available for OCaml 4.05.0.
+      LABLGTKVER=$(grep "^version =" $DIR/META 2> /dev/null | \
+         sed -e "s/version = \"//" -e "s/\"//")
+      AX_VERSION_GE([$LABLGTKVER], 2.18.7, [],
+         [AC_MSG_ERROR(You need lablgtk version 2.18.7 or higher.)])
+      # Set Gtk version
       GTKVERSION=2
       reason_ide=" (gtk2)"
    else
