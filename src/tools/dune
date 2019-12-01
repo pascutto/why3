@@ -4,6 +4,7 @@
         (modules  why3config why3execute why3extract why3prove why3realize why3wc)
         (flags -linkall -open Why3.V1)
         (package why3)
+        (preprocess (pps bisect_ppx))
 )
 
 (executable
@@ -12,6 +13,7 @@
         (libraries why3)
         (modules main)
         (flags -linkall -open Why3.V1)
+        (preprocess (pps bisect_ppx))
         (package why3)
 )
 
@@ -22,6 +24,7 @@
         (name why3_unix_scheduler)
         (modules unix_scheduler)
         (libraries why3)
+        (preprocess (pps bisect_ppx))
         (flags -linkall -open Why3.V1)
 )
 
@@ -30,6 +33,7 @@
         (libraries why3 why3_unix_scheduler)
         (modules why3replay)
         (flags -linkall -open Why3.V1 -open Why3_unix_scheduler)
+        (preprocess (pps bisect_ppx))
         (package why3)
 )
 
@@ -38,5 +42,6 @@
         (modules why3shell)
         (libraries why3 why3_unix_scheduler)
         (flags -linkall -open Why3.V1 -open Why3_unix_scheduler)
+        (preprocess (pps bisect_ppx))
         (package why3)
 )

@@ -8,6 +8,7 @@
                 )
        )
        (flags -open Why3.V1 -linkall)
+       (preprocess (pps bisect_ppx))
        (package why3-ide)
 )
 
@@ -15,6 +16,8 @@
        (name why3_resetgc)
        (modules why3_resetgc)
        (c_names resetgc)
+       (preprocess (pps bisect_ppx))
+
 )
 
 (executable
@@ -23,5 +26,6 @@
        (modules wserver why3web)
        (libraries why3)
        (flags -open Why3.V1 -linkall)
+       (preprocess (pps bisect_ppx))
        (package why3)
 )

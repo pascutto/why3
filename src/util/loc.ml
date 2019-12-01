@@ -54,11 +54,12 @@ let join (f1,l1,b1,e1) (f2,_,b2,e2) =
   assert (f1 = f2); (f1,l1,b1,e1+e2-b2)
 
 let extract (b,e) =
-  let f = b.pos_fname in
+  (*let f = b.pos_fname in
   let l = b.pos_lnum in
   let fc = b.pos_cnum - b.pos_bol in
   let lc = e.pos_cnum - b.pos_bol in
-  (f,l,fc,lc)
+    (f,l,fc,lc)*)
+  ("", 1, 1, 1)
 
 let compare = Pervasives.compare
 let equal = Pervasives.(=)

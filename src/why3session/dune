@@ -6,5 +6,6 @@
                  why3session_main)
        (libraries why3)
        (flags -open Why3.V1 -linkall)
+       (preprocess (pps bisect_ppx))
        (package why3)
 )
