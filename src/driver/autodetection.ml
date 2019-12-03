@@ -362,7 +362,7 @@ let generate_auto_strategies env =
      if b then print_info "  Prover %a will be used in Auto level >= %d@."
                        Whyconf.print_prover p lev) env.prover_auto_levels;
   (* Split VCs *)
-  let code = "t split_vc exit" in
+  let code = "t split_vc next\nnext: \nt trivial_true\n exit" in
   let split = {
       strategy_name = "Split_VC";
       strategy_desc = "Split@ the@ VC@ into@ subgoals";
