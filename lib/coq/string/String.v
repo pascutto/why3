@@ -3,6 +3,7 @@
 Require Import BuiltIn.
 Require BuiltIn.
 Require int.Int.
+Require Ascii.
 
 (* Why3 goal *)
 Definition concat : BuiltIn.string -> BuiltIn.string -> BuiltIn.string.
@@ -17,10 +18,10 @@ Lemma concat_assoc :
 Proof.
   intros s1 s2 s3.
   induction s1.
-  auto.
-  simpl.
-  rewrite IHs1.
-  auto.
+  - auto.
+  - simpl.
+    rewrite IHs1.
+    auto.
 Qed.
 
 (* Why3 goal *)
@@ -54,36 +55,6 @@ Proof.
   exact (fun s => Z_of_nat (Strings.String.length s)).
 Defined.
 
-(* (* Why3 goal *)
-Definition length : BuiltIn.string -> Numbers.BinNums.Z :=
-  fix length s := match s with
-  | EmptyString => 0%Z
-  | String _ s' => (1 + (length s'))%Z
-  end.
-
-(* TODO remove? *)
-Lemma of_nat_succ_add_1: forall (n:nat), (Z.of_nat (S n)) = (1 + (Z.of_nat n))%Z.
-Proof.
-  intros n.
-  rewrite Nat2Z.inj_succ.
-  rewrite Z.add_1_l.
-  reflexivity.
-Qed. 
-
-Lemma length_coq_eq_length_why3: forall (s: BuiltIn.string), (Z.of_nat (Strings.String.length s) = length s).
-Proof.
-  intros s.
-  induction s as [| x xs IH].
-  + auto.
-  + simpl String.length.
-    rewrite of_nat_succ_add_1.
-    rewrite IH.
-    simpl length.
-    case xs.
-    - simpl. reflexivity.
-    - auto.
-Qed. *)
-
 (* Why3 goal *)
 Lemma length_empty : ((length rliteral) = 0%Z).
 Proof.
@@ -114,41 +85,91 @@ Proof.
     auto with zarith.
 Qed.
 
-(* Why3 goal *)
-Definition lt : BuiltIn.string -> BuiltIn.string -> Prop.
-Proof.
+Definition ascii_lt (a1 a1: Ascii.ascii): Prop :=
+  Ascii.nat_of_ascii a1 < Ascii.nat_of_ascii a1.
 
-Admitted.
+(* Why3 goal *)
+Fixpoint lt (s1 s2: BuiltIn.string): Prop := 
+ match s1, s2 with
+ | _, EmptyString => False
+ | EmptyString, _ => True
+ | String a1 s1, String a2 s2 => if Ascii.eqb a1 a2 then lt s1 s2 else
+                                 ascii_lt a1 a2
+ end.
 
 (* Why3 goal *)
 Lemma lt_empty :
   forall (s:BuiltIn.string), ~ (s = rliteral) -> lt rliteral s.
 Proof.
-intros s h1.
-
-Admitted.
+  intros s.
+  unfold rliteral.
+  intros.
+  simpl lt.
+  destruct s.
+  auto. auto.
+Qed.
 
 (* Why3 goal *)
 Lemma lt_not_com :
   forall (s1:BuiltIn.string) (s2:BuiltIn.string), lt s1 s2 -> ~ lt s2 s1.
 Proof.
-intros s1 s2 h1.
-admit.
-Admitted.
+  intro s1.
+  induction s1 as [| a s IH].
+  - intro s2.
+    intro.
+    unfold not.
+    case s2.
+    + auto.
+    + auto.
+  - intro.
+    case s2.
+    + auto.
+    + intros a0 s0.
+      simpl.
+      destruct (Ascii.eqb a a0).
+      * intro.
+        unfold not.
+        case (Ascii.eqb a0 a).
+        ** intro.
+           apply IH in H.
+           contradiction.
+        ** SearchAbout Nat.ltb.
+           apply Nat.lt_irrefl.
+      * intro.
+        apply Nat.lt_irrefl in H.
+        auto.
+Qed.
 
 (* Why3 goal *)
 Lemma lt_ref : forall (s1:BuiltIn.string), ~ lt s1 s1.
 Proof.
   intros s1.
-
-Admitted.
+  induction s1 as [| a s IH].
+  + auto.
+  + simpl.
+    case (Ascii.eqb a a).
+    - exact IH.
+    - unfold not.
+      apply Nat.lt_irrefl.
+Qed.
 
 (* Why3 goal *)
 Lemma lt_trans :
   forall (s1:BuiltIn.string) (s2:BuiltIn.string) (s3:BuiltIn.string),
   lt s1 s2 /\ lt s2 s3 -> lt s1 s3.
 Proof.
-intros s1 s2 s3 (h1,h2).
+  induction s1 as [| a1 s1 IH1].
+  - intros s2 s3.
+    case s2.
+    + intro. destruct H. exact H0.
+    + intros a s. case s3.
+      * intros. destruct H. simpl in H0. auto.
+      * simpl. auto.
+  - induction s2 as [| a2 s2 IH2].
+    + intro. simpl. case s3.
+      * intro. destruct H. auto.
+      * intros. destruct H. contradiction.
+    + intro s3. intro H. destruct H. simpl in H0. case s3.
 
 Admitted.
 
