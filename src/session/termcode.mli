@@ -53,7 +53,7 @@ type shape_v =
 val shape_of_string: version:int -> string -> shape_v
 val string_of_shape: shape_v -> string
 
-val t_shape_task: version:int -> expl:string -> Task.task -> shape
+val t_shape_task: version:int -> expl:string -> Trans.naming_table -> Task.task -> shape
 (** returns the shape of a given task. Raise [Assert_failure] for version >= 8 *)
 
 (* True if a shape version represented as bound_shape false if it is shape *)
@@ -79,7 +79,7 @@ module Gshape : sig
   val goal_and_expl_shapes  : gshape -> bound_shape -> shape
 
   val t_bound_shape_task:
-    gshape -> version:int -> expl:string -> Task.task -> bound_shape
+    gshape -> version:int -> expl:string -> Trans.naming_table -> Task.task -> bound_shape
 
   val empty_bshape: bound_shape
 end

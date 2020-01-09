@@ -172,16 +172,16 @@ module Sshape = struct
         | Not_found -> empty_shape in
       Old_shape shape
 
-  let compute_and_add_shape s ~expl goal_id t =
+  let compute_and_add_shape s ~expl goal_id nt t =
     let sshape = s.shapes in
     if is_bound_shape_version sshape.shape_version then
       let gs = sshape.session_global_shapes in
       let version = sshape.shape_version in
-      let shape = Gshape.t_bound_shape_task gs ~version ~expl t in
+      let shape = Gshape.t_bound_shape_task gs ~version ~expl nt t in
       Hpn.add sshape.session_bound_shape_table goal_id shape
     else
       let version = sshape.shape_version in
-      let shape = t_shape_task ~version ~expl t in
+      let shape = t_shape_task ~version ~expl nt t in
       Hpn.add sshape.session_shape_table goal_id shape
 
   let find_sum s goal_id =
@@ -685,7 +685,8 @@ let mk_proof_node ~shape_version ~expl (s : session) (n : Ident.ident) (t : Task
   Hpn.add s.session_raw_tasks node_id t;
   let sum = Termcode.task_checksum ~version:shape_version t in
   Sshape.add_sum s node_id sum;
-  Sshape.compute_and_add_shape s ~expl node_id t
+  let _, (nt: Trans.naming_table) = get_task_name_table s node_id in
+  Sshape.compute_and_add_shape s ~expl node_id nt t
 
 let mk_new_proof_node = mk_proof_node ~shape_version:Termcode.current_shape_version
 
@@ -1910,11 +1911,11 @@ let merge_files ~shape_version env (ses:session) (old_ses : session) =
          | APn id ->
              begin
                try
-                 let t = get_task ses id in
+                 let t, nt = get_task_name_table ses id in
                  let _, expl,_ = Termcode.goal_expl_task ~root:false t in
                  let sum = Termcode.task_checksum ~version t in
                  Sshape.add_sum ses id sum;
-                 Sshape.compute_and_add_shape ses ~expl id t
+                 Sshape.compute_and_add_shape ses ~expl id nt t
                with Not_found -> (* detached goal *)
                  (Sshape.add_sum ses id Termcode.dumb_checksum;
                   Sshape.add_empty_shape ses id)
@@ -2205,13 +2206,13 @@ let save_session (s : session) =
         fold_all_session s (fun () any ->
             match any with
             | APn g when not (is_detached s any)  ->
-                let t = get_task s g in
+                let t, nt = get_task_name_table s g in
                 let (_, expl, _) =
                   let root =
                     match get_proof_parent s g with
                     | Trans _ -> false | Theory _ -> true in
                   Termcode.goal_expl_task ~root t in
-                Sshape.compute_and_add_shape s ~expl g t;
+                Sshape.compute_and_add_shape s ~expl g nt t;
             | _ -> ()) ()
       end in
   (* Used here so that shape do not save artifacts of the old saved shapes or
