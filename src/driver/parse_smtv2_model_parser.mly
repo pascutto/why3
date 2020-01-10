@@ -77,6 +77,8 @@ decl:
 | DECLARE_DATATYPES idata_def { None }
 (* z3 declare function *)
 | DECLARE_FUN name LPAREN args_lists RPAREN ireturn_type { None }
+(* cvc4 declaring unit-like singleton *)
+| DECLARE_FUN LPAREN RPAREN ireturn_type { None }
 | FORALL LPAREN args_lists RPAREN smt_term { None } (* z3 cardinality *)
 
 smt_term:
