@@ -41,11 +41,11 @@ let unstop f =
 module M = struct
 
   (* Multiplication tree *)
-  type comb = Base of term | Op of comb * comb
+  type 'a comb = Base of 'a | Op of 'a comb * 'a comb
 
   (* zero: false for /\, true for \/
      unit: true for /\, false for \/ *)
-  type monoid = Zero of term | Unit | Comb of comb
+  type 'a monoid = Zero of term | Unit | Comb of 'a comb
 
   (* Triviality degree. *)
   let degree = function Unit -> 0 | Zero _ | Comb (Base _) -> 1 | _ -> 2
@@ -112,18 +112,18 @@ module M = struct
 
 end
 
-type split_ret = {
+type 'a split_ret = {
   (* implications are equivalences when byso_split is off *)
   (* Conjunctive decomposition of formula: /\ pos -> f *)
-  pos : M.monoid;
-  (* Disjunctive decomposition of formula: f -> \/ pos *)
-  neg : M.monoid;
+  pos : 'a M.monoid;
+  (* Disjunctive decomposition of formula: f -> \/ neg *)
+  neg : 'a M.monoid;
   (* Backward pull of formula: bwd -> f (typically from by) *)
   bwd : term;
   (* Forward pull of formula: f -> fwd (typically from so) *)
   fwd : term;
   (* Side-condition (generated from by/so occurrences when byso_split is on) *)
-  side : M.monoid;
+  side : 'a M.monoid;
   (* Indicate whether positive/negative occurrences of formula
      force decomposition. *)
   cpos : bool;

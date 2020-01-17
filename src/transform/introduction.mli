@@ -27,6 +27,9 @@
 
 *)
 
+val meta_intro_ls: Theory.meta
+val meta_intro_pr: Theory.meta
+
 val intros :
   ?known_map:Decl.known_map -> Decl.prsymbol -> Term.term -> Decl.decl list
  (** [intros ?known_map G f] returns the declarations after introducing
@@ -34,4 +37,6 @@ val intros :
 
 val introduce_premises : Task.task Trans.trans
 
+val generalize_intro: Task.task Trans.trans
+val subst: Task.task Trans.trans
 val simplify_intros: Task.task Trans.trans

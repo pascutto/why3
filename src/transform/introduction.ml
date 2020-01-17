@@ -300,17 +300,9 @@ let subst_filter ls =
   Sattr.mem Inlining.intro_attr ls.ls_name.id_attrs &&
   not (relevant_for_counterexample ls.ls_name)
 
+let subst =
+  Subst.subst_filtered ~subst_proxy:false subst_filter
+
 let simplify_intros =
-  Trans.compose introduce_premises
-                (Subst.subst_filtered ~subst_proxy:false subst_filter)
+  Trans.compose introduce_premises subst
 
-let split_vc =
-  Trans.compose_l
-    (Trans.compose generalize_intro Split_goal.split_goal_right)
-    (Trans.singleton simplify_intros)
-
-let () = Trans.register_transform_l
-           "split_vc" split_vc
-           ~desc:"The@ recommended@ splitting@ transformation@ to@ apply@ \
-              on@ VCs@ generated@ by@ WP@ (split_goal_right@ followed@ \
-              by@ introduce_premises@ followed@ by@ subst_all)."
