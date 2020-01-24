@@ -1754,7 +1754,7 @@ ALTERGOCMO = \
 	$(addprefix $(ALTERGODIR)/lib/, $(addsuffix .cmo,$(ALTERGOLIBS))) \
 	$(addprefix $(ALTERGODIR)/parsers/, $(addsuffix .cmo,$(ALTERGOPARSERS)))
 
-TRYWHY3CMO=lib/why3/why3.cma
+TRYWHY3CMO=lib/why3/why3.cma lib/plugins/microc.cmo
 TRYWHY3FILES=trywhy3.js trywhy3.html trywhy3.css \
 	README.md examples/ \
 	trywhy3_custom.css gen_index.sh \
