@@ -8,7 +8,7 @@ fi
 
 export OCAMLRUNPARAM=o=20,O=200
 ./autogen.sh
-./configure --enable-local
+./configure --enable-local --disable-coq-libs --disable-isabelle-libs
 make
 
 while test $# -gt 0
