@@ -102,6 +102,7 @@ run () {
         printf "Strongest Postcondition  ${file_path} ($1)... "
     fi
     $dir/../bin/why3prove.opt --json --debug print_model_attrs${wp_sp} -P "$1,counterexamples" --timelimit 1 -a split_vc "${file_path}.mlw" | \
+        tee "$f.full-out" |
         # This ad hoc sed removes any timing information from counterexamples output.
         # Counterexamples in JSON format cannot match this regexp.
         sed 's/ ([0-9]\+\.[0-9]\+s)//' | \
@@ -149,9 +150,12 @@ run () {
             if $is_xfail; then
                 echo "Failed but bench is ok because asserted as an XFAIL."
             else
+                echo "=== START FULL OUTPUT"
+                cat "$f.full-out"
+                echo "=== END FULL OUTPUT"
                 echo "diff is the following:"
                 echo "$f"
-                diff "${oracle_file}" "$f.out"
+                diff -u "${oracle_file}" "$f.out"
                 success=false
             fi
         fi

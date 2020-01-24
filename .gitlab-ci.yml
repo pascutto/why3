@@ -1,9 +1,6 @@
 stages:
   - docker
-  - build
-  - test
   - nightly
-  - deploy
 
 variables:
   BUILD_IMAGE: "$CI_REGISTRY_IMAGE:ci-master-2019-12-11"
@@ -28,53 +25,45 @@ build-image:
   tags:
     - docker
 
-.build_template: &build_definition
-  stage: build
-  script:
-    - misc/ci-local.sh
-  <<: *docker_definition
+# .build_template: &build_definition
+#   stage: build
+#   script:
+#     - misc/ci-local.sh
+#   <<: *docker_definition
 
-build-system:
-  variables:
-    COMPILER: system
-  <<: *build_definition
+# build-system:
+#   variables:
+#     COMPILER: system
+#   <<: *build_definition
 
-build-4.09.0:
-  variables:
-    COMPILER: 4.09.0
-  <<: *build_definition
+# build-4.09.0:
+#   variables:
+#     COMPILER: 4.09.0
+#   <<: *build_definition
 
-bench-system:
-  variables:
-    COMPILER: system
-  stage: test
-  script:
-    - misc/ci-local.sh bench ide doc
-  <<: *docker_definition
+# bench-system:
+#   variables:
+#     COMPILER: system
+#   stage: test
+#   script:
+#     - misc/ci-local.sh bench ide doc
+#   <<: *docker_definition
 
-bench-4.09.0:
-  variables:
-    COMPILER: 4.09.0
-  stage: test
-  script:
-    - misc/ci-local.sh ide bench
-  <<: *docker_definition
+# bench-4.09.0:
+#   variables:
+#     COMPILER: 4.09.0
+#   stage: test
+#   script:
+#     - misc/ci-local.sh ide bench
+#   <<: *docker_definition
 
-full:
-  stage: test
-  variables:
-    COMPILER: full
-  script:
-    - misc/ci-local.sh ide doc web_ide bench
-  <<: *docker_definition
-
-nightly-bench:
-  stage: nightly
-  variables:
-    COMPILER: bench
-  script:
-    - misc/ci-local.sh nightly-bench-reduced
-  <<: *docker_definition
+# full:
+#   stage: test
+#   variables:
+#     COMPILER: full
+#   script:
+#     - misc/ci-local.sh ide doc web_ide bench
+#   <<: *docker_definition
 
 ce-bench:
   stage: nightly
@@ -84,34 +73,34 @@ ce-bench:
     - misc/ci-local.sh ce-bench
   <<: *docker_definition
 
-opam:
-  stage: build
-  script:
-    - opam switch full
-    - opam pin -v -y add why3 .
-    - opam pin -v -y add why3-ide .
-    - opam pin -v -y add why3-coq .
-  <<: *docker_definition
+# opam:
+#   stage: build
+#   script:
+#     - opam switch full
+#     - opam pin -v -y add why3 .
+#     - opam pin -v -y add why3-ide .
+#     - opam pin -v -y add why3-coq .
+#   <<: *docker_definition
 
-deploy:
-  stage: deploy
-  script:
-    - BRANCH=$(echo $CI_COMMIT_REF_NAME | tr -cs "[:alnum:].\n" "-")
-    - CACHE=$CI_REGISTRY_IMAGE:cache-$BRANCH
-    - IMAGE=$CI_REGISTRY_IMAGE:$BRANCH
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
-    - docker pull "$CACHE" || true
-    - docker pull "$IMAGE" || true
-    - docker build --force-rm --cache-from="$CACHE" --target=builder -t "$CACHE" -f misc/Dockerfile.deploy .
-    - docker build --force-rm --cache-from="$CACHE" --cache-from="$IMAGE" -t "$IMAGE" -f misc/Dockerfile.deploy .
-    - docker push "$CACHE"
-    - docker push "$IMAGE"
-    - docker rmi "$CACHE"
-    - docker rmi "$IMAGE"
-    - docker image prune -f
-  only:
-    - master
-    - /^bugfix[/]v[0-9.]*$/
-    - tags
-  tags:
-    - shell
+# deploy:
+#   stage: deploy
+#   script:
+#     - BRANCH=$(echo $CI_COMMIT_REF_NAME | tr -cs "[:alnum:].\n" "-")
+#     - CACHE=$CI_REGISTRY_IMAGE:cache-$BRANCH
+#     - IMAGE=$CI_REGISTRY_IMAGE:$BRANCH
+#     - docker login -u "$CI_REGISTRY_USER" -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+#     - docker pull "$CACHE" || true
+#     - docker pull "$IMAGE" || true
+#     - docker build --force-rm --cache-from="$CACHE" --target=builder -t "$CACHE" -f misc/Dockerfile.deploy .
+#     - docker build --force-rm --cache-from="$CACHE" --cache-from="$IMAGE" -t "$IMAGE" -f misc/Dockerfile.deploy .
+#     - docker push "$CACHE"
+#     - docker push "$IMAGE"
+#     - docker rmi "$CACHE"
+#     - docker rmi "$IMAGE"
+#     - docker image prune -f
+#   only:
+#     - master
+#     - /^bugfix[/]v[0-9.]*$/
+#     - tags
+#   tags:
+#     - shell
