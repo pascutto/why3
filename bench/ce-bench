@@ -101,7 +101,7 @@ run () {
         echo "Strongest Postcondition" > "$f.out"
         printf "Strongest Postcondition  ${file_path} ($1)... "
     fi
-    $dir/../bin/why3prove.opt --json --debug print_model_attrs${wp_sp} -P "$1,counterexamples" --timelimit 1 -a split_vc "${file_path}.mlw" | \
+    $dir/../bin/why3prove.opt --json --debug call_prover --debug print_model_attrs${wp_sp} -P "$1,counterexamples" --timelimit 1 -a split_vc "${file_path}.mlw" | \
         # This ad hoc sed removes any timing information from counterexamples output.
         # Counterexamples in JSON format cannot match this regexp.
         sed 's/ ([0-9]\+\.[0-9]\+s)//' | \
@@ -162,9 +162,9 @@ for file in $files; do
     filedir=`dirname $file`
     filebase=`basename $file .mlw`
     printf "Running provers on $filedir/$filebase.mlw\n";
-    run CVC4,1.7 $filedir $filebase true
-    run CVC4,1.7 $filedir $filebase false
-    run Z3,4.8.4 $filedir $filebase true
+    # run CVC4,1.7 $filedir $filebase true
+    # run CVC4,1.7 $filedir $filebase false
+    # run Z3,4.8.4 $filedir $filebase true
     run Z3,4.8.4 $filedir $filebase false
 done
 if $success; then

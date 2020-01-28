@@ -209,6 +209,7 @@ let debug_print_model ~print_attrs model =
 type answer_or_model = Answer of prover_answer | Model of string
 
 let analyse_result exit_result res_parser printer_mapping out =
+  Debug.dprintf debug "SMT output: %s@." out;
   let list_re = res_parser.prp_regexps in
   let re = craft_efficient_re list_re in
   let list_re = List.map (fun (a, b) -> Re.Str.regexp a, b) list_re in
@@ -263,7 +264,7 @@ let analyse_result exit_result res_parser printer_mapping out =
           let m =
             if is_model_empty m then saved_model else
               match res with
-              | StepLimitExceeded | Timeout | Unknown ("resourceout" | "timeout") ->
+              | StepLimitExceeded | Timeout | OutOfMemory | Unknown ("resourceout" | "timeout") ->
                   (* we keep the previous model if it was there *)
                   if use_incremental_choice then
                     Some (Opt.get_def m saved_model)

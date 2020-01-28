@@ -33,7 +33,7 @@ do
             ;;
         ce-bench)
             bin/why3config --detect
-            bench/ce-bench
+            bench/ce-bench bench/ce/floats
             ;;
         nightly-bench-reduced)
             bin/why3config --detect
